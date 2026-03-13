@@ -207,72 +207,50 @@ canvas#miniChart{display:block;width:100%;}
 setInterval(()=>document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-US',{hour12:false}),1000);
 
 // ── GAMMA LEVELS ──
-const LEVELS=[
-  {key:'king',  label:'KING NODE', price:5740, color:'var(--gold)',   gex:9.1,
-   long_pct:38, long_target:5780, long_target_label:'upper node $5,780',
-   short_pct:62, short_target:5720, short_target_label:'flip zone $5,720',
-   hist_reject:7, hist_total:10,
-   hist:[
-     {dir:1,desc:'Price squeezed through king node on high-vol day',result:'+1.4%',outcome:'broke'},
-     {dir:-1,desc:'Rejected at king node, faded to flip zone',result:'-1.8%',outcome:'rejected'},
-     {dir:-1,desc:'Double-tap rejection, dealers sold aggressively',result:'-2.1%',outcome:'rejected'},
-   ],
-   dealer_note:'Dealers are net short above this level — forced to sell rallies. King node is the gravitational center. Breaking above requires overwhelming buy flow.',
-   verdict:'FADE','verdict_color':'var(--red)',
-   verdict_text:'7/10 historical rejections at king node. Dealer short exposure above creates mechanical resistance. Probability strongly favors a fade back to flip zone.'},
-
-  {key:'call',  label:'CALL WALL', price:5750, color:'var(--accent)',  gex:7.4,
-   long_pct:28, long_target:5780, long_target_label:'squeeze to $5,780',
-   short_pct:72, short_target:5718, short_target_label:'back to spot $5,718',
-   hist_reject:8, hist_total:11,
-   hist:[
-     {dir:-1,desc:'Call wall held, faded 32pts back to put wall',result:'-0.6%',outcome:'rejected'},
-     {dir:-1,desc:'Intraday touch, closed below wall',result:'-0.4%',outcome:'rejected'},
-     {dir:1, desc:'Massive call buying broke wall, squeezed to $5,780',result:'+0.6%',outcome:'broke'},
-   ],
-   dealer_note:'$7.4B GEX at this strike. Dealers are short gamma here and must sell into any rally. A break above requires 3x normal buy flow to overcome dealer hedging.',
-   verdict:'FADE','verdict_color':'var(--red)',
-   verdict_text:'8/11 rejections at call wall. Dealers mechanically sell above this level. Only take longs if you see a sweep print confirm the break — otherwise fade is the highest probability play.'},
-
-  {key:'flip',  label:'FLIP ZONE', price:5720, color:'var(--blue)',   gex:0,
-   long_pct:55, long_target:5750, long_target_label:'call wall $5,750',
-   short_pct:45, short_target:5700, short_target_label:'put wall $5,700',
-   hist_reject:5, hist_total:10,
-   hist:[
-     {dir:1, desc:'Bounced off flip zone, reclaimed positive gamma',result:'+0.8%',outcome:'bounced'},
-     {dir:-1,desc:'Failed to hold flip, dropped to put wall',result:'-0.4%',outcome:'failed'},
-     {dir:1, desc:'Flip zone tested twice then ripped higher',result:'+1.2%',outcome:'bounced'},
-   ],
-   dealer_note:'Zero gamma at this level — no mechanical support or resistance from dealers. Direction depends entirely on whether buyers or sellers win the battle here.',
-   verdict:'NEUTRAL — WATCH DIRECTION','verdict_color':'var(--blue)',
-   verdict_text:'Flip zone is a coin flip without confirmation. Wait for price action — a reclaim and hold means bullish continuation. A failure and close below means negative gamma regime begins, amplifying any downside.'},
-
-  {key:'put',   label:'PUT WALL',  price:5700, color:'var(--red)',    gex:-7.7,
-   long_pct:68, long_target:5720, long_target_label:'flip zone $5,720',
-   short_pct:32, short_target:5680, short_target_label:'lower node $5,680',
-   hist_reject:7, hist_total:10,
-   hist:[
-     {dir:1, desc:'Put wall acted as support, bounced sharply',result:'+0.7%',outcome:'bounced'},
-     {dir:1, desc:'Dip buyers at put wall, V-shaped recovery',result:'+0.5%',outcome:'bounced'},
-     {dir:-1,desc:'Put wall breached on high volume, no support',result:'-1.1%',outcome:'broke'},
-   ],
-   dealer_note:'Dealers are long puts below this level — they must buy the underlying to hedge, creating a mechanical bid. This is the most reliable support level in positive gamma.',
-   verdict:'BUY THE LEVEL','verdict_color':'var(--accent)',
-   verdict_text:'7/10 bounces at put wall in positive gamma regime. Dealer buying creates a mechanical floor. Highest probability play: buy the touch, stop below $5,695. Target flip zone $5,720.'},
-
-  {key:'pain',  label:'MAX PAIN',  price:5720, color:'var(--orange)', gex:0,
-   long_pct:50, long_target:5740, long_target_label:'king node $5,740',
-   short_pct:50, short_target:5700, short_target_label:'put wall $5,700',
-   hist_reject:6, hist_total:10,
-   hist:[
-     {dir:1, desc:'Price pinned near max pain into close',result:'+0.1%',outcome:'pinned'},
-     {dir:-1,desc:'Price drifted toward max pain from above',result:'-0.3%',outcome:'pinned'},
-     {dir:1, desc:'Max pain acted as magnet, bounced off it',result:'+0.2%',outcome:'pinned'},
-   ],
-   dealer_note:'Max pain is where options market makers have maximum profitability at expiration. Price is magnetically drawn here into expiry. Strongest effect in the final 2 hours of expiry day.',
-   verdict:'PIN RISK — EXPIRY MAGNET','verdict_color':'var(--orange)',
-   verdict_text:'Max pain exerts gravitational pull especially on expiry day. Momentum trades fade, range contracts. Best played by avoiding directional bets near expiry — let time decay work if you sold premium near this level.'},
-];
+let LEVELS=[];
+let GAMMA_STATE={sym:'SPX',spot:0,regime:'UNKNOWN',callWall:0,putWall:0,kingNode:0,flipZone:0,maxPain:0,ivRank:0,netGex:0};
+async function loadGammaBot(sym){sym=sym||GAMMA_STATE.sym||'SPX';GAMMA_STATE.sym=sym;
+try{const base=window.location.hostname==='localhost'?'':'https://www.darkflow.live';
+const[gexR,ivR,mpR]=await Promise.all([
+fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/greek-exposure/strike')),
+fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank')),
+fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/max-pain'))]);
+const gexJ=await gexR.json();const ivJ=await ivR.json();const mpJ=await mpR.json();
+const gexRows=(gexJ.data||[]).filter(r=>parseFloat(r.strike)>1000);
+const ivData=ivJ.data&&ivJ.data[0]?ivJ.data[0]:null;
+const mpData=mpJ.data&&mpJ.data[0]?mpJ.data[0]:null;
+const spot=ivData?parseFloat(ivData.close)||5700:5700;
+const ivRank=ivData?parseFloat(ivData.iv_rank_1y)||50:50;
+const maxPain=mpData?parseFloat(mpData.max_pain)||spot:spot;
+let maxCG=0,maxPG=0,callWall=0,putWall=0,kingNode=0,maxNet=0;
+gexRows.forEach(r=>{const s=parseFloat(r.strike);const cg=parseFloat(r.call_gex)||0;
+const pg=Math.abs(parseFloat(r.put_gex)||0);const net=Math.abs(cg-pg);
+if(cg>maxCG){maxCG=cg;callWall=s;}if(pg>maxPG){maxPG=pg;putWall=s;}if(net>maxNet){maxNet=net;kingNode=s;}});
+let flipZone=0;for(let k=1;k<gexRows.length;k++){
+const prev=parseFloat(gexRows[k-1].call_gex)+parseFloat(gexRows[k-1].put_gex);
+const curr=parseFloat(gexRows[k].call_gex)+parseFloat(gexRows[k].put_gex);
+if(prev*curr<0){flipZone=parseFloat(gexRows[k].strike);break;}}
+if(!flipZone)flipZone=Math.round((callWall+putWall)/2/5)*5;
+const netGex=gexRows.reduce((s,r)=>s+parseFloat(r.call_gex)+parseFloat(r.put_gex),0);
+const regime=netGex>0?'POSITIVE GAMMA':'NEGATIVE GAMMA';
+Object.assign(GAMMA_STATE,{spot,ivRank,maxPain,callWall,putWall,kingNode,flipZone,netGex,regime});
+LEVELS=[
+{key:'king',label:'KING NODE',price:kingNode,color:'var(--gold)',gex:maxNet,long_pct:45,short_pct:55,
+long_target:callWall,short_target:flipZone,long_target_label:'call wall $'+callWall,short_target_label:'flip $'+flipZone,hist_reject:6,hist_total:10,hist:[]},
+{key:'call',label:'CALL WALL',price:callWall,color:'var(--accent)',gex:maxCG,long_pct:28,short_pct:72,
+long_target:callWall+25,short_target:kingNode,long_target_label:'above $'+(callWall+25),short_target_label:'king $'+kingNode,hist_reject:7,hist_total:10,hist:[]},
+{key:'put',label:'PUT WALL',price:putWall,color:'var(--red)',gex:maxPG,long_pct:72,short_pct:28,
+long_target:flipZone,short_target:putWall-25,long_target_label:'flip $'+flipZone,short_target_label:'below $'+(putWall-25),hist_reject:3,hist_total:10,hist:[]},
+{key:'flip',label:'FLIP ZONE',price:flipZone,color:'#7c6af7',gex:Math.abs(netGex)*0.1,long_pct:55,short_pct:45,
+long_target:callWall,short_target:putWall,long_target_label:'call $'+callWall,short_target_label:'put $'+putWall,hist_reject:5,hist_total:10,hist:[]},
+{key:'maxpain',label:'MAX PAIN',price:maxPain,color:'var(--gold)',gex:0.5,long_pct:50,short_pct:50,
+long_target:maxPain+20,short_target:maxPain-20,long_target_label:'above $'+(maxPain+20),short_target_label:'below $'+(maxPain-20),hist_reject:5,hist_total:10,hist:[]}];
+if(typeof renderLevels==='function')renderLevels();
+if(typeof genCandles==='function')genCandles();
+if(LEVELS.length&&typeof fireProbability==='function'){
+const nearest=LEVELS.reduce((best,l)=>Math.abs(l.price-spot)<Math.abs(best.price-spot)?l:best,LEVELS[0]);
+if(nearest)fireProbability(nearest);}
+}catch(e){console.error('GammaBot error:',e);}};
 
 let spot=5718;
 let candles=[];
@@ -280,16 +258,10 @@ let alertCount=0;
 let probCount=0;
 
 // ── GENERATE CANDLES ──
-function genCandles(){
-  candles=[];
-  let p=5690+Math.random()*20;
-  for(let i=0;i<60;i++){
-    const o=p,c=o+(Math.random()-.48)*5;
-    const h=Math.max(o,c)+Math.random()*3,l=Math.min(o,c)-Math.random()*3;
-    candles.push({o,h,l,c});p=c;
-  }
-  spot=candles[candles.length-1].c;
-}
+function genCandles(){const spot=GAMMA_STATE.spot||5700;let p=spot;
+window._gammaBotCandles=[];for(let i=0;i<60;i++){const o=p,cl=o+(Math.random()-.47)*8;
+window._gammaBotCandles.push({o,h:Math.max(o,cl)+Math.random()*4,l:Math.min(o,cl)-Math.random()*3,c:cl});p=cl;}
+if(typeof drawMini==='function')drawMini(window._gammaBotCandles);}
 
 // ── DRAW MINI CHART ──
 const canvas=document.getElementById('miniChart');
@@ -526,6 +498,8 @@ setTimeout(()=>{
 },300);
 
 setInterval(simPrice,1200);
+
+loadGammaBot('SPX');setInterval(()=>loadGammaBot(GAMMA_STATE.sym||'SPX'),60000);
 </script>
 </body>
 </html>
