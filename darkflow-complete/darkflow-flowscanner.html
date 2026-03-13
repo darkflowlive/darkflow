@@ -256,79 +256,7 @@ const GRADES=['A+','A','A-','B+','B','B-','C','C'];
 const GRADE_CLASS={'A+':'Ap','A':'A','A-':'Am','B+':'Bp','B':'B','B-':'Bm','C':'C','F':'F'};
 const SPEEDS=['1D','1D','1W','1W','1W','HELD','HELD'];
 
-const FLOW_DATA=[
-  {id:1,date:'Jan 8',ticker:'NVDA',type:'CALL',strike:'$860',expiry:'Jan 17',premium:4200000,signal:'SWEEP',gain:312,peak:418,speed:'1W',grade:'A+',
-   entry_price:8.40,peak_price:43.50,expiry_val:38.20,
-   context:'3-leg sweep hit simultaneously across CBOE, PHLX, and ISE at 10:14am. Size was 12x normal call volume at this strike. Stock was consolidating at $842 — a classic pre-breakout accumulation pattern.',
-   what_happened:'NVDA broke out of its 3-week range on Jan 10 on heavy volume. The $860 calls went from $8.40 to a peak of $43.50 within 4 trading days. Most of the position appears to have been closed near peak.',
-   ai_note:'This is the ideal flow trade — massive unusual sweep, clean technical setup, earnings catalyst approaching. The speed (4 days to peak) and size ($4.2M premium) both score maximum. A+ is warranted.'},
-
-  {id:2,date:'Jan 3',ticker:'META',type:'CALL',strike:'$580',expiry:'Jan 31',premium:2800000,signal:'BLOCK',gain:187,peak:240,speed:'1W',grade:'A',
-   entry_price:6.20,peak_price:21.00,expiry_val:18.50,
-   context:'Single block trade — one counterparty, one exchange, 4,500 contracts. Unusual because it was bought above mid. Dark pool showed $1.4B accumulation in META over the prior 5 days.',
-   what_happened:'META ran from $568 to $614 over 8 days following strong ad revenue data. The $580 calls tripled. Position held through the move — theta cost was minimal given the Jan 31 expiry.',
-   ai_note:'Clean block trade with strong dark pool confirmation. The 8-day timeline to peak is slightly slower than ideal but the gain magnitude is strong. Minor deduction for not being a sweep — block trades are slightly less bullish signal than multi-leg sweeps.'},
-
-  {id:3,date:'Dec 28',ticker:'TSLA',type:'CALL',strike:'$260',expiry:'Jan 10',premium:1900000,signal:'SWEEP',gain:156,peak:198,speed:'1D',grade:'A-',
-   entry_price:3.80,peak_price:11.30,expiry_val:7.20,
-   context:'Aggressive sweep bought on ask — 5,000 contracts in under 3 minutes. TSLA was trading at $248, down 4% on the week. Contrarian bet — buyer was fading weakness.',
-   what_happened:'TSLA reversed sharply the next day on short covering and delivery optimism, running to $267. The $260 calls went from $3.80 to $11.30 overnight. Fast trade — most value captured in 1 day.',
-   ai_note:'A- for the speed and size but slight ding for the contrarian nature of the bet (buying weakness is riskier) and relatively short expiry which increased pin risk. Still a very high quality signal — paid same-day.'},
-
-  {id:4,date:'Dec 20',ticker:'SPY',type:'CALL',strike:'$575',expiry:'Dec 27',premium:3400000,signal:'SWEEP',gain:134,peak:165,speed:'1D',grade:'B+',
-   entry_price:2.10,peak_price:5.40,expiry_val:4.80,
-   context:'Year-end holiday sweep — massive size on a short-dated contract. 16,000 contracts swept. GEX was strongly positive — dealers were long gamma, providing mechanical support.',
-   what_happened:'SPY grinded higher through Christmas week on thin volume. The $575 calls paid but took the full week to develop. Slow burn vs the typical 1-day sweep resolution.',
-   ai_note:'B+ because the trade paid well but lacked conviction in timing — took 5 days on a 7-day contract. Holiday week flow is always slightly lower signal quality. The GEX backdrop was the real edge here, not the flow itself.'},
-
-  {id:5,date:'Dec 15',ticker:'AAPL',type:'CALL',strike:'$230',expiry:'Jan 17',premium:5100000,signal:'SWEEP',gain:98,peak:142,speed:'1W',grade:'B+',
-   entry_price:4.20,peak_price:10.10,expiry_val:8.30,
-   context:'Massive $5.1M sweep — largest AAPL call print in 30 days. Multi-leg across 4 exchanges. Stock at $225, approaching 52-week high. GEX king node at $230 — buyer betting on breakout.',
-   what_happened:'AAPL tested $230 twice before breaking through on Dec 26. The calls doubled but never hit the $230 strike cleanly until expiry week. Slightly disappointing given the size of the bet.',
-   ai_note:'B+ despite the large premium size. The gain was real but the trade took 3 weeks to develop and never far exceeded expectations. Large premium size inflates signal quality but the actual option return was modest. Good trade, not great.'},
-
-  {id:6,date:'Dec 10',ticker:'AMZN',type:'CALL',strike:'$220',expiry:'Dec 20',premium:1200000,signal:'UNUSUAL',gain:224,peak:310,speed:'1D',grade:'A',
-   entry_price:1.80,peak_price:7.40,expiry_val:6.10,
-   context:'Open interest at this strike jumped 800% overnight — someone built a massive position quietly then a sweep came in to add on top. 10-day expiry, $220 strike with stock at $213.',
-   what_happened:'AMZN exploded on an analyst upgrade the next morning, gapping up 4.2% to $221.90. The $220 calls went from $1.80 to $7.40 at open. Classic overnight gap play — whoever bought this knew something.',
-   ai_note:'A for the overnight speed and size of the gain. Slight discount from A+ because the OI buildup suggests this may have been inside information — those trades often look better than they are as a signal for retail traders to follow.'},
-
-  {id:7,date:'Dec 5',ticker:'QQQ',type:'PUT',strike:'$490',expiry:'Dec 19',premium:2600000,signal:'REPEAT',gain:178,peak:225,speed:'1W',grade:'A-',
-   entry_price:3.20,peak_price:10.40,expiry_val:9.20,
-   context:'Third consecutive day of put buying at this strike from what appears to be the same institution — signature matches across all 3 days. QQQ at $502 — buyer paying up for out-of-money puts.',
-   what_happened:'QQQ sold off 3.8% over 5 days following CPI data that came in hotter than expected. The $490 puts went from $3.20 to $10.40. Repeat buyer knew the macro setup.',
-   ai_note:'A- for the repeat signal pattern (one of our highest conviction indicators) and the macro catalyst timing. Slight deduction because the position took the full week — a faster resolution would be A+. Still, repeat institutional buyers at a strike is one of the cleanest signals we track.'},
-
-  {id:8,date:'Nov 28',ticker:'MSFT',type:'CALL',strike:'$430',expiry:'Jan 17',premium:3700000,signal:'BLOCK',gain:67,peak:89,speed:'HELD',grade:'B',
-   entry_price:5.80,peak_price:10.97,expiry_val:10.20,
-   context:'Clean institutional block — single counterparty, 6,400 contracts, bought slightly above mid. Post-holiday session, thin tape. MSFT at $418 heading into earnings.',
-   what_happened:'MSFT beat earnings on Jan 29 and ran to $432. The $430 calls paid but took 7 weeks and required holding through earnings — theta bled significantly in the interim.',
-   ai_note:'B because the trade required holding 7 weeks and surviving earnings — most traders would have been stopped out or lost patience. The final return is good but the path to get there was punishing. Blocks with far-dated expiry are lower signal quality than sweeps.'},
-
-  {id:9,date:'Nov 20',ticker:'NVDA',type:'CALL',strike:'$800',expiry:'Dec 6',premium:6800000,signal:'SWEEP',gain:267,peak:380,speed:'1W',grade:'A+',
-   entry_price:9.20,peak_price:43.90,expiry_val:40.10,
-   context:'The largest single flow print of the month — $6.8M in NVDA calls with 16 days to expiry. 7,400 contracts swept across all major exchanges in under 5 minutes. Stock at $778.',
-   what_happened:'NVDA broke $800 on Nov 25 on AI infrastructure spending news, hitting $832 by Dec 2. The $800 calls went from $9.20 to $43.90 — a 377% return in 12 days. Textbook flow trade.',
-   ai_note:'A+ on every metric. Largest premium of the period, fastest move relative to expiry, clean sweep signal, strong sector tailwind, and a 377% return. This is the template for what we look for — size, speed, and a catalyst already in motion.'},
-
-  {id:10,date:'Nov 14',ticker:'GOOGL',type:'CALL',strike:'$180',expiry:'Nov 22',premium:980000,signal:'UNUSUAL',gain:143,peak:190,speed:'1D',grade:'B+',
-   entry_price:1.40,peak_price:4.06,expiry_val:3.60,
-   context:'OI jumped 400% at this strike overnight. Very short dated — 8 days to expiry. Buyer paid $0.20 above ask. GOOGL at $174, rally above $180 would require a 3.5% move.',
-   what_happened:'GOOGL rallied 4.1% on Nov 15 following positive cloud commentary at an investor day. The $180 calls tripled in a single day. Pure momentum play.',
-   ai_note:'B+ rather than A because the premium was under $1M — lower signal quality than the mega-prints. However, the 1-day resolution and 143% gain are excellent. Smaller premium trades can be high quality signals but carry more noise.'},
-
-  {id:11,date:'Nov 8',ticker:'SPY',type:'PUT',strike:'$565',expiry:'Nov 15',premium:4400000,signal:'SWEEP',gain:189,peak:240,speed:'1D',grade:'A',
-   entry_price:2.80,peak_price:9.50,expiry_val:8.40,
-   context:'Massive 0-week put sweep — $4.4M in protection bought on Friday morning. GEX was turning negative — the flip zone at $568 had just been breached. Buyer caught the regime change in real time.',
-   what_happened:'SPY dropped 2.1% on Nov 11 following weak consumer sentiment data. The $565 puts went from $2.80 to $9.50 in 3 days. Perfect macro timing.',
-   ai_note:'A for catching the GEX regime flip in real time — this is exactly the edge DARKFLOW provides. Slight discount from A+ because puts are inherently more insurance than directional conviction, but the size and timing here suggest true directional intent.'},
-
-  {id:12,date:'Oct 30',ticker:'TSLA',type:'PUT',strike:'$240',expiry:'Nov 8',premium:2100000,signal:'SWEEP',gain:98,peak:130,speed:'1W',grade:'B',
-   entry_price:4.20,peak_price:9.66,expiry_val:7.80,
-   context:'Post-earnings put sweep — TSLA had just reported and was fading. 5,000 contracts bought across 3 exchanges. Short dated — 9 days.',
-   what_happened:'TSLA dropped from $255 to $238 over the following week. The puts paid but barely — the stock found support exactly at the $240 strike. Borderline outcome.',
-   ai_note:'B — the trade worked but not convincingly. Post-earnings sweeps are often hedges from holders exiting, not directional bets. The gain is real but the signal quality was mixed. The GEX was actually positive at $240 which should have been a warning.'},
-];
+let FLOW_DATA=[];async function loadFlowScanner(){try{const base=window.location.hostname==='localhost'?'':'https://www.darkflow.live';const r=await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/option-trades/flow-alerts'));const json=await r.json();const rows=json.data||[];FLOW_DATA=rows.map((row,idx)=>{const prem=parseFloat(row.total_premium)||0;const volOI=parseFloat(row.volume_oi_ratio)||0;const isSweep=row.has_sweep||(row.alert_rule||'').includes('Ascending');const isFloor=row.has_floor;const type=(row.type||'call').toUpperCase();const strike=parseFloat(row.strike)||0;const expiry=row.expiry||'';let grade='B';if(prem>1000000&&volOI>2&&(isSweep||isFloor))grade='A+';else if(prem>500000&&volOI>1.5)grade='A';else if(prem>250000&&(isSweep||isFloor||volOI>1))grade='B+';const daysToExp=expiry?Math.round((new Date(expiry)-new Date())/(864e5)):30;const speed=daysToExp<=1?'SAME':daysToExp<=7?'1W':daysToExp<=14?'2W':'1M';const dt=new Date(row.created_at);const dateStr=dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});const entryPrice=parseFloat(row.price)||0;const ruleDesc={'RepeatedHitsAscendingFill':'Multi-hit sweep ascending fill — urgency signal','RepeatedHits':'Repeated institutional hits on same strike','UnusualVolume':'Volume significantly above open interest','FloorTrade':'Floor trade — institutional block off-exchange'};return{id:idx+1,date:dateStr,ticker:row.ticker||'',type,strike:'$'+strike.toFixed(0),expiry:expiry?new Date(expiry).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'',premium:prem,signal:isFloor?'FLOOR':isSweep?'SWEEP':'BLOCK',gain:null,peak:null,speed,grade,entry_price:entryPrice,peak_price:parseFloat(row.ask)||entryPrice*1.05,expiry_val:entryPrice*0.85,context:ruleDesc[row.alert_rule]||row.alert_rule||'Institutional flow alert',live:true,volOI:volOI.toFixed(2)};}).sort((a,b)=>{const g={'A+':0,'A':1,'B+':2,'B':3};return(g[a.grade]||3)-(g[b.grade]||3)||b.premium-a.premium;});if(typeof updateStats==='function')updateStats();if(typeof renderTable==='function')renderTable();}catch(e){console.error('FlowScanner:',e);}};
 
 // ── STATE ──
 let filters={type:'ALL',size:'ALL',speed:'ALL',grade:'ALL'};
@@ -537,6 +465,8 @@ function selectRow(id){
 updateStats();
 applyFilters();
 setTimeout(()=>selectRow(9),400);
+
+loadFlowScanner();setInterval(loadFlowScanner,30000);
 </script>
 </body>
 </html>
