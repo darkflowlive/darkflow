@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DARKFLOW · NET DRIFT</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080810;--surface:#0c0c18;--raised:#10101f;--hover:#14142a;
+  --border:#1c1c30;--bm:#252540;
+  --text:#e8e8f0;--dim:#b0b0c8;--muted2:#8888a8;--muted:#444460;
+  --accent:#00d4aa;--red:#f04060;--gold:#f0c040;--blue:#4888ff;--orange:#ff8040;--purple:#a855f7;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;overflow:hidden;-webkit-font-smoothing:antialiased;}
+.app{display:flex;flex-direction:column;height:100vh;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+::-webkit-scrollbar{width:3px;height:3px;}::-webkit-scrollbar-thumb{background:var(--bm);}
+
+/* TOPBAR */
+.topbar{flex-shrink:0;height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;}
+.logo{font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:13px;letter-spacing:.12em;color:var(--accent);display:flex;align-items:center;gap:8px;margin-right:20px;flex-shrink:0;}
+.logo-tri{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--accent);}
+.nav{display:flex;height:100%;overflow-x:auto;}
+.nav-tab{height:100%;padding:0 13px;display:flex;align-items:center;font-size:10px;font-weight:500;letter-spacing:.08em;white-space:nowrap;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;border-top:none;border-left:none;border-right:none;background:none;font-family:'IBM Plex Mono',monospace;}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;}
+
+/* BODY */
+.body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.inner{padding:12px 16px;display:flex;flex-direction:column;gap:10px;}
+
+/* REGIME BANNER */
+.regime{border-radius:6px;padding:10px 14px;position:relative;overflow:hidden;display:flex;gap:14px;align-items:flex-start;}
+.regime.bull{background:rgba(0,212,170,.05);border:1px solid rgba(0,212,170,.2);}
+.regime.bear{background:rgba(240,64,96,.05);border:1px solid rgba(240,64,96,.2);}
+.regime.neutral{background:rgba(240,192,64,.05);border:1px solid rgba(240,192,64,.2);}
+.regime-shimmer{position:absolute;top:0;left:0;right:0;height:2px;animation:shimmer 3s infinite;}
+.regime-col1{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;padding-top:2px;}
+.regime-dot{width:9px;height:9px;border-radius:50%;animation:pulse 2s infinite;}
+.regime-tag{font-size:6px;font-weight:700;letter-spacing:.12em;}
+.regime-body{flex:1;min-width:0;}
+.regime-headline{display:flex;align-items:baseline;gap:10px;margin-bottom:4px;}
+.regime-title{font-size:12px;font-weight:700;letter-spacing:.04em;}
+.regime-sub{font-size:8px;color:var(--muted2);}
+.regime-text{font-size:8px;color:var(--muted2);line-height:1.65;}
+.regime-stats{display:flex;gap:16px;flex-shrink:0;align-items:center;}
+.rstat{display:flex;flex-direction:column;align-items:flex-end;}
+.rstat-l{font-size:6px;color:var(--muted);letter-spacing:.1em;}
+.rstat-v{font-size:13px;font-weight:700;}
+
+/* CHART CARD */
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:5px;overflow:hidden;}
+.chart-header{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--border);}
+.chart-title{font-size:8px;font-weight:600;letter-spacing:.12em;color:var(--muted2);}
+.chart-val{font-size:13px;font-weight:700;}
+.chart-legend{margin-left:auto;display:flex;gap:12px;align-items:center;}
+.leg{display:flex;align-items:center;gap:5px;font-size:7px;color:var(--muted2);}
+.leg-line{width:16px;height:2px;border-radius:1px;}
+
+/* TABS */
+.chart-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);}
+.ctab{height:28px;padding:0 12px;font-size:8px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'IBM Plex Mono',monospace;color:var(--muted);border-bottom:2px solid transparent;letter-spacing:.06em;}
+.ctab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* STAT GRID */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:9px 12px;}
+.stat-label{font-size:6px;color:var(--muted);letter-spacing:.12em;margin-bottom:4px;}
+.stat-val{font-size:15px;font-weight:700;line-height:1;}
+.stat-sub{font-size:7px;color:var(--muted2);margin-top:3px;}
+
+/* TWO COL */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* EXPIRY BREAKDOWN */
+.exp-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);}
+.exp-row:last-child{border-bottom:none;}
+.exp-label{font-size:9px;font-weight:600;min-width:64px;flex-shrink:0;}
+.exp-bars{flex:1;display:flex;flex-direction:column;gap:3px;}
+.exp-bar-row{display:flex;align-items:center;gap:4px;}
+.exp-bar-track{flex:1;height:4px;background:var(--raised);border-radius:2px;overflow:hidden;}
+.exp-bar-fill{height:100%;border-radius:2px;}
+.exp-bar-label{font-size:7px;min-width:28px;text-align:right;flex-shrink:0;}
+.exp-delta{font-size:9px;font-weight:600;min-width:64px;text-align:right;flex-shrink:0;}
+
+/* VOL BARS (call/put) */
+.vol-bar-wrap{padding:2px 0;}
+.vol-bar-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.vol-time{font-size:7px;color:var(--muted);min-width:36px;flex-shrink:0;}
+.vol-track{flex:1;height:12px;background:var(--raised);border-radius:2px;overflow:hidden;position:relative;}
+.vol-call{position:absolute;left:0;top:0;height:100%;border-radius:2px 0 0 2px;}
+.vol-put{position:absolute;right:0;top:0;height:100%;border-radius:0 2px 2px 0;}
+.vol-label{font-size:7px;min-width:36px;text-align:right;flex-shrink:0;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo"><div class="logo-tri"></div>DARKFLOW</div>
+  <div class="nav">
+    <button class="nav-tab">OVERVIEW</button>
+    <button class="nav-tab">OPTIONS FLOW</button>
+    <button class="nav-tab">GEX</button>
+    <button class="nav-tab active">PREMIUM DIVERGENCE</button>
+    <button class="nav-tab">DARK POOL</button>
+    <button class="nav-tab">STRIKE MATRIX</button>
+    <button class="nav-tab">JOURNAL</button>
+    <button class="nav-tab">AI SIGNALS</button>
+  </div>
+  <div class="topbar-right">
+    <div class="live-dot"></div>
+    <span style="font-size:10px;color:var(--muted2)" id="clock"></span>
+  </div>
+</div>
+
+<div class="body"><div class="inner">
+
+<!-- REGIME BANNER -->
+<div class="regime bull">
+  <div class="regime-shimmer" style="background:linear-gradient(90deg,transparent,rgba(0,212,170,.5),transparent)"></div>
+  <div class="regime-col1">
+    <div class="regime-dot" style="background:var(--accent);box-shadow:0 0 10px var(--accent)"></div>
+    <div class="regime-tag" style="color:var(--accent)">DRIFT</div>
+  </div>
+  <div class="regime-body">
+    <div class="regime-headline">
+      <span class="regime-title" style="color:var(--accent)">BULLISH DRIFT</span>
+      <span class="regime-sub">Net delta positive and rising — buyers in control</span>
+    </div>
+    <div class="regime-text">Cumulative net delta has been positive all session and accelerating since 11am. This means call buyers are outweighing put buyers on a delta-adjusted basis — dealers are net short gamma and must buy the underlying to hedge, which creates a mechanical bid under the market. When drift is rising and positive gamma regime is active, the path of least resistance is higher. Fades are dangerous. Dip buyers have been rewarded all day.</div>
+  </div>
+  <div class="regime-stats">
+    <div class="rstat">
+      <div class="rstat-l">NET DELTA</div>
+      <div class="rstat-v" style="color:var(--accent)">+4.2M</div>
+    </div>
+    <div class="rstat">
+      <div class="rstat-l">DRIFT RATE</div>
+      <div class="rstat-v" style="color:var(--gold)">↑ +84K/h</div>
+    </div>
+  </div>
+</div>
+
+<!-- STAT ROW -->
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="stat-label">CALL DELTA</div>
+    <div class="stat-val" style="color:var(--accent)">+6.8M</div>
+    <div class="stat-sub">Total call delta today</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">PUT DELTA</div>
+    <div class="stat-val" style="color:var(--red)">-2.6M</div>
+    <div class="stat-sub">Total put delta today</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">NET DELTA</div>
+    <div class="stat-val" style="color:var(--accent)">+4.2M</div>
+    <div class="stat-sub">Call minus put delta</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">CALL/PUT RATIO</div>
+    <div class="stat-val" style="color:var(--gold)">1.84</div>
+    <div class="stat-sub">Above 1.5 = bullish bias</div>
+  </div>
+</div>
+
+<!-- MAIN CHART -->
+<div class="chart-card">
+  <div class="chart-header">
+    <span class="chart-title">CUMULATIVE NET DELTA</span>
+    <span class="chart-val" style="color:var(--accent)">+4.2M</span>
+    <span style="font-size:8px;color:var(--muted2);margin-left:4px">↑ +12% from open</span>
+    <div class="chart-legend">
+      <div class="leg"><div class="leg-line" style="background:var(--accent)"></div>CALL PREM</div>
+      <div class="leg"><div class="leg-line" style="background:var(--red)"></div>PUT PREM</div>
+      <div class="leg"><div class="leg-line" style="background:rgba(72,136,255,.5)"></div>SPX</div>
+    </div>
+  </div>
+  <div class="chart-tabs">
+    <button class="ctab active" onclick="setChartTab('1D',this)">TODAY</button>
+    <button class="ctab" onclick="setChartTab('2D',this)">2D</button>
+    <button class="ctab" onclick="setChartTab('3D',this)">3D</button>
+    <button class="ctab" onclick="setChartTab('5D',this)">5D</button>
+  </div>
+  <canvas id="driftChart" style="width:100%;height:220px;display:block;"></canvas>
+</div>
+
+<!-- BOTTOM ROW -->
+<div class="two-col">
+
+  <!-- EXPIRY BREAKDOWN -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <span class="chart-title">DELTA BY EXPIRY</span>
+    </div>
+    <div style="padding:8px 14px;">
+      <div class="exp-row">
+        <span class="exp-label" style="color:var(--orange)">0DTE</span>
+        <div class="exp-bars">
+          <div class="exp-bar-row">
+            <span style="font-size:6px;color:var(--muted);width:24px">CALL</span>
+            <div class="exp-bar-track"><div class="exp-bar-fill" style="width:88%;background:var(--accent)"></div></div>
+            <span class="exp-bar-label" style="color:var(--accent)">+2.1M</span>
+          </div>
+          <div class="exp-bar-row">
+            <span style="font-size:6px;color:var(--muted);width:24px">PUT</span>
+            <div class="exp-bar-track"><div class="exp-bar-fill" style="width:42%;background:var(--red)"></div></div>
+            <span class="exp-bar-label" style="color:var(--red)">-0.8M</span>
+          </div>
+        </div>
+        <span class="exp-delta" style="color:var(--accent)">+1.3M</span>
+      </div>
+      <div class="exp-row">
+        <span class="exp-label" style="color:var(--accent)">WEEKLY</span>
+        <div class="exp-bars">
+          <div class="exp-bar-row">
+            <span style="font-size:6px;color:var(--muted);width:24px">CALL</span>
+            <div class="exp-bar-track"><div class="exp-bar-fill" style="width:72%;background:var(--accent)"></div></div>
+            <span class="exp-bar-label" style="color:var(--accent)">+1.8M</span>
+          </div>
+          <div class="exp-bar-row">
+            <span style="font-size:6px;color:var(--muted);width:24px">PUT</span>
+            <div class="exp-bar-track"><div class="exp-bar-fill" style="width:38%;background:var(--red)"></div></div>
+            <span class="exp-bar-label" style="color:var(--red)">-0.9M</span>
+          </div>
+        </div>
+        <span class="exp-delta" style="color:var(--accent)">+0.9M</span>
+      </div>
+      <div class="exp-row">
+        <span class="exp-label" style="color:var(--blue)">MONTHLY</span>
+        <div class="exp-bars">
+          <div class="exp-bar-row">
+            <span style="font-size:6px;color:var(--muted);width:24px">CALL</span>
+            <div class="exp-bar-track"><div class="exp-bar-fill" style="width:55%;background:var(--accent)"></div></div>
+            <span class="exp-bar-label" style="color:var(--accent)">+1.4M</span>
+          </div>
+          <div class="exp-bar-row">
+            <span style="font-size:6px;color:var(--muted);width:24px">PUT</span>
+            <div class="exp-bar-track"><div class="exp-bar-fill" style="width:60%;background:var(--red)"></div></div>
+            <span class="exp-bar-label" style="color:var(--red)">-0.9M</span>
+          </div>
+        </div>
+        <span class="exp-delta" style="color:var(--accent)">+0.5M</span>
+      </div>
+      <div class="exp-row">
+        <span class="exp-label" style="color:var(--purple)">LEAPS</span>
+        <div class="exp-bars">
+          <div class="exp-bar-row">
+            <span style="font-size:6px;color:var(--muted);width:24px">CALL</span>
+            <div class="exp-bar-track"><div class="exp-bar-fill" style="width:22%;background:var(--accent)"></div></div>
+            <span class="exp-bar-label" style="color:var(--accent)">+0.6M</span>
+          </div>
+          <div class="exp-bar-row">
+            <span style="font-size:6px;color:var(--muted);width:24px">PUT</span>
+            <div class="exp-bar-track"><div class="exp-bar-fill" style="width:0%;background:var(--red)"></div></div>
+            <span class="exp-bar-label" style="color:var(--muted)">0</span>
+          </div>
+        </div>
+        <span class="exp-delta" style="color:var(--accent)">+0.6M</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALL/PUT VOL BARS by hour -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <span class="chart-title">CALL VS PUT VOLUME BY HOUR</span>
+      <div class="chart-legend" style="margin-left:auto">
+        <div class="leg"><div style="width:10px;height:10px;background:rgba(0,212,170,.4);border-radius:1px"></div>CALLS</div>
+        <div class="leg"><div style="width:10px;height:10px;background:rgba(240,64,96,.4);border-radius:1px"></div>PUTS</div>
+      </div>
+    </div>
+    <div style="padding:8px 14px;" id="volBars"></div>
+  </div>
+
+</div>
+</div></div><!-- inner/body -->
+</div><!-- app -->
+
+<script>
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-US',{hour12:false});},1000);
+
+// ── DRIFT DATA ────────────────────────────────────────────────
+// calls/puts = cumulative premium (positive values), delta = net (calls-puts)
+const DAYS = {
+  '1D': {
+    times:["09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30"],
+    calls:[520000, 1240000,2100000,2800000,3200000,3380000,3420000,3440000,3460000,3480000,3500000],
+    puts: [180000, 320000, 480000, 560000, 820000, 1280000,1840000,2400000,2960000,3200000,3400000],
+    spx:  [572.8,  573.2,  573.6,  573.4,  572.8,  572.1,  571.6,  571.2,  570.8,  571.0,  571.4],
+  },
+  '2D': {
+    times:["Yest 9:30","10:30","11:30","12:30","13:30","14:30","Today 9:30","10:30","11:30","12:30","13:30","14:30"],
+    calls:[800000, 1200000,1600000,2000000,1800000,1600000,420000, 980000, 2020000,3100000,4280000,5600000],
+    puts: [900000, 1100000,1400000,1600000,1700000,1700000,300000, 600000, 1080000,1280000,1300000,1400000],
+    spx:  [570.2,  570.8,  571.4,  571.8,  571.2,  570.9,  572.1,  571.8,  572.8,  572.1,  571.8,  571.4],
+  },
+  '3D': {
+    times:["D-2 9:30","11:30","13:30","D-1 9:30","11:30","13:30","Today 9:30","11:30","13:30","14:30"],
+    calls:[600000, 800000, 900000, 800000, 1600000,1600000,420000, 2020000,4280000,5600000],
+    puts: [900000, 1000000,1100000,900000, 1400000,1700000,300000, 1080000,1300000,1400000],
+    spx:  [569.4,  569.8,  570.1,  570.2,  571.4,  570.9,  572.1,  572.8,  571.8,  571.4],
+  },
+  '5D': {
+    times:["D-4","D-4 PM","D-3","D-3 PM","D-2","D-2 PM","D-1","D-1 PM","Today","Today PM"],
+    calls:[400000, 600000, 600000, 900000, 800000, 900000, 800000, 1600000,2020000,5600000],
+    puts: [800000, 1000000,1000000,1100000,900000, 1100000,900000, 1400000,1080000,1400000],
+    spx:  [568.2,  568.8,  569.4,  570.1,  570.2,  570.9,  570.9,  571.4,  572.8,  571.4],
+  },
+};
+
+let activeTab='1D';
+
+function setChartTab(tab, el){
+  activeTab=tab;
+  document.querySelectorAll('.ctab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  drawDrift();
+}
+
+function drawDrift(){
+  const canvas=document.getElementById('driftChart');
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.parentElement.clientWidth;
+  const H=240;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+
+  const d=DAYS[activeTab];
+  const n=d.times.length;
+  const pad={l:58,r:52,t:16,b:28};
+  const cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
+
+  // Scales — calls and puts share same left axis (premium $)
+  // SPX on right axis
+  const allPrem=[...d.calls,...d.puts];
+  const maxPrem=Math.max(...allPrem)*1.12;
+  const minPrem=Math.min(0, Math.min(...allPrem)*1.05);
+  const minSpx=Math.min(...d.spx)-0.5;
+  const maxSpx=Math.max(...d.spx)+0.5;
+
+  const px=i=>pad.l+(i/(n-1))*cw;
+  const pyP=v=>pad.t+ch-(((v-minPrem)/(maxPrem-minPrem))*ch);
+  const pyS=v=>pad.t+ch-(((v-minSpx)/(maxSpx-minSpx))*ch);
+
+  // Grid lines
+  ctx.strokeStyle='#1c1c30';ctx.lineWidth=1;
+  const steps=4;
+  for(let i=0;i<=steps;i++){
+    const v=minPrem+(maxPrem-minPrem)*(i/steps);
+    const y=pyP(v);
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+    // Left axis labels
+    ctx.fillStyle='#444460';ctx.font='7px IBM Plex Mono';ctx.textAlign='right';
+    const label=Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'M':Math.abs(v)>=1e3?(v/1e3).toFixed(0)+'K':'0';
+    ctx.fillText((v>0?'+':'')+label,pad.l-4,y+3);
+  }
+
+  // Zero line
+  if(minPrem<0){
+    ctx.strokeStyle='rgba(255,255,255,.1)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(pad.l,pyP(0));ctx.lineTo(W-pad.r,pyP(0));ctx.stroke();
+  }
+
+  // Time labels
+  const step=Math.ceil(n/7);
+  ctx.fillStyle='#444460';ctx.font='7px IBM Plex Mono';ctx.textAlign='center';
+  d.times.forEach((t,i)=>{if(i%step===0||i===n-1)ctx.fillText(t,px(i),H-pad.b+12);});
+
+  // CALL area fill
+  ctx.beginPath();
+  ctx.moveTo(px(0),pyP(d.calls[0]));
+  d.calls.forEach((v,i)=>ctx.lineTo(px(i),pyP(v)));
+  ctx.lineTo(px(n-1),pyP(minPrem));ctx.lineTo(px(0),pyP(minPrem));ctx.closePath();
+  const callGrad=ctx.createLinearGradient(0,pad.t,0,pad.t+ch);
+  callGrad.addColorStop(0,'rgba(0,212,170,.14)');
+  callGrad.addColorStop(1,'rgba(0,212,170,.02)');
+  ctx.fillStyle=callGrad;ctx.fill();
+
+  // PUT area fill
+  ctx.beginPath();
+  ctx.moveTo(px(0),pyP(d.puts[0]));
+  d.puts.forEach((v,i)=>ctx.lineTo(px(i),pyP(v)));
+  ctx.lineTo(px(n-1),pyP(minPrem));ctx.lineTo(px(0),pyP(minPrem));ctx.closePath();
+  const putGrad=ctx.createLinearGradient(0,pad.t,0,pad.t+ch);
+  putGrad.addColorStop(0,'rgba(240,64,96,.12)');
+  putGrad.addColorStop(1,'rgba(240,64,96,.02)');
+  ctx.fillStyle=putGrad;ctx.fill();
+
+  // SPX line (right axis)
+  ctx.beginPath();
+  ctx.strokeStyle='rgba(72,136,255,.55)';ctx.lineWidth=1.5;ctx.setLineDash([]);
+  d.spx.forEach((v,i)=>{i===0?ctx.moveTo(px(i),pyS(v)):ctx.lineTo(px(i),pyS(v));});
+  ctx.stroke();
+
+  // CALL line
+  ctx.beginPath();
+  ctx.strokeStyle='#00d4aa';ctx.lineWidth=2;
+  d.calls.forEach((v,i)=>{i===0?ctx.moveTo(px(i),pyP(v)):ctx.lineTo(px(i),pyP(v));});
+  ctx.stroke();
+
+  // PUT line
+  ctx.beginPath();
+  ctx.strokeStyle='#f04060';ctx.lineWidth=2;
+  d.puts.forEach((v,i)=>{i===0?ctx.moveTo(px(i),pyP(v)):ctx.lineTo(px(i),pyP(v));});
+  ctx.stroke();
+
+  // Divergence highlight — shade between lines where puts > calls
+  for(let i=0;i<n-1;i++){
+    if(d.puts[i]>d.calls[i]){
+      ctx.fillStyle='rgba(240,64,96,.08)';
+      ctx.fillRect(px(i),pad.t,px(i+1)-px(i),ch);
+    }
+  }
+
+  // Right axis SPX labels
+  [minSpx+0.3,(minSpx+maxSpx)/2,maxSpx-0.3].forEach(v=>{
+    ctx.fillStyle='rgba(72,136,255,.55)';ctx.font='7px IBM Plex Mono';ctx.textAlign='left';
+    ctx.fillText('$'+v.toFixed(1),W-pad.r+4,pyS(v)+3);
+  });
+
+  // End dots
+  const lastC=d.calls[n-1],lastP=d.puts[n-1];
+  [[lastC,'#00d4aa'],[lastP,'#f04060']].forEach(([v,c])=>{
+    ctx.beginPath();ctx.arc(px(n-1),pyP(v),4,0,Math.PI*2);
+    ctx.fillStyle=c;ctx.fill();
+    ctx.strokeStyle='#080810';ctx.lineWidth=2;ctx.stroke();
+  });
+
+  // Current value labels
+  ctx.font='bold 8px IBM Plex Mono';ctx.textAlign='left';
+  ctx.fillStyle='rgba(0,212,170,.9)';
+  ctx.fillText('C '+(lastC/1e6).toFixed(2)+'M',px(n-1)+8,pyP(lastC)-4);
+  ctx.fillStyle='rgba(240,64,96,.9)';
+  ctx.fillText('P '+(lastP/1e6).toFixed(2)+'M',px(n-1)+8,pyP(lastP)+10);
+
+  // Divergence annotation if puts overtaking calls
+  const diverging = d.puts[n-1] > d.puts[n-3] * 1.08 && d.calls[n-1] < d.calls[n-3] * 1.02;
+  if(diverging){
+    ctx.fillStyle='rgba(240,64,96,.85)';ctx.font='bold 7px IBM Plex Mono';ctx.textAlign='center';
+    ctx.fillText('⚠ DIVERGENCE DETECTED',W/2,pad.t+8);
+  }
+}
+
+
+// ── CALL/PUT VOL BARS ─────────────────────────────────────────
+const VOL_HOURS=[
+  {t:"09:30",calls:0.82,puts:0.28},
+  {t:"10:00",calls:1.24,puts:0.41},
+  {t:"10:30",calls:0.94,puts:0.38},
+  {t:"11:00",calls:1.10,puts:0.52},
+  {t:"11:30",calls:0.88,puts:0.84},
+  {t:"12:00",calls:0.62,puts:0.98},
+  {t:"13:00",calls:0.58,puts:1.14},
+  {t:"14:00",calls:0.54,puts:1.08},
+];
+const maxVol=Math.max(...VOL_HOURS.map(h=>h.calls+h.puts));
+
+function buildVolBars(){
+  const el=document.getElementById('volBars');
+  if(!el) return;
+  el.innerHTML='';
+  VOL_HOURS.forEach(h=>{
+    const cPct=Math.round(h.calls/maxVol*100);
+    const pPct=Math.round(h.puts/maxVol*100);
+    const net=h.calls-h.puts;
+    el.innerHTML+=`<div class="vol-bar-row">
+      <span class="vol-time">${h.t}</span>
+      <div class="vol-track">
+        <div class="vol-call" style="width:${cPct}%;background:rgba(0,212,170,.35)"></div>
+        <div class="vol-put" style="width:${pPct}%;background:rgba(240,64,96,.35)"></div>
+      </div>
+      <span class="vol-label" style="color:${net>0?'var(--accent)':'var(--red)'}">${net>0?'+':''}${net.toFixed(2)}M</span>
+    </div>`;
+  });
+}
+
+window.addEventListener('resize',drawDrift);
+buildVolBars();
+setTimeout(drawDrift,80);
+</script>
+</body>
+</html>

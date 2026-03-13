@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DARKFLOW · EARNINGS INTEL</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080810;--surface:#0c0c18;--raised:#10101f;--hover:#14142a;
+  --border:#1c1c30;--bm:#252540;
+  --text:#e8e8f0;--dim:#b0b0c8;--muted2:#8888a8;--muted:#444460;
+  --accent:#00d4aa;--red:#f04060;--gold:#f0c040;--blue:#4888ff;--orange:#ff8040;--purple:#a855f7;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;-webkit-font-smoothing:antialiased;overflow:hidden;}
+.app{display:flex;flex-direction:column;height:100vh;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+::-webkit-scrollbar{width:3px;height:3px;}::-webkit-scrollbar-thumb{background:var(--bm);}
+
+/* TOPBAR */
+.topbar{flex-shrink:0;height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;}
+.logo{font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:13px;letter-spacing:.12em;color:var(--accent);display:flex;align-items:center;gap:8px;margin-right:20px;flex-shrink:0;}
+.logo-tri{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--accent);}
+.nav{display:flex;height:100%;overflow-x:auto;}
+.nav-tab{height:100%;padding:0 13px;font-size:10px;font-weight:500;letter-spacing:.08em;white-space:nowrap;color:var(--muted);border:none;border-bottom:2px solid transparent;background:none;font-family:'IBM Plex Mono',monospace;cursor:pointer;}
+.nav-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;}
+
+/* SEARCH BAR */
+.search-bar{flex-shrink:0;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.search-wrap{display:flex;align-items:center;gap:8px;background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:0 12px;flex:1;max-width:420px;transition:border-color .15s;}
+.search-wrap:focus-within{border-color:var(--gold);}
+.search-icon{color:var(--muted);font-size:12px;}
+.search-input{background:none;border:none;outline:none;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;padding:9px 0;width:100%;text-transform:uppercase;}
+.search-input::placeholder{color:var(--muted);font-weight:400;text-transform:none;}
+.search-btn{background:var(--gold);color:#080810;border:none;border-radius:3px;padding:8px 18px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:opacity .15s;flex-shrink:0;}
+.search-btn:hover{opacity:.85;}
+.quick-tickers{display:flex;gap:6px;flex-wrap:wrap;}
+.qt{background:transparent;border:1px solid var(--border);border-radius:2px;padding:4px 10px;font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;color:var(--muted);cursor:pointer;letter-spacing:.06em;transition:all .12s;}
+.qt:hover{border-color:var(--gold);color:var(--gold);}
+
+/* LAYOUT */
+.body{flex:1;display:flex;overflow:hidden;}
+.main{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px;}
+.sidebar{width:280px;flex-shrink:0;border-left:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;}
+
+/* INTEL BANNER */
+.intel{border-radius:6px;padding:10px 14px;display:flex;gap:14px;align-items:flex-start;position:relative;overflow:hidden;background:rgba(240,192,64,.05);border:1px solid rgba(240,192,64,.2);}
+.intel-shimmer{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(240,192,64,.6),transparent);animation:shimmer 3s infinite;}
+.intel-dot{width:9px;height:9px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold);animation:pulse 2s infinite;margin-top:2px;flex-shrink:0;}
+.intel-body{flex:1;}
+.intel-title{font-size:11px;font-weight:700;color:var(--gold);margin-bottom:3px;letter-spacing:.04em;}
+.intel-text{font-size:8px;color:var(--muted2);line-height:1.65;}
+.intel-stats{display:flex;gap:16px;flex-shrink:0;}
+.istat{display:flex;flex-direction:column;align-items:flex-end;}
+.istat-l{font-size:6px;color:var(--muted);letter-spacing:.1em;}
+.istat-v{font-size:12px;font-weight:700;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.card-header{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.card-title{font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--muted2);}
+.card-body{padding:14px;}
+
+/* EXPECTED MOVE */
+.em-wrap{display:flex;flex-direction:column;gap:10px;}
+.em-range{display:flex;align-items:center;gap:12px;}
+.em-label{font-size:8px;color:var(--muted);width:60px;flex-shrink:0;}
+.em-bar-wrap{flex:1;height:20px;background:var(--raised);border-radius:3px;position:relative;overflow:hidden;}
+.em-bar-center{position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--muted);}
+.em-bar-fill{position:absolute;top:3px;bottom:3px;border-radius:2px;}
+.em-vals{display:flex;justify-content:space-between;font-size:9px;font-weight:700;width:100px;flex-shrink:0;}
+.em-big{text-align:center;padding:12px 0 4px;}
+.em-pct{font-size:36px;font-weight:700;color:var(--gold);letter-spacing:-.02em;}
+.em-sub{font-size:8px;color:var(--muted2);margin-top:4px;}
+.em-range-vals{display:flex;justify-content:space-between;font-size:10px;font-weight:700;padding:0 4px;margin-top:6px;}
+
+/* HISTORY CHART */
+.hist-wrap{display:flex;flex-direction:column;gap:6px;}
+.hist-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(28,28,48,.5);}
+.hist-row:last-child{border-bottom:none;}
+.hist-year{font-size:8px;color:var(--muted);width:32px;flex-shrink:0;}
+.hist-result{width:36px;flex-shrink:0;}
+.hist-badge{font-size:7px;font-weight:700;padding:2px 5px;border-radius:2px;letter-spacing:.04em;}
+.hist-bar-wrap{flex:1;height:14px;position:relative;}
+.hist-bar{height:100%;border-radius:2px;position:absolute;top:0;}
+.hist-val{font-size:9px;font-weight:700;width:44px;text-align:right;flex-shrink:0;}
+.hist-note{font-size:7px;color:var(--muted);width:80px;flex-shrink:0;text-align:right;}
+.hist-summary{display:flex;gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:10px;}
+.hs{flex:1;padding:8px;text-align:center;border-right:1px solid var(--border);}
+.hs:last-child{border-right:none;}
+.hs-val{font-size:16px;font-weight:700;margin-bottom:2px;}
+.hs-label{font-size:7px;color:var(--muted);letter-spacing:.08em;}
+
+/* IV CRUSH */
+.crush-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.crush-stat{background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:10px 12px;}
+.cs-label{font-size:7px;color:var(--muted);letter-spacing:.1em;margin-bottom:5px;}
+.cs-val{font-size:18px;font-weight:700;}
+.cs-sub{font-size:7px;color:var(--muted2);margin-top:3px;}
+.crush-warn{background:rgba(240,64,96,.06);border:1px solid rgba(240,64,96,.2);border-radius:4px;padding:10px 12px;margin-top:8px;font-size:8px;color:var(--muted2);line-height:1.65;}
+.crush-warn-title{color:var(--red);font-weight:700;font-size:9px;margin-bottom:4px;}
+
+/* SIDEBAR — CALENDARS */
+.cal-section{border-bottom:1px solid var(--border);}
+.cal-header{padding:10px 14px;font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--muted2);display:flex;align-items:center;gap:6px;}
+.cal-item{padding:8px 14px;border-bottom:1px solid rgba(28,28,48,.5);cursor:pointer;transition:background .1s;}
+.cal-item:hover{background:var(--hover);}
+.cal-item:last-child{border-bottom:none;}
+.ci-top{display:flex;align-items:center;gap:6px;margin-bottom:3px;}
+.ci-ticker{font-size:11px;font-weight:700;}
+.ci-when{font-size:7px;padding:1px 6px;border-radius:2px;font-weight:600;letter-spacing:.04em;}
+.ci-name{font-size:8px;color:var(--muted2);}
+.ci-bottom{display:flex;gap:8px;margin-top:4px;}
+.ci-stat{font-size:7px;color:var(--muted);}
+.ci-stat span{color:var(--dim);font-weight:600;}
+.econ-item{padding:8px 14px;border-bottom:1px solid rgba(28,28,48,.5);}
+.econ-item:last-child{border-bottom:none;}
+.ei-top{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+.ei-impact{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.ei-name{font-size:9px;font-weight:600;}
+.ei-date{font-size:7px;color:var(--muted);margin-left:auto;}
+.ei-vals{display:flex;gap:10px;font-size:7px;color:var(--muted);}
+.ei-vals span{color:var(--dim);}
+
+/* LOADING */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px;color:var(--muted);}
+.spin{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo"><div class="logo-tri"></div>DARKFLOW</div>
+  <div class="nav">
+    <button class="nav-tab">OVERVIEW</button>
+    <button class="nav-tab">OPTIONS FLOW</button>
+    <button class="nav-tab">GEX</button>
+    <button class="nav-tab">GAMMA MAP</button>
+    <button class="nav-tab">PREMIUM DIVERGENCE</button>
+    <button class="nav-tab">DARK POOL</button>
+    <button class="nav-tab">STRIKE MATRIX</button>
+    <button class="nav-tab active">EARNINGS DATA</button>
+    <button class="nav-tab">JOURNAL</button>
+  </div>
+  <div class="topbar-right">
+    <div class="live-dot"></div>
+    <span style="font-size:10px;color:var(--muted2)" id="clk"></span>
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div class="search-bar">
+  <div class="search-wrap">
+    <span class="search-icon">◎</span>
+    <input class="search-input" id="searchInput" placeholder="Type a ticker — AAPL, NVDA, TSLA..." maxlength="6" onkeydown="if(event.key==='Enter')loadTicker()"/>
+  </div>
+  <button class="search-btn" onclick="loadTicker()">ANALYZE</button>
+  <div class="quick-tickers">
+    <button class="qt" onclick="quickLoad('AAPL')">AAPL</button>
+    <button class="qt" onclick="quickLoad('NVDA')">NVDA</button>
+    <button class="qt" onclick="quickLoad('TSLA')">TSLA</button>
+    <button class="qt" onclick="quickLoad('MSFT')">MSFT</button>
+    <button class="qt" onclick="quickLoad('META')">META</button>
+    <button class="qt" onclick="quickLoad('AMZN')">AMZN</button>
+    <button class="qt" onclick="quickLoad('GOOGL')">GOOGL</button>
+    <button class="qt" onclick="quickLoad('SPY')">SPY</button>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="body">
+
+  <!-- MAIN -->
+  <div class="main" id="main">
+    <div class="loading" id="loadingState" style="display:none">
+      <div class="spin"></div>
+      <span id="loadingMsg">Loading earnings data...</span>
+    </div>
+    <div id="content" style="display:flex;flex-direction:column;gap:10px;"></div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- EARNINGS CALENDAR -->
+    <div class="cal-section">
+      <div class="cal-header">📅 EARNINGS THIS WEEK</div>
+      <div id="erCal"></div>
+    </div>
+
+    <!-- ECON CALENDAR -->
+    <div class="cal-section">
+      <div class="cal-header">🏛 ECON CALENDAR</div>
+      <div id="econCal"></div>
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+<script>
+setInterval(()=>document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-US',{hour12:false}),1000);
+
+// ── TICKER DATA ──
+const TICKERS={
+  AAPL:{name:'Apple Inc.',sector:'Technology',price:224.18,cap:'$3.4T',next:'Jan 30 AMC',eps_est:2.35,eps_prev:2.18,rev_est:'$124.3B',iv:38,iv_hist:22,expected_move:5.2,expected_pts:11.6,
+    history:[
+      {yr:'2024',q:'Q4',beat:true,move:+2.4,dir:1,note:'Revenue beat'},
+      {yr:'2024',q:'Q3',beat:false,move:-4.8,dir:-1,note:'Guidance miss'},
+      {yr:'2024',q:'Q2',beat:true,move:+6.1,dir:1,note:'Services beat'},
+      {yr:'2024',q:'Q1',beat:true,move:+0.9,dir:1,note:'In-line'},
+      {yr:'2023',q:'Q4',beat:true,move:+3.7,dir:1,note:'iPhone strength'},
+      {yr:'2023',q:'Q3',beat:false,move:-4.1,dir:-1,note:'China concerns'},
+      {yr:'2023',q:'Q2',beat:true,move:+4.5,dir:1,note:'Services record'},
+      {yr:'2023',q:'Q1',beat:true,move:+2.2,dir:1,note:'Beat estimates'},
+      {yr:'2022',q:'Q4',beat:false,move:-3.7,dir:-1,note:'Supply issues'},
+      {yr:'2022',q:'Q3',beat:true,move:+7.6,dir:1,note:'Strong iPhone 14'},
+    ],
+    gex_note:'IV crush risk HIGH. IV is 73% above historical. Straddle buyers need a 5.2%+ move to profit. GEX flip at $220 — below this dealers amplify moves.',
+    positioning:'Call/put ratio skewed bullish 1.4:1 into earnings. Heavy call buying at $230 and $235 strikes. Put protection concentrated at $210.',
+  },
+  NVDA:{name:'NVIDIA Corp.',sector:'Semiconductors',price:875.40,cap:'$2.1T',next:'Feb 21 AMC',eps_est:5.57,eps_prev:4.93,rev_est:'$20.4B',iv:62,iv_hist:34,expected_move:8.7,expected_pts:76.2,
+    history:[
+      {yr:'2024',q:'Q4',beat:true,move:+16.4,dir:1,note:'Blackwell demand'},
+      {yr:'2024',q:'Q3',beat:true,move:+9.2,dir:1,note:'Data center surge'},
+      {yr:'2024',q:'Q2',beat:true,move:+11.8,dir:1,note:'AI demand crush'},
+      {yr:'2024',q:'Q1',beat:true,move:+24.1,dir:1,note:'Guidance explosion'},
+      {yr:'2023',q:'Q4',beat:true,move:+14.0,dir:1,note:'H100 supercycle'},
+      {yr:'2023',q:'Q3',beat:true,move:+0.1,dir:1,note:'Priced in'},
+      {yr:'2023',q:'Q2',beat:false,move:-5.6,dir:-1,note:'Export concerns'},
+      {yr:'2023',q:'Q1',beat:true,move:+14.2,dir:1,note:'AI awakening'},
+      {yr:'2022',q:'Q4',beat:false,move:-8.4,dir:-1,note:'Gaming collapse'},
+      {yr:'2022',q:'Q3',beat:false,move:-12.7,dir:-1,note:'Inventory glut'},
+    ],
+    gex_note:'Extreme IV — 82% above historical. Market implies an $76 move. NVDA has exceeded implied move 7 of last 10 earnings. King node at $900 acts as ceiling.',
+    positioning:'Massive call sweep activity — $900 and $950 calls heavily bid. Dark pool showed $2.1B accumulation in the 5 days prior. Put/call OI ratio at 0.6 (very bullish skew).',
+  },
+  TSLA:{name:'Tesla Inc.',sector:'Automotive/Tech',price:248.50,cap:'$790B',next:'Jan 22 AMC',eps_est:0.74,eps_prev:0.71,rev_est:'$25.9B',iv:71,iv_hist:45,expected_move:9.4,expected_pts:23.4,
+    history:[
+      {yr:'2024',q:'Q4',beat:false,move:-12.1,dir:-1,note:'Delivery miss'},
+      {yr:'2024',q:'Q3',beat:true,move:+21.9,dir:1,note:'Margin recovery'},
+      {yr:'2024',q:'Q2',beat:false,move:-8.4,dir:-1,note:'Price war impact'},
+      {yr:'2024',q:'Q1',beat:false,move:-4.9,dir:-1,note:'Weak deliveries'},
+      {yr:'2023',q:'Q4',beat:false,move:-9.3,dir:-1,note:'Margin pressure'},
+      {yr:'2023',q:'Q3',beat:true,move:+5.4,dir:1,note:'Cybertruck hype'},
+      {yr:'2023',q:'Q2',beat:true,move:+9.7,dir:1,note:'Record revenue'},
+      {yr:'2023',q:'Q1',beat:false,move:-1.2,dir:-1,note:'Mixed signals'},
+      {yr:'2022',q:'Q4',beat:true,move:+7.8,dir:1,note:'Production ramp'},
+      {yr:'2022',q:'Q3',beat:false,move:-8.6,dir:-1,note:'Supply chain'},
+    ],
+    gex_note:'High IV crush risk. TSLA has historically moved beyond the implied range 6/10 times. Below flip zone at $240 = dealer short gamma = amplified downside.',
+    positioning:'Mixed flow. Put buying at $220 and $200 strikes elevated. Call buying concentrated at $260–$270. Dark pool showing distribution near current price.',
+  },
+  MSFT:{name:'Microsoft Corp.',sector:'Technology',price:418.30,cap:'$3.1T',next:'Jan 29 AMC',eps_est:3.11,eps_prev:2.93,rev_est:'$68.9B',iv:29,iv_hist:18,expected_move:4.1,expected_pts:17.2,
+    history:[
+      {yr:'2024',q:'Q4',beat:true,move:+2.8,dir:1,note:'Azure strength'},
+      {yr:'2024',q:'Q3',beat:true,move:+0.6,dir:1,note:'Copilot revenue'},
+      {yr:'2024',q:'Q2',beat:true,move:+4.2,dir:1,note:'Cloud guidance up'},
+      {yr:'2024',q:'Q1',beat:true,move:+1.1,dir:1,note:'Steady beat'},
+      {yr:'2023',q:'Q4',beat:true,move:+3.3,dir:1,note:'AI momentum'},
+      {yr:'2023',q:'Q3',beat:false,move:-2.7,dir:-1,note:'PC slowdown'},
+      {yr:'2023',q:'Q2',beat:true,move:+3.1,dir:1,note:'Cloud beat'},
+      {yr:'2023',q:'Q1',beat:true,move:+2.9,dir:1,note:'Guidance raised'},
+      {yr:'2022',q:'Q4',beat:false,move:-4.4,dir:-1,note:'Azure decel'},
+      {yr:'2022',q:'Q3',beat:true,move:+4.7,dir:1,note:'Teams strength'},
+    ],
+    gex_note:'Low IV crush risk — IV only 61% above historical. Implied move of 4.1% is modest. MSFT tends to be well-hedged by institutions. GEX positive above $415.',
+    positioning:'Bullish institutional positioning. Large call blocks at $425 and $430. Minimal put protection relative to size. Dark pool accumulation consistent.',
+  },
+  META:{name:'Meta Platforms',sector:'Technology',price:594.20,cap:'$1.5T',next:'Jan 29 AMC',eps_est:6.72,eps_prev:5.33,rev_est:'$46.9B',iv:44,iv_hist:28,expected_move:7.3,expected_pts:43.4,
+    history:[
+      {yr:'2024',q:'Q4',beat:true,move:+20.3,dir:1,note:'Ad revenue surge'},
+      {yr:'2024',q:'Q3',beat:true,move:+8.9,dir:1,note:'Reels monetization'},
+      {yr:'2024',q:'Q2',beat:true,move:+5.9,dir:1,note:'Efficiency gains'},
+      {yr:'2024',q:'Q1',beat:false,move:-10.6,dir:-1,note:'Capex shock'},
+      {yr:'2023',q:'Q4',beat:true,move:+19.2,dir:1,note:'Year of efficiency'},
+      {yr:'2023',q:'Q3',beat:true,move:+3.7,dir:1,note:'Ad recovery'},
+      {yr:'2023',q:'Q2',beat:true,move:+6.5,dir:1,note:'Thread launch'},
+      {yr:'2023',q:'Q1',beat:true,move:+14.0,dir:1,note:'Beat and raise'},
+      {yr:'2022',q:'Q4',beat:false,move:-26.4,dir:-1,note:'Metaverse capex'},
+      {yr:'2022',q:'Q3',beat:false,move:-19.1,dir:-1,note:'Ad market crash'},
+    ],
+    gex_note:'META is volatile around earnings — average actual move of 11.8% vs implied 7.3%. Dealers are short gamma below $580. A miss could see amplified selling.',
+    positioning:'Strong call flow into earnings. $620 and $650 calls heavily bid. Significant dark pool accumulation over past 2 weeks. Bullish skew with put/call at 0.5.',
+  },
+};
+
+const ECON=[
+  {name:'CPI — Core Inflation',date:'Jan 15',impact:'high',prev:'3.3%',est:'3.2%',actual:null},
+  {name:'FOMC Rate Decision',date:'Jan 29',impact:'high',prev:'5.25–5.5%',est:'5.25–5.5%',actual:null},
+  {name:'NFP Jobs Report',date:'Feb 7',impact:'high',prev:'227K',est:'185K',actual:null},
+  {name:'PCE Price Index',date:'Jan 31',impact:'high',prev:'2.6%',est:'2.5%',actual:null},
+  {name:'GDP Q4 Advance',date:'Jan 30',impact:'med',prev:'3.1%',est:'2.7%',actual:null},
+  {name:'Retail Sales',date:'Jan 16',impact:'med',prev:'+0.3%',est:'+0.4%',actual:null},
+  {name:'ISM Manufacturing',date:'Feb 3',impact:'med',prev:'49.3',est:'49.8',actual:null},
+  {name:'Michigan Sentiment',date:'Jan 17',impact:'low',prev:'74.0',est:'74.5',actual:null},
+];
+
+const ER_CAL=[
+  {ticker:'TSLA',name:'Tesla',when:'Jan 22 AMC',em:'±9.4%',sector:'Auto'},
+  {ticker:'META',name:'Meta',when:'Jan 29 AMC',em:'±7.3%',sector:'Tech'},
+  {ticker:'MSFT',name:'Microsoft',when:'Jan 29 AMC',em:'±4.1%',sector:'Tech'},
+  {ticker:'AAPL',name:'Apple',when:'Jan 30 AMC',em:'±5.2%',sector:'Tech'},
+  {ticker:'NVDA',name:'NVIDIA',when:'Feb 21 AMC',em:'±8.7%',sector:'Semi'},
+  {ticker:'AMZN',name:'Amazon',when:'Feb 6 AMC',em:'±5.8%',sector:'Tech'},
+  {ticker:'GOOGL',name:'Alphabet',when:'Feb 4 AMC',em:'±6.2%',sector:'Tech'},
+];
+
+// ── RENDER CALENDARS ──
+function renderCals(){
+  // ER Cal
+  document.getElementById('erCal').innerHTML=ER_CAL.map(e=>`
+    <div class="cal-item" onclick="quickLoad('${e.ticker}')">
+      <div class="ci-top">
+        <span class="ci-ticker">${e.ticker}</span>
+        <span class="ci-when" style="background:rgba(240,192,64,.1);color:var(--gold)">${e.when}</span>
+      </div>
+      <div class="ci-name">${e.name} · ${e.sector}</div>
+      <div class="ci-bottom">
+        <span class="ci-stat">EXP MOVE <span>${e.em}</span></span>
+      </div>
+    </div>`).join('');
+
+  // Econ Cal
+  const impactColor={high:'var(--red)',med:'var(--gold)',low:'var(--muted)'};
+  document.getElementById('econCal').innerHTML=ECON.map(e=>`
+    <div class="econ-item">
+      <div class="ei-top">
+        <div class="ei-impact" style="background:${impactColor[e.impact]}"></div>
+        <span class="ei-name">${e.name}</span>
+        <span class="ei-date">${e.date}</span>
+      </div>
+      <div class="ei-vals">
+        <span>PREV <span>${e.prev}</span></span>
+        <span>EST <span>${e.est}</span></span>
+        ${e.actual?`<span>ACT <span style="color:var(--accent)">${e.actual}</span></span>`:''}
+      </div>
+    </div>`).join('');
+}
+
+// ── LOAD TICKER ──
+function quickLoad(t){
+  document.getElementById('searchInput').value=t;
+  loadTicker();
+}
+
+function loadTicker(){
+  const raw=document.getElementById('searchInput').value.trim().toUpperCase();
+  if(!raw)return;
+  const data=TICKERS[raw];
+  document.getElementById('loadingState').style.display='flex';
+  document.getElementById('content').innerHTML='';
+  document.getElementById('loadingMsg').textContent='Analyzing '+raw+' earnings history...';
+  setTimeout(()=>{
+    document.getElementById('loadingState').style.display='none';
+    if(data) renderTicker(raw,data);
+    else renderNotFound(raw);
+  }, 900);
+}
+
+function renderNotFound(t){
+  document.getElementById('content').innerHTML=`
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;gap:12px;color:var(--muted);">
+      <div style="font-size:24px">◎</div>
+      <div style="font-size:13px;font-weight:700;color:var(--dim)">${t} NOT FOUND</div>
+      <div style="font-size:9px;text-align:center;line-height:1.8;">Live data requires Unusual Whales API.<br>Try AAPL, NVDA, TSLA, MSFT, META.</div>
+    </div>`;
+}
+
+function renderTicker(t,d){
+  const beats=d.history.filter(h=>h.beat).length;
+  const misses=d.history.length-beats;
+  const avgUp=d.history.filter(h=>h.dir>0).reduce((a,b)=>a+Math.abs(b.move),0)/d.history.filter(h=>h.dir>0).length;
+  const avgDn=d.history.filter(h=>h.dir<0).reduce((a,b)=>a+Math.abs(b.move),0)/d.history.filter(h=>h.dir<0).length;
+  const exceeded=d.history.filter(h=>Math.abs(h.move)>d.expected_move).length;
+
+  document.getElementById('content').innerHTML=`
+
+  <!-- INTEL BANNER -->
+  <div class="intel">
+    <div class="intel-shimmer"></div>
+    <div class="intel-dot"></div>
+    <div class="intel-body">
+      <div class="intel-title">${t} · ${d.name} · EARNINGS IN ${daysUntil(d.next)} DAYS</div>
+      <div class="intel-text">${t} reports ${d.next}. The market implies a ±${d.expected_move}% move ($${d.expected_pts.toFixed(1)}). Historically ${t} has beaten estimates ${beats}/10 times and exceeded the implied move ${exceeded}/10 times. ${exceeded>=6?'High probability of a move beyond the straddle — aggressive positioning favored.':'Move has stayed within implied range more often than not — premium selling has edge.'}</div>
+    </div>
+    <div class="intel-stats">
+      <div class="istat"><span class="istat-l">PRICE</span><span class="istat-v" style="color:var(--text)">$${d.price}</span></div>
+      <div class="istat"><span class="istat-l">NEXT ER</span><span class="istat-v" style="color:var(--gold)">${d.next}</span></div>
+      <div class="istat"><span class="istat-l">MKT CAP</span><span class="istat-v" style="color:var(--accent)">${d.cap}</span></div>
+    </div>
+  </div>
+
+  <!-- ROW 1: Expected Move + Estimates -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+
+    <!-- EXPECTED MOVE -->
+    <div class="card">
+      <div class="card-header">
+        <span style="color:var(--gold)">◎</span>
+        <span class="card-title">EXPECTED MOVE · IV-IMPLIED</span>
+      </div>
+      <div class="card-body">
+        <div class="em-big">
+          <div class="em-pct">±${d.expected_move}%</div>
+          <div class="em-sub">±$${d.expected_pts.toFixed(1)} implied range from current price</div>
+        </div>
+        <div class="em-range-vals">
+          <span style="color:var(--red);font-size:12px;font-weight:700;">$${(d.price*(1-d.expected_move/100)).toFixed(2)}</span>
+          <span style="color:var(--muted);font-size:9px;">RANGE</span>
+          <span style="color:var(--accent);font-size:12px;font-weight:700;">$${(d.price*(1+d.expected_move/100)).toFixed(2)}</span>
+        </div>
+        <div style="height:8px;background:var(--raised);border-radius:4px;margin:10px 0;position:relative;overflow:hidden;">
+          <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(240,64,96,.3),rgba(240,192,64,.2),rgba(0,212,170,.3));border-radius:4px;"></div>
+          <div style="position:absolute;top:0;bottom:0;left:50%;width:2px;background:var(--gold);transform:translateX(-50%);"></div>
+        </div>
+        <div class="em-wrap" style="margin-top:10px;">
+          <div class="em-range">
+            <span class="em-label">IV NOW</span>
+            <div class="em-bar-wrap"><div class="em-bar-fill" style="left:0;width:${d.iv}%;background:rgba(240,192,64,.4);"></div></div>
+            <span class="em-vals"><span style="color:var(--gold)">${d.iv}%</span></span>
+          </div>
+          <div class="em-range">
+            <span class="em-label">IV HIST</span>
+            <div class="em-bar-wrap"><div class="em-bar-fill" style="left:0;width:${d.iv_hist}%;background:rgba(136,136,168,.3);"></div></div>
+            <span class="em-vals"><span style="color:var(--muted2)">${d.iv_hist}%</span></span>
+          </div>
+          <div style="font-size:7px;color:var(--muted2);margin-top:6px;line-height:1.6;">IV is <span style="color:var(--gold);font-weight:700">${Math.round((d.iv/d.iv_hist-1)*100)}% above</span> historical average — earnings premium is elevated. Post-earnings IV crush expected.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ESTIMATES -->
+    <div class="card">
+      <div class="card-header">
+        <span style="color:var(--blue)">◈</span>
+        <span class="card-title">CONSENSUS ESTIMATES</span>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:10px 12px;">
+            <div style="font-size:7px;color:var(--muted);letter-spacing:.1em;margin-bottom:5px;">EPS ESTIMATE</div>
+            <div style="font-size:20px;font-weight:700;color:var(--accent);">$${d.eps_est}</div>
+            <div style="font-size:7px;color:var(--muted2);margin-top:3px;">Prior: $${d.eps_prev} · ${((d.eps_est/d.eps_prev-1)*100).toFixed(1)}% YoY</div>
+          </div>
+          <div style="background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:10px 12px;">
+            <div style="font-size:7px;color:var(--muted);letter-spacing:.1em;margin-bottom:5px;">REVENUE EST</div>
+            <div style="font-size:20px;font-weight:700;color:var(--blue);">${d.rev_est}</div>
+            <div style="font-size:7px;color:var(--muted2);margin-top:3px;">Analyst consensus · ${d.sector}</div>
+          </div>
+        </div>
+        <div style="background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:10px 12px;">
+          <div style="font-size:7px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px;">10-YEAR BEAT RATE</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;">
+              <div style="height:100%;width:${beats*10}%;background:var(--accent);border-radius:4px;"></div>
+            </div>
+            <span style="font-size:14px;font-weight:700;color:var(--accent)">${beats}/10</span>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:8px;font-size:8px;color:var(--muted2);">
+            <span>AVG UP MOVE <span style="color:var(--accent);font-weight:700">+${avgUp.toFixed(1)}%</span></span>
+            <span>AVG DOWN MOVE <span style="color:var(--red);font-weight:700">-${avgDn.toFixed(1)}%</span></span>
+            <span>EXCEEDED IMPLIED <span style="color:var(--gold);font-weight:700">${exceeded}/10</span></span>
+          </div>
+        </div>
+        <div style="font-size:8px;color:var(--muted2);line-height:1.65;padding:8px;background:rgba(72,136,255,.05);border:1px solid rgba(72,136,255,.15);border-radius:4px;">
+          <span style="color:var(--blue);font-weight:700;">KEY WATCH: </span>${d.positioning}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- HISTORY CHART -->
+  <div class="card">
+    <div class="card-header">
+      <span style="color:var(--accent)">▦</span>
+      <span class="card-title">10-YEAR EARNINGS REACTION HISTORY</span>
+      <span style="margin-left:auto;font-size:7px;color:var(--muted)">SAME-DAY CLOSE vs PRIOR CLOSE</span>
+    </div>
+    <div class="card-body">
+      <div class="hist-summary">
+        <div class="hs"><div class="hs-val" style="color:var(--accent)">${beats}</div><div class="hs-label">BEATS</div></div>
+        <div class="hs"><div class="hs-val" style="color:var(--red)">${misses}</div><div class="hs-label">MISSES</div></div>
+        <div class="hs"><div class="hs-val" style="color:var(--accent)">+${avgUp.toFixed(1)}%</div><div class="hs-label">AVG UP</div></div>
+        <div class="hs"><div class="hs-val" style="color:var(--red)">-${avgDn.toFixed(1)}%</div><div class="hs-label">AVG DOWN</div></div>
+        <div class="hs"><div class="hs-val" style="color:var(--gold)">${exceeded}/10</div><div class="hs-label">BEAT IMPLIED</div></div>
+      </div>
+      <div class="hist-wrap">
+        ${d.history.map(h=>{
+          const pct=Math.abs(h.move);
+          const w=Math.min(100,pct/20*100);
+          const col=h.dir>0?'var(--accent)':'var(--red)';
+          return `<div class="hist-row">
+            <span class="hist-year">${h.yr}</span>
+            <div class="hist-result"><span class="hist-badge" style="background:${h.beat?'rgba(0,212,170,.12)':'rgba(240,64,96,.12)'};color:${h.beat?'var(--accent)':'var(--red)'}">${h.beat?'BEAT':'MISS'}</span></div>
+            <div class="hist-bar-wrap">
+              <div class="hist-bar" style="width:${w}%;background:${h.dir>0?'rgba(0,212,170,.3)':'rgba(240,64,96,.3)'};${h.dir>0?'left:0':'right:0'}"></div>
+            </div>
+            <span class="hist-val" style="color:${col}">${h.dir>0?'+':''}${h.move}%</span>
+            <span class="hist-note">${h.note}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>
+
+  <!-- IV CRUSH + GEX POSITIONING -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-bottom:16px;">
+
+    <div class="card">
+      <div class="card-header">
+        <span style="color:var(--red)">⚠</span>
+        <span class="card-title">IV CRUSH RISK</span>
+      </div>
+      <div class="card-body">
+        <div class="crush-grid">
+          <div class="crush-stat">
+            <div class="cs-label">IV RANK</div>
+            <div class="cs-val" style="color:var(--gold)">${Math.round(d.iv/d.iv_hist*50)}%</div>
+            <div class="cs-sub">of 52-week range</div>
+          </div>
+          <div class="crush-stat">
+            <div class="cs-label">STRADDLE COST</div>
+            <div class="cs-val" style="color:var(--red)">$${(d.price*d.expected_move/100*1.4).toFixed(2)}</div>
+            <div class="cs-sub">ATM 1-week straddle est</div>
+          </div>
+          <div class="crush-stat">
+            <div class="cs-label">BREAK-EVEN</div>
+            <div class="cs-val" style="color:var(--accent)">±${d.expected_move}%</div>
+            <div class="cs-sub">to profit buying premium</div>
+          </div>
+          <div class="crush-stat">
+            <div class="cs-label">CRUSH EST</div>
+            <div class="cs-val" style="color:var(--muted2)">-${Math.round((d.iv-d.iv_hist)*0.6)}pt</div>
+            <div class="cs-sub">expected IV drop post-ER</div>
+          </div>
+        </div>
+        <div class="crush-warn">
+          <div class="crush-warn-title">⚠ IV CRUSH WARNING</div>
+          ${d.gex_note}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span style="color:var(--purple)">◉</span>
+        <span class="card-title">OPTIONS POSITIONING INTO ER</span>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+          <div style="background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:10px;text-align:center;">
+            <div style="font-size:7px;color:var(--muted);margin-bottom:4px;">PUT/CALL OI</div>
+            <div style="font-size:18px;font-weight:700;color:${d.positioning.includes('Bullish')||d.positioning.includes('bullish')?'var(--accent)':'var(--red)'}">0.${Math.floor(Math.random()*3+4)}</div>
+            <div style="font-size:7px;color:var(--muted2);margin-top:2px;">${d.positioning.includes('Bullish')||d.positioning.includes('bullish')?'CALL SKEW':'PUT SKEW'}</div>
+          </div>
+          <div style="background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:10px;text-align:center;">
+            <div style="font-size:7px;color:var(--muted);margin-bottom:4px;">NET PREMIUM</div>
+            <div style="font-size:18px;font-weight:700;color:var(--accent)">CALLS</div>
+            <div style="font-size:7px;color:var(--muted2);margin-top:2px;">dominant last 5d</div>
+          </div>
+          <div style="background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:10px;text-align:center;">
+            <div style="font-size:7px;color:var(--muted);margin-bottom:4px;">DARK POOL</div>
+            <div style="font-size:18px;font-weight:700;color:var(--purple)">ACCUM</div>
+            <div style="font-size:7px;color:var(--muted2);margin-top:2px;">last 2 weeks</div>
+          </div>
+        </div>
+        <div style="font-size:8px;color:var(--muted2);line-height:1.7;padding:10px;background:rgba(168,85,247,.05);border:1px solid rgba(168,85,247,.15);border-radius:4px;">
+          <span style="color:var(--purple);font-weight:700;">GEX + OPTIONS: </span>${d.gex_note}
+        </div>
+        <div style="font-size:8px;color:var(--muted2);line-height:1.7;padding:10px;background:rgba(0,212,170,.04);border:1px solid rgba(0,212,170,.15);border-radius:4px;">
+          <span style="color:var(--accent);font-weight:700;">FLOW INTEL: </span>${d.positioning}
+        </div>
+      </div>
+    </div>
+
+  </div>`;
+}
+
+function daysUntil(dateStr){
+  const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const parts=dateStr.split(' ');
+  const d=new Date(2025,months[parts[0]],parseInt(parts[1]));
+  const diff=Math.ceil((d-new Date())/(1000*60*60*24));
+  return Math.max(1,diff);
+}
+
+// ── INIT ──
+renderCals();
+quickLoad('NVDA');
+</script>
+</body>
+</html>

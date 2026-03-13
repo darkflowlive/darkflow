@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DARKFLOW · FLOW</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080810;--surface:#0c0c18;--raised:#10101f;--hover:#14142a;
+  --border:#1c1c30;--bm:#252540;
+  --text:#e8e8f0;--dim:#b0b0c8;--muted2:#8888a8;--muted:#444460;
+  --accent:#00d4aa;--red:#f04060;--gold:#f0c040;--blue:#4888ff;--orange:#ff8040;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;overflow:hidden;-webkit-font-smoothing:antialiased;}
+.app{display:flex;flex-direction:column;height:100vh;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+@keyframes rowIn{from{opacity:0;background:rgba(0,212,170,.06)}to{opacity:1;background:transparent}}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-thumb{background:var(--bm);}
+
+/* ── TOPBAR ── */
+.topbar{flex-shrink:0;height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:0;}
+.logo{font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:13px;letter-spacing:.12em;color:var(--accent);display:flex;align-items:center;gap:8px;margin-right:20px;}
+.logo-tri{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--accent);}
+.nav{display:flex;height:100%;}
+.nav-tab{height:100%;padding:0 14px;display:flex;align-items:center;font-size:10px;font-weight:500;letter-spacing:.08em;white-space:nowrap;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;border-top:none;border-left:none;border-right:none;background:none;font-family:'IBM Plex Mono',monospace;transition:color .15s;}
+.nav-tab:hover{color:var(--muted2);}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;}
+
+/* ── INTEL BANNER ── */
+.intel{flex-shrink:0;margin:10px 16px 0;border-radius:6px;padding:10px 14px;display:flex;gap:14px;align-items:flex-start;position:relative;overflow:hidden;}
+.intel.bull{background:rgba(0,212,170,.05);border:1px solid rgba(0,212,170,.18);}
+.intel.bear{background:rgba(240,64,96,.05);border:1px solid rgba(240,64,96,.18);}
+.intel-shimmer{position:absolute;top:0;left:0;right:0;height:2px;animation:shimmer 3s infinite;}
+.intel.bull .intel-shimmer{background:linear-gradient(90deg,transparent,rgba(0,212,170,.5),transparent);}
+.intel.bear .intel-shimmer{background:linear-gradient(90deg,transparent,rgba(240,64,96,.5),transparent);}
+.intel-col1{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;padding-top:1px;}
+.intel-dot{width:9px;height:9px;border-radius:50%;animation:pulse 2s infinite;}
+.intel-dot.bull{background:var(--accent);box-shadow:0 0 10px var(--accent);}
+.intel-dot.bear{background:var(--red);box-shadow:0 0 10px var(--red);}
+.intel-tag{font-size:6px;font-weight:700;letter-spacing:.12em;}
+.intel-tag.bull{color:var(--accent);}
+.intel-tag.bear{color:var(--red);}
+.intel-body{flex:1;min-width:0;}
+.intel-headline{display:flex;align-items:baseline;gap:10px;margin-bottom:4px;}
+.intel-bias{font-size:12px;font-weight:700;letter-spacing:.04em;}
+.intel-bias.bull{color:var(--accent);}
+.intel-bias.bear{color:var(--red);}
+.intel-sub{font-size:8px;color:var(--muted2);}
+.intel-text{font-size:8px;color:var(--muted2);line-height:1.65;}
+.intel-stats{display:flex;flex-direction:column;gap:4px;flex-shrink:0;align-items:flex-end;min-width:90px;}
+.intel-stat-row{display:flex;flex-direction:column;align-items:flex-end;}
+.ist-label{font-size:6px;color:var(--muted);letter-spacing:.1em;}
+.ist-val{font-size:12px;font-weight:700;color:var(--gold);}
+.ist-small{font-size:7px;color:var(--muted2);}
+
+/* ── FILTERS ── */
+.filters{flex-shrink:0;height:38px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:5px;margin-top:10px;overflow-x:auto;}
+.fl{font-size:7px;color:var(--muted);flex-shrink:0;letter-spacing:.1em;margin-right:2px;}
+.fdiv{width:1px;height:14px;background:var(--border);flex-shrink:0;margin:0 5px;}
+.fbtn{height:22px;padding:0 9px;border-radius:2px;font-size:7px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace;flex-shrink:0;background:transparent;border:1px solid var(--border);color:var(--muted);letter-spacing:.06em;transition:all .12s;}
+.fbtn:hover{border-color:var(--bm);color:var(--muted2);}
+.fbtn.on{border-color:var(--accent);color:var(--accent);background:rgba(0,212,170,.07);}
+.fbtn.on-red{border-color:var(--red);color:var(--red);background:rgba(240,64,96,.07);}
+.fbtn.on-gold{border-color:var(--gold);color:var(--gold);background:rgba(240,192,64,.07);}
+.fcount{margin-left:auto;font-size:7px;color:var(--muted);flex-shrink:0;}
+
+/* ── TABLE ── */
+.tbl-wrap{flex:1;overflow:auto;}
+table{width:100%;border-collapse:collapse;min-width:900px;}
+thead tr{position:sticky;top:0;z-index:10;background:var(--surface);}
+th{padding:6px 10px;font-size:7px;font-weight:600;letter-spacing:.12em;color:var(--muted);text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;}
+th:hover{color:var(--muted2);}
+th .sort-arrow{margin-left:4px;opacity:.4;}
+th.sorted .sort-arrow{opacity:1;color:var(--accent);}
+td{padding:0 10px;height:30px;font-size:10px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:middle;}
+tr.flow-row{cursor:pointer;transition:background .1s;}
+tr.flow-row:hover{background:var(--hover);}
+tr.flow-row.expanded{background:var(--raised);}
+tr.flow-row.new-row{animation:rowIn .6s ease;}
+
+/* detail row */
+tr.detail-row td{padding:0;height:auto;}
+.detail-inner{padding:10px 14px 12px 44px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;}
+.d-stat{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:5px 10px;}
+.d-label{font-size:6px;color:var(--muted);letter-spacing:.1em;margin-bottom:2px;}
+.d-val{font-size:9px;font-weight:600;}
+.wtm{flex:1;min-width:200px;background:var(--bg);border-radius:4px;padding:8px 12px;}
+.wtm-label{font-size:7px;font-weight:600;letter-spacing:.1em;color:var(--muted);margin-bottom:5px;}
+.wtm-text{font-size:9px;color:var(--muted2);line-height:1.65;}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;justify-content:center;padding:1px 6px;border-radius:2px;font-size:7px;font-weight:700;letter-spacing:.07em;}
+.b-sweep{background:rgba(255,128,64,.14);color:var(--orange);border:1px solid rgba(255,128,64,.3);}
+.b-block{background:rgba(72,136,255,.14);color:var(--blue);border:1px solid rgba(72,136,255,.3);}
+.b-call{background:rgba(0,212,170,.13);color:var(--accent);border:1px solid rgba(0,212,170,.28);}
+.b-put{background:rgba(240,64,96,.13);color:var(--red);border:1px solid rgba(240,64,96,.28);}
+.b-bull{background:rgba(0,212,170,.1);color:var(--accent);}
+.b-bear{background:rgba(240,64,96,.1);color:var(--red);}
+.b-neutral{background:rgba(136,136,168,.1);color:var(--muted2);}
+.sent-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.sent-dot.bull{background:var(--accent);box-shadow:0 0 4px var(--accent);}
+.sent-dot.bear{background:var(--red);box-shadow:0 0 4px var(--red);}
+.sent-dot.neutral{background:var(--muted2);}
+.unusual-star{color:var(--gold);font-size:9px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo"><div class="logo-tri"></div>DARKFLOW</div>
+  <div class="nav">
+    <button class="nav-tab" onclick="alert('OVERVIEW')">OVERVIEW</button>
+    <button class="nav-tab active">OPTIONS FLOW</button>
+    <button class="nav-tab" onclick="alert('GEX')">GEX</button>
+    <button class="nav-tab">PREMIUM DIVERGENCE</button>
+    <button class="nav-tab">DARK POOL</button>
+    <button class="nav-tab">STRIKE MATRIX</button>
+    <button class="nav-tab">JOURNAL</button>
+    <button class="nav-tab">AI SIGNALS</button>
+  </div>
+  <div class="topbar-right">
+    <div class="live-dot"></div>
+    <span style="font-size:10px;color:var(--muted2)" id="clock">--:--:--</span>
+  </div>
+</div>
+
+<!-- INTEL BANNER -->
+<div class="intel bull" id="intelBanner">
+  <div class="intel-shimmer"></div>
+  <div class="intel-col1">
+    <div class="intel-dot bull"></div>
+    <div class="intel-tag bull">OPTIONS FLOW</div>
+  </div>
+  <div class="intel-body">
+    <div class="intel-headline">
+      <span class="intel-bias bull" id="intelBias">BULLISH</span>
+      <span class="intel-sub" id="intelSub">7 of 10 unusual prints are calls</span>
+    </div>
+    <div class="intel-text" id="intelText">Heavy call sweep activity in SPY and NVDA signals institutional positioning for upside. The QQQ put block is likely a hedge — not a directional bet. Net flow bias is bullish, aligning with the positive gamma regime. Watch SPX $5,735 flip level as the line in the sand.</div>
+  </div>
+  <div class="intel-stats">
+    <div class="intel-stat-row">
+      <div class="ist-label">UNUSUAL</div>
+      <div class="ist-val">7<span style="font-size:8px;color:var(--muted)">/10</span></div>
+    </div>
+    <div class="ist-small">CALLS $4.56M</div>
+    <div class="ist-small">PUTS $4.52M</div>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <span class="fl">TYPE</span>
+  <button class="fbtn on" id="ftAll" onclick="setF('type','ALL')">ALL</button>
+  <button class="fbtn" id="ftSweep" onclick="setF('type','SWEEP')">SWEEP</button>
+  <button class="fbtn" id="ftBlock" onclick="setF('type','BLOCK')">BLOCK</button>
+  <div class="fdiv"></div>
+  <span class="fl">SIDE</span>
+  <button class="fbtn on" id="fsAll" onclick="setF('side','ALL')">ALL</button>
+  <button class="fbtn" id="fsCall" onclick="setF('side','CALL')">CALLS</button>
+  <button class="fbtn" id="fsPut" onclick="setF('side','PUT')">PUTS</button>
+  <div class="fdiv"></div>
+  <button class="fbtn on-gold" id="fsUnusual" onclick="setF('unusual','toggle')">⚡ UNUSUAL ONLY</button>
+  <span class="fcount" id="fcount">— PRINTS</span>
+</div>
+
+<!-- TABLE -->
+
+  <!-- AI HOT PICKS -->
+  <div id="aiPicks" style="flex-shrink:0;margin:10px 16px 0;display:flex;flex-direction:column;gap:0;background:var(--surface);border:1px solid rgba(240,192,64,.25);border-radius:6px;overflow:hidden;">
+    <div style="padding:8px 14px;border-bottom:1px solid rgba(240,192,64,.15);display:flex;align-items:center;gap:8px;background:rgba(240,192,64,.04);">
+      <span style="font-size:11px;">⚡</span>
+      <span style="font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--gold)">DARKFLOW AI · TOP PICKS</span>
+      <span style="font-size:7px;color:var(--muted);margin-left:4px">AI-scored by conviction, size, and unusual activity</span>
+      <span style="margin-left:auto;font-size:7px;color:var(--muted)" id="pickTime"></span>
+      <div style="width:5px;height:5px;border-radius:50%;background:var(--gold);animation:pulse 2s infinite;box-shadow:0 0 6px var(--gold)"></div>
+    </div>
+    <div id="aiPicksList" style="display:flex;gap:0;overflow-x:auto;"></div>
+  </div>
+
+<div class="tbl-wrap">
+<table>
+  <thead>
+    <tr>
+      <th style="width:14px"></th>
+      <th onclick="sortBy('time')" class="sorted">TIME <span class="sort-arrow">↓</span></th>
+      <th onclick="sortBy('ticker')">CONTRACT <span class="sort-arrow">↕</span></th>
+      <th onclick="sortBy('spot')">SPOT <span class="sort-arrow">↕</span></th>
+      <th onclick="sortBy('qty')">QTY <span class="sort-arrow">↕</span></th>
+      <th onclick="sortBy('price')">PRICE <span class="sort-arrow">↕</span></th>
+      <th>BID-ASK</th>
+      <th onclick="sortBy('prem')">PREMIUM <span class="sort-arrow">↕</span></th>
+      <th>SENTIMENT</th>
+      <th>TYPE</th>
+      <th>MONEYNESS</th>
+      <th>EXCH</th>
+      <th onclick="sortBy('vol')">VOL <span class="sort-arrow">↕</span></th>
+      <th onclick="sortBy('oi')">OI <span class="sort-arrow">↕</span></th>
+    </tr>
+  </thead>
+  <tbody id="flowBody"></tbody>
+</table>
+</div>
+
+</div>
+<script>
+// ── CLOCK ─────────────────────────────────────────────────────
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-US',{hour12:false});},1000);
+
+// ── DATA ─────────────────────────────────────────────────────
+const FLOW=[
+  {id:1, time:"14:03:22",ticker:"SPY", exp:"Mar 12",strike:572,  side:"CALL",spot:571.40,qty:1842,price:1.14,bid:1.13,ask:1.15,prem:2100000,sentiment:"BULL",type:"SWEEP",exch:"MULTIPLE",otm:"OTM $0.60",vol:94820,oi:218430,unusual:true, note:"Multi-leg sweep hit 4 exchanges simultaneously — aggressive directional bet on SPY moving higher before close. Paid above ask signals urgency."},
+  {id:2, time:"13:58:11",ticker:"QQQ", exp:"Mar 19",strike:480,  side:"PUT", spot:471.20,qty:1203,price:1.50,bid:1.48,ask:1.51,prem:1800000,sentiment:"BEAR",type:"BLOCK",exch:"CBOE",    otm:"OTM $9.20",vol:34120,oi:87650,unusual:true, note:"Single large block at ask — likely institutional hedge against long equity position. Monthly expiry suggests protection, not speculation."},
+  {id:3, time:"13:51:44",ticker:"NVDA",exp:"Mar 12",strike:875,  side:"CALL",spot:868.40,qty:980, price:0.91,bid:0.89,ask:0.92,prem:890000, sentiment:"BULL",type:"SWEEP",exch:"MULTIPLE",otm:"OTM $6.60",vol:182400,oi:44380,unusual:true, note:"Paid above ask on a market order — high urgency. Someone expects NVDA to rip into close. Follows broader semi sector strength."},
+  {id:4, time:"13:44:09",ticker:"AAPL",exp:"Mar 26",strike:232,  side:"CALL",spot:228.60,qty:751, price:0.59,bid:0.58,ask:0.60,prem:440000, sentiment:"BULL",type:"BLOCK",exch:"AMEX",    otm:"OTM $3.40",vol:28940,oi:61200,unusual:false,note:"At-ask block, moderate size. Could be covered call unwind or new bullish position ahead of product event. Watch for follow-on flow."},
+  {id:5, time:"13:39:55",ticker:"SPX", exp:"Mar 12",strike:5700, side:"PUT", spot:5718.4,qty:621, price:1.93,bid:1.91,ask:1.94,prem:1200000,sentiment:"BEAR",type:"SWEEP",exch:"CBOE",    otm:"OTM $18.4",vol:74200,oi:156800,unusual:true, note:"Fast sweep executed below bid — dealer-driven hedging near gamma flip at $5,735. Not a pure directional bet — likely delta hedging."},
+  {id:6, time:"13:31:02",ticker:"TSLA",exp:"Mar 19",strike:260,  side:"CALL",spot:251.80,qty:1420,price:0.44,bid:0.43,ask:0.45,prem:620000, sentiment:"BULL",type:"SWEEP",exch:"MULTIPLE",otm:"OTM $8.20",vol:211800,oi:89400,unusual:true, note:"Repeated sweeps building across multiple prints — pattern suggests accumulation. Someone is positioning for a catalyst or technical breakout."},
+  {id:7, time:"13:28:17",ticker:"META",exp:"Apr 17", strike:580,  side:"PUT", spot:601.20,qty:391, price:2.51,bid:2.48,ask:2.53,prem:980000, sentiment:"BEAR",type:"BLOCK",exch:"PHLX",    otm:"OTM $21.2",vol:18200,oi:42100,unusual:false,note:"Monthly put block — likely portfolio protection against long META position, not a directional bet. Standard institutional hedging behavior."},
+  {id:8, time:"13:19:44",ticker:"SPY", exp:"Mar 14",strike:574,  side:"CALL",spot:571.40,qty:914, price:0.83,bid:0.82,ask:0.84,prem:760000, sentiment:"BULL",type:"SWEEP",exch:"MULTIPLE",otm:"OTM $2.60",vol:62400,oi:198200,unusual:true, note:"Strike above call wall — speculative bet on breakout above SPX $5,750. Paid at ask, multi-exchange. High conviction directional play."},
+  {id:9, time:"13:11:28",ticker:"IWM", exp:"Mar 19",strike:205,  side:"PUT", spot:208.40,qty:874, price:0.62,bid:0.61,ask:0.63,prem:540000, sentiment:"BEAR",type:"BLOCK",exch:"ISE",     otm:"OTM $3.40",vol:24800,oi:71600,unusual:false,note:"Small-cap hedge — risk-off positioning in Russell 2000. Consistent with macro caution despite positive SPX gamma regime."},
+  {id:10,time:"13:04:55",ticker:"AMD", exp:"Mar 12",strike:120,  side:"CALL",spot:116.80,qty:1240,price:0.25,bid:0.24,ask:0.26,prem:310000, sentiment:"BULL",type:"SWEEP",exch:"MULTIPLE",otm:"OTM $3.20",vol:318400,oi:112800,unusual:true, note:"0DTE sweep following NVDA strength — sector momentum play. AMD lagging NVDA, this bet is on catch-up before close."},
+  {id:11,time:"12:58:33",ticker:"SPX", exp:"Mar 12",strike:5740, side:"CALL",spot:5718.4,qty:304, price:2.80,bid:2.78,ask:2.82,prem:852000, sentiment:"BULL",type:"SWEEP",exch:"CBOE",    otm:"OTM $21.6",vol:48200,oi:88400,unusual:true, note:"Bullish call above call wall at $5,750 — this is a breakout bet. Small size but above-ask execution signals conviction."},
+  {id:12,time:"12:51:14",ticker:"MSFT",exp:"Mar 19",strike:415,  side:"CALL",spot:404.70,qty:657, price:0.87,bid:0.82,ask:0.88,prem:572000, sentiment:"BULL",type:"SWEEP",exch:"MULTIPLE",otm:"OTM $10.3",vol:16190,oi:7300, unusual:false,note:"Mid-size call sweep, slightly above ask. Could be covering short calls or initiating new bullish position ahead of macro data."},
+];
+
+let typeF="ALL", sideF="ALL", unusualF=false, expandedId=null, sortCol="time", sortDir=-1;
+
+function fmtPrem(p){return p>=1e6?`$${(p/1e6).toFixed(2)}M`:p>=1e3?`$${(p/1e3).toFixed(0)}K`:`$${p}`;}
+function fmtNum(n){return n>=1e6?`${(n/1e6).toFixed(1)}M`:n>=1e3?`${(n/1e3).toFixed(0)}K`:n;}
+
+function setF(type,val){
+  if(type==='type'){
+    typeF=val;
+    ['All','Sweep','Block'].forEach(x=>{const el=document.getElementById('ft'+x);if(el)el.className='fbtn'+(val===x.toUpperCase()?' on':'');});
+  } else if(type==='side'){
+    sideF=val;
+    ['All','Call','Put'].forEach(x=>{const el=document.getElementById('fs'+x);if(el)el.className='fbtn'+(val===x.toUpperCase()?' on':'');});
+  } else if(type==='unusual'){
+    unusualF=!unusualF;
+    document.getElementById('fsUnusual').className='fbtn'+(unusualF?' on-gold':'');
+  }
+  render();
+}
+
+function sortBy(col){
+  if(sortCol===col) sortDir*=-1; else {sortCol=col;sortDir=-1;}
+  render();
+}
+
+function getFiltered(){
+  return FLOW.filter(f=>{
+    if(typeF!=='ALL'&&f.type!==typeF) return false;
+    if(sideF!=='ALL'&&f.side!==sideF) return false;
+    if(unusualF&&!f.unusual) return false;
+    return true;
+  }).sort((a,b)=>{
+    const map={time:'time',ticker:'ticker',spot:'spot',qty:'qty',price:'price',prem:'prem',vol:'vol',oi:'oi'};
+    const k=map[sortCol]||'time';
+    return a[k]>b[k]?sortDir:a[k]<b[k]?-sortDir:0;
+  });
+}
+
+function render(){
+  const rows=getFiltered();
+  document.getElementById('fcount').textContent=rows.length+' PRINTS';
+  const tbody=document.getElementById('flowBody');
+  tbody.innerHTML='';
+  rows.forEach(f=>{
+    const isBull=f.sentiment==='BULL';
+    const isSweep=f.type==='SWEEP';
+    const sc=isBull?'var(--accent)':'var(--red)';
+    const isExp=expandedId===f.id;
+
+    // MAIN ROW
+    const tr=document.createElement('tr');
+    tr.className='flow-row'+(isExp?' expanded':'')+(f.unusual?' new-row':'');
+    tr.onclick=()=>{expandedId=isExp?null:f.id;render();};
+    tr.innerHTML=`
+      <td style="width:14px;text-align:center">${f.unusual?'<span class="unusual-star">⚡</span>':''}</td>
+      <td style="color:var(--muted2)">${f.time}</td>
+      <td>
+        <span style="font-weight:700;color:var(--text);margin-right:6px">${f.ticker}</span>
+        <span style="color:var(--muted2);font-size:9px">${f.exp} $${f.strike.toLocaleString()}</span>
+        <span class="badge ${f.side==='CALL'?'b-call':'b-put'}" style="margin-left:5px">${f.side}</span>
+      </td>
+      <td style="color:var(--dim)">$${f.spot.toLocaleString()}</td>
+      <td style="color:var(--dim)">${fmtNum(f.qty)}</td>
+      <td style="color:var(--text);font-weight:500">$${f.price.toFixed(2)}</td>
+      <td style="color:var(--muted2);font-size:9px">$${f.bid.toFixed(2)} × $${f.ask.toFixed(2)}</td>
+      <td style="font-weight:600;color:${sc}">${fmtPrem(f.prem)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span class="sent-dot ${f.sentiment==='BULL'?'bull':f.sentiment==='BEAR'?'bear':'neutral'}"></span>
+          <span style="font-size:8px;color:${isBull?'var(--accent)':'var(--red)'}">${f.sentiment==='BULL'?'Bullish':f.sentiment==='BEAR'?'Bearish':'Neutral'}</span>
+        </div>
+      </td>
+      <td><span class="badge ${isSweep?'b-sweep':'b-block'}">${f.type}</span></td>
+      <td style="font-size:9px;color:var(--muted2)">${f.otm}</td>
+      <td style="font-size:9px;color:var(--muted)">${f.exch}</td>
+      <td style="color:var(--dim)">${fmtNum(f.vol)}</td>
+      <td style="color:var(--muted2)">${fmtNum(f.oi)}</td>
+    `;
+    tbody.appendChild(tr);
+
+    // DETAIL ROW
+    if(isExp){
+      const dr=document.createElement('tr');
+      dr.className='detail-row';
+      const borderColor=isBull?'rgba(0,212,170,.15)':'rgba(240,64,96,.15)';
+      dr.innerHTML=`<td colspan="14" style="border-bottom:1px solid ${borderColor}">
+        <div class="detail-inner">
+          ${[
+            ['STRIKE',`$${f.strike.toLocaleString()}`,'var(--text)'],
+            ['EXPIRY',f.exp,'var(--dim)'],
+            ['SPOT',`$${f.spot}`,'var(--dim)'],
+            ['PRICE',`$${f.price.toFixed(2)}`,'var(--text)'],
+            ['BID/ASK',`$${f.bid.toFixed(2)} / $${f.ask.toFixed(2)}`,'var(--muted2)'],
+            ['PREMIUM',fmtPrem(f.prem),sc],
+            ['QUANTITY',fmtNum(f.qty),'var(--dim)'],
+            ['VOLUME',fmtNum(f.vol),'var(--dim)'],
+            ['OI',fmtNum(f.oi),'var(--muted2)'],
+            ['MONEYNESS',f.otm,'var(--muted2)'],
+            ['EXCHANGE',f.exch,'var(--muted2)'],
+          ].map(([l,v,c])=>`<div class="d-stat"><div class="d-label">${l}</div><div class="d-val" style="color:${c}">${v}</div></div>`).join('')}
+          <div class="wtm" style="border:1px solid ${borderColor}">
+            <div class="wtm-label" style="color:${isBull?'var(--accent)':'var(--red)'}">▸ WHAT THIS MEANS</div>
+            <div class="wtm-text">${f.note}</div>
+          </div>
+        </div>
+      </td>`;
+      tbody.appendChild(dr);
+    }
+  });
+}
+
+render();
+
+// ── AI HOT PICKS ──
+const AI_PICKS=[
+  {rank:1,score:97,ticker:'NVDA',exp:'Mar 21',type:'CALL',strike:'$920',size:'$4.2M',signal:'SWEEP',conviction:'EXTREME',
+   reason:'Massive sweep above ask — 2,400 contracts hit in single print. IV at 78th percentile. Dark pool showed $890M accumulation yesterday. This is institutional positioning ahead of earnings.',
+   color:'var(--accent)'},
+  {rank:2,score:91,ticker:'SPY',exp:'0DTE',type:'CALL',strike:'$575',size:'$1.8M',signal:'BLOCK',conviction:'HIGH',
+   reason:'Large block bought on offer at 10:42am — unusual for 0DTE this size. GEX positive above $572. Call wall at $576. Risk/reward favors a squeeze into close.',
+   color:'var(--accent)'},
+  {rank:3,score:88,ticker:'TSLA',exp:'Feb 7',type:'PUT',strike:'$230',size:'$2.1M',signal:'SWEEP',conviction:'HIGH',
+   reason:'Multi-leg put sweep — 3 exchanges hit simultaneously. Below GEX flip at $240. Dark pool showing distribution. Earnings miss history 6/10 last years.',
+   color:'var(--red)'},
+  {rank:4,score:82,ticker:'META',exp:'Feb 14',type:'CALL',strike:'$620',size:'$980K',signal:'UNUSUAL',conviction:'MED-HIGH',
+   reason:'Open interest jumped 340% overnight at this strike. Premium buyer aggressive — paid $4.20 vs $3.10 mid. Consistent with dark pool accumulation pattern seen last 2 weeks.',
+   color:'var(--accent)'},
+  {rank:5,score:76,ticker:'QQQ',exp:'Jan 31',type:'PUT',strike:'$490',size:'$1.4M',signal:'REPEAT',conviction:'MED',
+   reason:'Third consecutive day of put buying at this strike from same counterparty signature. Smells like macro hedge from large fund. Net drift turning bearish on QQQ.',
+   color:'var(--red)'},
+];
+
+function renderAIPicks(){
+  document.getElementById('pickTime').textContent='Updated '+new Date().toLocaleTimeString('en-US',{hour12:false});
+  document.getElementById('aiPicksList').innerHTML=AI_PICKS.map(p=>`
+    <div style="flex-shrink:0;width:220px;padding:10px 12px;border-right:1px solid rgba(240,192,64,.12);cursor:pointer;transition:background .12s;" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background=''" onclick="showPickDetail(${p.rank-1})">
+      <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px;">
+        <span style="font-size:7px;background:rgba(240,192,64,.12);color:var(--gold);padding:1px 5px;border-radius:2px;font-weight:700;">#${p.rank}</span>
+        <span style="font-size:11px;font-weight:700;color:${p.color}">${p.ticker}</span>
+        <span style="font-size:7px;padding:1px 5px;border-radius:2px;font-weight:700;background:${p.type==='CALL'?'rgba(0,212,170,.1)':'rgba(240,64,96,.1)'};color:${p.type==='CALL'?'var(--accent)':'var(--red)'};">${p.type}</span>
+        <span style="margin-left:auto;font-size:8px;font-weight:700;color:var(--gold)">${p.score}</span>
+      </div>
+      <div style="font-size:8px;color:var(--muted2);margin-bottom:4px;">${p.strike} · ${p.exp} · ${p.size}</div>
+      <div style="display:flex;gap:4px;margin-bottom:6px;">
+        <span style="font-size:6px;font-weight:700;padding:1px 5px;border-radius:2px;background:rgba(255,128,64,.1);color:var(--orange)">${p.signal}</span>
+        <span style="font-size:6px;font-weight:700;padding:1px 5px;border-radius:2px;background:rgba(168,85,247,.1);color:var(--purple)">${p.conviction}</span>
+      </div>
+      <div style="font-size:7px;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.reason}</div>
+    </div>`).join('');
+}
+
+function showPickDetail(idx){
+  const p=AI_PICKS[idx];
+  // Flash the corresponding row in the flow table if it exists
+  const rows=document.querySelectorAll('.flow-row');
+  rows.forEach(r=>{
+    if(r.textContent.includes(p.ticker)){
+      r.style.background='rgba(240,192,64,.08)';
+      setTimeout(()=>r.style.background='',2000);
+    }
+  });
+}
+
+renderAIPicks();
+setInterval(renderAIPicks, 60000);
+
+</script>
+</body>
+</html>

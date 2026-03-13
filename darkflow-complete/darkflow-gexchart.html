@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DARKFLOW · GEX CHART</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080810;--surface:#0c0c18;--raised:#10101f;--hover:#14142a;
+  --border:#1c1c30;--bm:#252540;
+  --text:#e8e8f0;--dim:#b0b0c8;--muted2:#8888a8;--muted:#444460;
+  --accent:#00d4aa;--red:#f04060;--gold:#f0c040;--blue:#4888ff;--orange:#ff8040;--purple:#a855f7;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;overflow:hidden;-webkit-font-smoothing:antialiased;}
+.app{display:flex;flex-direction:column;height:100vh;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@keyframes flashGreen{0%,100%{background:transparent}50%{background:rgba(0,212,170,.18)}}
+@keyframes flashRed{0%,100%{background:transparent}50%{background:rgba(240,64,96,.18)}}
+@keyframes alertIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+::-webkit-scrollbar{width:3px;height:3px;}::-webkit-scrollbar-thumb{background:var(--bm);}
+
+/* TOPBAR */
+.topbar{flex-shrink:0;height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;}
+.logo{font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:13px;letter-spacing:.12em;color:var(--accent);display:flex;align-items:center;gap:8px;margin-right:20px;flex-shrink:0;}
+.logo-tri{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--accent);}
+.nav{display:flex;height:100%;overflow-x:auto;}
+.nav-tab{height:100%;padding:0 13px;display:flex;align-items:center;font-size:10px;font-weight:500;letter-spacing:.08em;white-space:nowrap;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;font-family:'IBM Plex Mono',monospace;}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;}
+
+/* INTEL */
+.intel{flex-shrink:0;margin:10px 16px 0;border-radius:6px;padding:9px 14px;display:flex;gap:14px;align-items:flex-start;position:relative;overflow:hidden;background:rgba(0,212,170,.05);border:1px solid rgba(0,212,170,.2);}
+.intel-shimmer{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,212,170,.6),transparent);animation:shimmer 3s infinite;}
+.intel-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:pulse 2s infinite;margin-top:2px;flex-shrink:0;}
+.intel-body{flex:1;min-width:0;}
+.intel-headline{display:flex;align-items:baseline;gap:10px;margin-bottom:3px;}
+.intel-bias{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--accent);}
+.intel-sub{font-size:8px;color:var(--muted2);}
+.intel-text{font-size:8px;color:var(--muted2);line-height:1.6;}
+.intel-stats{display:flex;gap:16px;flex-shrink:0;align-items:center;}
+.istat{display:flex;flex-direction:column;align-items:flex-end;}
+.istat-l{font-size:6px;color:var(--muted);letter-spacing:.1em;}
+.istat-v{font-size:11px;font-weight:700;}
+
+/* ALERT STACK */
+#alert-stack{position:fixed;top:54px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+.alert-toast{background:var(--surface);border-radius:4px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px;animation:alertIn .3s ease;pointer-events:all;min-width:260px;max-width:320px;box-shadow:0 8px 24px rgba(0,0,0,.5);}
+.alert-toast.green{border:1px solid rgba(0,212,170,.4);border-left:3px solid var(--accent);}
+.alert-toast.red{border:1px solid rgba(240,64,96,.4);border-left:3px solid var(--red);}
+.alert-toast.gold{border:1px solid rgba(240,192,64,.4);border-left:3px solid var(--gold);}
+.alert-toast.purple{border:1px solid rgba(168,85,247,.4);border-left:3px solid var(--purple);}
+.alert-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.alert-body{flex:1;min-width:0;}
+.alert-title{font-size:9px;font-weight:700;letter-spacing:.06em;margin-bottom:2px;}
+.alert-msg{font-size:8px;color:var(--muted2);line-height:1.5;}
+.alert-time{font-size:7px;color:var(--muted);margin-top:3px;}
+.alert-close{font-size:12px;color:var(--muted);cursor:pointer;flex-shrink:0;line-height:1;background:none;border:none;font-family:inherit;}
+.alert-close:hover{color:var(--text);}
+
+/* TICKER ROW */
+.ticker-bar{flex-shrink:0;height:36px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:5px;overflow-x:auto;margin-top:10px;}
+.t-label{font-size:7px;color:var(--muted);letter-spacing:.1em;flex-shrink:0;}
+.t-div{width:1px;height:14px;background:var(--border);flex-shrink:0;margin:0 4px;}
+.tbtn{height:22px;padding:0 10px;border-radius:2px;font-size:8px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace;flex-shrink:0;border:1px solid var(--border);color:var(--muted);background:transparent;letter-spacing:.06em;transition:all .12s;}
+.tbtn.on{border-color:var(--accent);color:var(--accent);background:rgba(0,212,170,.08);}
+.pill{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:2px;font-size:8px;font-weight:600;letter-spacing:.06em;flex-shrink:0;margin-left:auto;}
+.pill.green{background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.25);color:var(--accent);}
+.pill.red{background:rgba(240,64,96,.08);border:1px solid rgba(240,64,96,.25);color:var(--red);}
+.pill.gold{background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.25);color:var(--gold);}
+.pill.purple{background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.25);color:var(--purple);}
+
+/* CHART */
+.chart-wrap{flex:1;display:flex;flex-direction:column;margin:10px 16px 0;background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden;min-height:0;}
+.chart-header{flex-shrink:0;display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--border);}
+.ch-ticker{font-size:14px;font-weight:700;}
+.ch-price{font-size:12px;color:var(--dim);}
+.ch-change{font-size:9px;}
+.ch-legend{margin-left:auto;display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+.leg{display:flex;align-items:center;gap:5px;font-size:7px;color:var(--muted2);cursor:pointer;transition:opacity .15s;}
+.leg:hover{opacity:.7;}
+.leg-line{width:20px;height:2px;border-radius:1px;}
+.leg-line.dashed{background:repeating-linear-gradient(90deg,currentColor 0,currentColor 4px,transparent 4px,transparent 8px);}
+canvas#gexChart{display:block;width:100%;flex:1;}
+
+/* LEVEL TABLE */
+.levels{flex-shrink:0;margin:10px 16px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.levels-header{display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border);gap:10px;}
+.levels-title{font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--muted2);}
+.levels-grid{display:grid;grid-template-columns:repeat(5,1fr);}
+.lev{padding:10px 14px;border-right:1px solid var(--border);position:relative;}
+.lev:last-child{border-right:none;}
+.lev-label{font-size:6px;letter-spacing:.12em;color:var(--muted);margin-bottom:5px;}
+.lev-val{font-size:14px;font-weight:700;}
+.lev-sub{font-size:7px;margin-top:3px;}
+.lev-bar{position:absolute;bottom:0;left:0;right:0;height:2px;}
+.lev-alert{display:flex;align-items:center;gap:4px;font-size:7px;margin-top:5px;padding:2px 6px;border-radius:2px;cursor:pointer;width:fit-content;transition:opacity .15s;}
+.lev-alert:hover{opacity:.75;}
+.lev.flashing-green{animation:flashGreen 1s ease 3;}
+.lev.flashing-red{animation:flashRed 1s ease 3;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo"><div class="logo-tri"></div>DARKFLOW</div>
+    <div class="nav">
+      <button class="nav-tab">OVERVIEW</button>
+      <button class="nav-tab">OPTIONS FLOW</button>
+      <button class="nav-tab">GEX</button>
+      <button class="nav-tab active">GAMMA MAP</button>
+      <button class="nav-tab">PREMIUM DIVERGENCE</button>
+      <button class="nav-tab">DARK POOL</button>
+      <button class="nav-tab">STRIKE MATRIX</button>
+      <button class="nav-tab">JOURNAL</button>
+    </div>
+    <div class="topbar-right">
+      <div class="live-dot"></div>
+      <span style="font-size:10px;color:var(--muted2)" id="clk"></span>
+    </div>
+  </div>
+
+  <!-- INTEL BANNER -->
+  <div class="intel" id="intelBanner">
+    <div class="intel-shimmer"></div>
+    <div class="intel-dot"></div>
+    <div class="intel-body">
+      <div class="intel-headline">
+        <span class="intel-bias" id="biasLabel">POSITIVE GAMMA · BULLISH REGIME</span>
+        <span class="intel-sub" id="biasTime">as of 15:22:01</span>
+      </div>
+      <div class="intel-text" id="biasText">SPX is trading above the gamma flip at $5,720. Dealers are net long gamma — they sell strength and buy dips, creating a mechanical ceiling at the Call Wall ($5,750) and support at the Put Wall ($5,700). Price is pinned in a 50-point range. A close above $5,750 triggers a dealer squeeze.</div>
+    </div>
+    <div class="intel-stats">
+      <div class="istat">
+        <span class="istat-l">SPOT</span>
+        <span class="istat-v" style="color:var(--accent)" id="spotVal">$5,718</span>
+      </div>
+      <div class="istat">
+        <span class="istat-l">NET GEX</span>
+        <span class="istat-v" style="color:var(--accent)" id="gexVal">+$4.2B</span>
+      </div>
+      <div class="istat">
+        <span class="istat-l">REGIME</span>
+        <span class="istat-v" style="color:var(--accent)" id="regimeVal">LONG</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TICKER BAR -->
+  <div class="ticker-bar">
+    <span class="t-label">TICKER</span>
+    <button class="tbtn on" onclick="setTicker('SPX',this)">SPX</button>
+    <button class="tbtn" onclick="setTicker('SPY',this)">SPY</button>
+    <button class="tbtn" onclick="setTicker('QQQ',this)">QQQ</button>
+    <button class="tbtn" onclick="setTicker('TSLA',this)">TSLA</button>
+    <button class="tbtn" onclick="setTicker('NVDA',this)">NVDA</button>
+    <button class="tbtn" onclick="setTicker('AAPL',this)">AAPL</button>
+    <div class="t-div"></div>
+    <span class="t-label">TIMEFRAME</span>
+    <button class="tbtn on" onclick="setTF('1D',this)" id="tf1D">1D</button>
+    <button class="tbtn" onclick="setTF('5D',this)" id="tf5D">5D</button>
+    <button class="tbtn" onclick="setTF('1M',this)" id="tf1M">1M</button>
+    <div class="t-div"></div>
+    <div class="pill green"><span>●</span>ABOVE FLIP</div>
+    <div class="pill green" style="margin-left:6px">⚡ KING $5,740</div>
+    <div class="pill gold" style="margin-left:6px">◎ MAX PAIN $5,720</div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <span class="ch-ticker" id="chTicker">SPX</span>
+      <span class="ch-price" id="chPrice">$5,718.42</span>
+      <span class="ch-change" style="color:var(--accent)" id="chChange">+12.4 (+0.22%)</span>
+      <div class="ch-legend">
+        <div class="leg" onclick="toggleLevel('king')"><div class="leg-line" style="background:var(--gold);height:3px"></div><span style="color:var(--gold)">KING NODE</span></div>
+        <div class="leg" onclick="toggleLevel('call')"><div class="leg-line" style="background:var(--accent)"></div><span style="color:var(--accent)">CALL WALL</span></div>
+        <div class="leg" onclick="toggleLevel('put')"><div class="leg-line" style="background:var(--red)"></div><span style="color:var(--red)">PUT WALL</span></div>
+        <div class="leg" onclick="toggleLevel('flip')"><div class="leg-line" style="background:var(--blue)"></div><span style="color:var(--blue)">FLIP ZONE</span></div>
+        <div class="leg" onclick="toggleLevel('pain')"><div class="leg-line" style="background:var(--orange)"></div><span style="color:var(--orange)">MAX PAIN</span></div>
+      </div>
+    </div>
+    <canvas id="gexChart"></canvas>
+  </div>
+
+  <!-- LEVELS -->
+  <div class="levels">
+    <div class="levels-header">
+      <span class="levels-title">KEY GAMMA LEVELS</span>
+      <span style="font-size:7px;color:var(--muted);margin-left:auto">CLICK BELL TO ENABLE ALERT · ALERTS FIRE WHEN PRICE TOUCHES LEVEL</span>
+    </div>
+    <div class="levels-grid">
+
+      <div class="lev" id="lev-king">
+        <div class="lev-bar" style="background:var(--gold)"></div>
+        <div class="lev-label">⚡ KING NODE</div>
+        <div class="lev-val" style="color:var(--gold)">$5,740</div>
+        <div class="lev-sub" style="color:var(--muted2)">Highest GEX strike · 9.1M</div>
+        <div class="lev-alert" style="background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.2);color:var(--gold)" onclick="toggleAlert('king')">
+          <span id="bell-king">🔔</span><span id="alert-label-king">SET ALERT</span>
+        </div>
+      </div>
+
+      <div class="lev" id="lev-call">
+        <div class="lev-bar" style="background:var(--accent)"></div>
+        <div class="lev-label">▲ CALL WALL</div>
+        <div class="lev-val" style="color:var(--accent)">$5,750</div>
+        <div class="lev-sub" style="color:var(--muted2)">Dealer ceiling · resistance</div>
+        <div class="lev-alert" style="background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2);color:var(--accent)" onclick="toggleAlert('call')">
+          <span id="bell-call">🔔</span><span id="alert-label-call">SET ALERT</span>
+        </div>
+      </div>
+
+      <div class="lev" id="lev-flip">
+        <div class="lev-bar" style="background:var(--blue)"></div>
+        <div class="lev-label">◈ FLIP ZONE</div>
+        <div class="lev-val" style="color:var(--blue)">$5,720</div>
+        <div class="lev-sub" style="color:var(--muted2)">Zero gamma line · regime shift</div>
+        <div class="lev-alert" style="background:rgba(72,136,255,.08);border:1px solid rgba(72,136,255,.2);color:var(--blue)" onclick="toggleAlert('flip')">
+          <span id="bell-flip">🔔</span><span id="alert-label-flip">SET ALERT</span>
+        </div>
+      </div>
+
+      <div class="lev" id="lev-put">
+        <div class="lev-bar" style="background:var(--red)"></div>
+        <div class="lev-label">▼ PUT WALL</div>
+        <div class="lev-val" style="color:var(--red)">$5,700</div>
+        <div class="lev-sub" style="color:var(--muted2)">Dealer floor · support</div>
+        <div class="lev-alert" style="background:rgba(240,64,96,.08);border:1px solid rgba(240,64,96,.2);color:var(--red)" onclick="toggleAlert('put')">
+          <span id="bell-put">🔔</span><span id="alert-label-put">SET ALERT</span>
+        </div>
+      </div>
+
+      <div class="lev" id="lev-pain">
+        <div class="lev-bar" style="background:var(--orange)"></div>
+        <div class="lev-label">◎ MAX PAIN</div>
+        <div class="lev-val" style="color:var(--orange)">$5,720</div>
+        <div class="lev-sub" style="color:var(--muted2)">Options expiry magnet</div>
+        <div class="lev-alert" style="background:rgba(255,128,64,.08);border:1px solid rgba(255,128,64,.2);color:var(--orange)" onclick="toggleAlert('pain')">
+          <span id="bell-pain">🔔</span><span id="alert-label-pain">SET ALERT</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ALERT STACK -->
+<div id="alert-stack"></div>
+
+<script>
+// ── CLOCK ──
+setInterval(()=>{
+  const t=new Date().toLocaleTimeString('en-US',{hour12:false});
+  document.getElementById('clk').textContent=t;
+  document.getElementById('biasTime').textContent='as of '+t;
+},1000);
+
+// ── STATE ──
+const levels={
+  king:{price:5740,color:'#f0c040',label:'KING NODE',visible:true,alert:false},
+  call:{price:5750,color:'#00d4aa',label:'CALL WALL',visible:true,alert:false},
+  flip:{price:5720,color:'#4888ff',label:'FLIP ZONE',visible:true,alert:false},
+  put: {price:5700,color:'#f04060',label:'PUT WALL', visible:true,alert:false},
+  pain:{price:5720,color:'#ff8040',label:'MAX PAIN', visible:true,alert:false},
+};
+
+let spot=5718.42;
+let alertedLevels={};
+
+function toggleLevel(k){
+  levels[k].visible=!levels[k].visible;
+  drawChart();
+}
+
+// ── ALERTS ──
+function toggleAlert(k){
+  levels[k].alert=!levels[k].alert;
+  const bell=document.getElementById('bell-'+k);
+  const lbl=document.getElementById('alert-label-'+k);
+  if(levels[k].alert){
+    bell.textContent='🔕';
+    lbl.textContent='ALERT ON';
+    fireAlert(k,'ALERT SET','You\'ll be notified when price touches '+levels[k].label+' at $'+levels[k].price.toLocaleString(),'green');
+  } else {
+    bell.textContent='🔔';
+    lbl.textContent='SET ALERT';
+  }
+}
+
+function fireAlert(key,title,msg,type){
+  const stack=document.getElementById('alert-stack');
+  const toast=document.createElement('div');
+  toast.className='alert-toast '+type;
+  const icons={green:'▲',red:'▼',gold:'⚡',purple:'◉'};
+  toast.innerHTML=`
+    <div class="alert-icon">${icons[type]||'◈'}</div>
+    <div class="alert-body">
+      <div class="alert-title" style="color:var(--${type==='green'?'accent':type==='gold'?'gold':type==='red'?'red':'purple'})">${title}</div>
+      <div class="alert-msg">${msg}</div>
+      <div class="alert-time">${new Date().toLocaleTimeString('en-US',{hour12:false})}</div>
+    </div>
+    <button class="alert-close" onclick="this.parentElement.remove()">✕</button>`;
+  stack.appendChild(toast);
+  // Flash the level card
+  const lev=document.getElementById('lev-'+key);
+  if(lev){
+    lev.classList.add(type==='red'?'flashing-red':'flashing-green');
+    setTimeout(()=>lev.classList.remove('flashing-red','flashing-green'),3100);
+  }
+  setTimeout(()=>{ if(toast.parentElement)toast.remove(); },7000);
+}
+
+// ── TICKER / TF ──
+function setTicker(t,btn){
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('tf1D').classList.add('on');
+  document.getElementById('chTicker').textContent=t;
+  generateCandles();
+  drawChart();
+}
+function setTF(t,btn){
+  ['tf1D','tf5D','tf1M'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  btn.classList.add('on');
+  generateCandles();
+  drawChart();
+}
+
+// ── CANDLE DATA ──
+let candles=[];
+function generateCandles(){
+  candles=[];
+  let p=5680+Math.random()*60;
+  const n=78; // ~6.5hr of 5-min candles
+  for(let i=0;i<n;i++){
+    const o=p;
+    const move=(Math.random()-.48)*8;
+    const c=o+move;
+    const h=Math.max(o,c)+Math.random()*4;
+    const l=Math.min(o,c)-Math.random()*4;
+    candles.push({o,h,l,c,v:Math.random()*1e6+2e5});
+    p=c;
+  }
+  spot=candles[candles.length-1].c;
+  document.getElementById('chPrice').textContent='$'+spot.toFixed(2);
+  const chg=spot-candles[0].o;
+  const el=document.getElementById('chChange');
+  el.textContent=(chg>=0?'+':'')+chg.toFixed(1)+' ('+(chg>=0?'+':'')+(chg/candles[0].o*100).toFixed(2)+'%)';
+  el.style.color=chg>=0?'var(--accent)':'var(--red)';
+}
+
+// ── CHART DRAW ──
+const canvas=document.getElementById('gexChart');
+const ctx=canvas.getContext('2d');
+let W,H;
+
+function resize(){
+  W=canvas.offsetWidth;
+  H=canvas.offsetHeight;
+  canvas.width=W*devicePixelRatio;
+  canvas.height=H*devicePixelRatio;
+  ctx.scale(devicePixelRatio,devicePixelRatio);
+  drawChart();
+}
+
+function drawChart(){
+  if(!candles.length)return;
+  ctx.clearRect(0,0,W,H);
+
+  const PAD={top:20,right:70,bottom:30,left:14};
+  const cw=W-PAD.left-PAD.right;
+  const ch=H-PAD.top-PAD.bottom;
+
+  // price range
+  let lo=Infinity,hi=-Infinity;
+  candles.forEach(c=>{lo=Math.min(lo,c.l);hi=Math.max(hi,c.h);});
+  // include level prices in range
+  Object.values(levels).forEach(lv=>{ lo=Math.min(lo,lv.price-5); hi=Math.max(hi,lv.price+5); });
+  const pad=(hi-lo)*.08;
+  lo-=pad; hi+=pad;
+  const pY=p=>(PAD.top + (hi-p)/(hi-lo)*ch);
+  const pX=i=>(PAD.left + (i+.5)*(cw/candles.length));
+  const cWidth=Math.max(2,(cw/candles.length)*.7);
+
+  // background
+  ctx.fillStyle='#0c0c18';
+  ctx.fillRect(0,0,W,H);
+
+  // grid
+  const gridY=6;
+  ctx.strokeStyle='rgba(28,28,48,.6)';
+  ctx.lineWidth=1;
+  for(let i=0;i<=gridY;i++){
+    const y=PAD.top+i*(ch/gridY);
+    ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(W-PAD.right,y);ctx.stroke();
+    const price=hi-(hi-lo)*i/gridY;
+    ctx.fillStyle='#444460';
+    ctx.font='9px IBM Plex Mono';
+    ctx.textAlign='left';
+    ctx.fillText('$'+price.toFixed(0),W-PAD.right+4,y+3);
+  }
+
+  // volume bars (bottom 15% of chart)
+  const volH=ch*.12;
+  const maxVol=Math.max(...candles.map(c=>c.v));
+  candles.forEach((c,i)=>{
+    const x=pX(i);
+    const vH=(c.v/maxVol)*volH;
+    ctx.fillStyle=c.c>=c.o?'rgba(0,212,170,.18)':'rgba(240,64,96,.18)';
+    ctx.fillRect(x-cWidth/2, PAD.top+ch-vH, cWidth, vH);
+  });
+
+  // ── GAMMA LEVEL LINES ──
+  Object.entries(levels).forEach(([key,lv])=>{
+    if(!lv.visible)return;
+    const y=pY(lv.price);
+    if(y<PAD.top-2||y>PAD.top+ch+2)return;
+
+    ctx.save();
+    ctx.strokeStyle=lv.color;
+    ctx.lineWidth=1.5;
+    ctx.globalAlpha=.85;
+
+    // Solid line across full chart
+    ctx.beginPath();
+    ctx.moveTo(PAD.left,y);
+    ctx.lineTo(W-PAD.right,y);
+    ctx.stroke();
+
+    // Label on right
+    ctx.globalAlpha=1;
+    const labelW=86;
+    ctx.fillStyle=lv.color+'22';
+    ctx.fillRect(W-PAD.right+1,y-9,labelW,14);
+    ctx.strokeStyle=lv.color;
+    ctx.lineWidth=.5;
+    ctx.strokeRect(W-PAD.right+1,y-9,labelW,14);
+    ctx.fillStyle=lv.color;
+    ctx.font='700 8px IBM Plex Mono';
+    ctx.textAlign='left';
+    ctx.fillText(lv.label+'  $'+lv.price.toLocaleString(),W-PAD.right+5,y+2);
+
+    // Alert dot if active
+    if(lv.alert){
+      ctx.beginPath();
+      ctx.arc(W-PAD.right-6,y,3.5,0,Math.PI*2);
+      ctx.fillStyle=lv.color;
+      ctx.fill();
+    }
+    ctx.restore();
+  });
+
+  // ── CANDLES ──
+  candles.forEach((c,i)=>{
+    const x=pX(i);
+    const oY=pY(c.o),cY=pY(c.c),hY=pY(c.h),lY=pY(c.l);
+    const bull=c.c>=c.o;
+    const col=bull?'#00d4aa':'#f04060';
+
+    // Wick
+    ctx.strokeStyle=col;
+    ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,hY);ctx.lineTo(x,lY);ctx.stroke();
+
+    // Body
+    const bodyTop=Math.min(oY,cY);
+    const bodyH=Math.max(1,Math.abs(oY-cY));
+    ctx.fillStyle=bull?'rgba(0,212,170,.85)':'rgba(240,64,96,.85)';
+    ctx.fillRect(x-cWidth/2,bodyTop,cWidth,bodyH);
+  });
+
+  // ── SPOT LINE ──
+  const sY=pY(spot);
+  ctx.strokeStyle='rgba(255,255,255,.4)';
+  ctx.lineWidth=1;
+  ctx.setLineDash([3,4]);
+  ctx.beginPath();ctx.moveTo(PAD.left,sY);ctx.lineTo(W-PAD.right,sY);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Time axis
+  const step=Math.ceil(candles.length/8);
+  ctx.fillStyle='#444460';
+  ctx.font='8px IBM Plex Mono';
+  ctx.textAlign='center';
+  candles.forEach((c,i)=>{
+    if(i%step===0){
+      const mins=i*5;
+      const h=Math.floor(mins/60)+9;
+      const m=String(mins%60).padStart(2,'0');
+      ctx.fillText(h+':'+m,pX(i),PAD.top+ch+18);
+    }
+  });
+}
+
+// ── PRICE SIMULATION + ALERT TRIGGER ──
+let simInterval;
+function startSim(){
+  simInterval=setInterval(()=>{
+    if(!candles.length)return;
+    const last=candles[candles.length-1];
+    const move=(Math.random()-.49)*3;
+    last.c=Math.max(last.l,Math.min(last.h,last.c+move));
+    last.h=Math.max(last.h,last.c);
+    last.l=Math.min(last.l,last.c);
+    const prev=spot;
+    spot=last.c;
+    document.getElementById('spotVal').textContent='$'+spot.toFixed(0);
+    document.getElementById('chPrice').textContent='$'+spot.toFixed(2);
+
+    // Check alert triggers
+    Object.entries(levels).forEach(([key,lv])=>{
+      if(!lv.alert)return;
+      const dist=Math.abs(spot-lv.price);
+      const crossed=(prev<lv.price&&spot>=lv.price)||(prev>lv.price&&spot<=lv.price);
+      const near=dist<2&&!alertedLevels[key+'near'];
+
+      if(crossed&&!alertedLevels[key]){
+        alertedLevels[key]=true;
+        const above=spot>=lv.price;
+        const type=lv.color==='#f04060'?'red':lv.color==='#f0c040'?'gold':'green';
+        fireAlert(key,
+          '🎯 PRICE TOUCHED '+lv.label,
+          'SPX just '+(above?'broke above':'dropped through')+' '+lv.label+' at $'+lv.price.toLocaleString()+'. Watch for dealer reaction at this level.',
+          type
+        );
+        setTimeout(()=>delete alertedLevels[key],30000);
+      } else if(near&&dist<1){
+        alertedLevels[key+'near']=true;
+        fireAlert(key,
+          '⚠ APPROACHING '+lv.label,
+          'SPX within 1pt of '+lv.label+' ($'+lv.price.toLocaleString()+'). Prepare for reaction.',
+          'gold'
+        );
+        setTimeout(()=>delete alertedLevels[key+'near'],20000);
+      }
+    });
+
+    drawChart();
+  },800);
+}
+
+// ── INIT ──
+generateCandles();
+new ResizeObserver(resize).observe(canvas);
+resize();
+startSim();
+
+// Fire a demo alert after 4s so user sees how they look
+setTimeout(()=>{
+  fireAlert('call','▲ CALL WALL ALERT ARMED','Alerts are live. Price will trigger a notification when it touches any level you\'ve enabled. Set alerts on the level cards below.','green');
+},2500);
+</script>
+</body>
+</html>

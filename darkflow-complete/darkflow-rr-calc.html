@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DARKFLOW · R/R CALCULATOR</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080810;--surface:#0c0c18;--raised:#10101f;--hover:#14142a;
+  --border:#1c1c30;--bm:#252540;
+  --text:#e8e8f0;--dim:#b0b0c8;--muted2:#8888a8;--muted:#444460;
+  --accent:#00d4aa;--red:#f04060;--gold:#f0c040;--blue:#4888ff;--orange:#ff8040;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;-webkit-font-smoothing:antialiased;}
+.app{min-height:100vh;display:flex;flex-direction:column;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:var(--bm);}
+
+/* TOPBAR */
+.topbar{flex-shrink:0;height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;}
+.logo{font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:13px;letter-spacing:.12em;color:var(--accent);display:flex;align-items:center;gap:8px;}
+.logo-tri{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--accent);}
+.topbar-tag{font-size:8px;color:var(--muted2);letter-spacing:.1em;border:1px solid var(--border);padding:2px 8px;border-radius:2px;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;}
+
+/* LAYOUT */
+.body{flex:1;padding:16px;display:flex;flex-direction:column;gap:12px;max-width:680px;margin:0 auto;width:100%;}
+
+/* VERDICT BANNER */
+.verdict{border-radius:6px;padding:14px 16px;position:relative;overflow:hidden;animation:fadeUp .3s ease;}
+.verdict.take{background:rgba(0,212,170,.06);border:1px solid rgba(0,212,170,.25);}
+.verdict.skip{background:rgba(240,64,96,.06);border:1px solid rgba(240,64,96,.25);}
+.verdict.neutral{background:rgba(240,192,64,.06);border:1px solid rgba(240,192,64,.2);}
+.verdict.empty{background:var(--surface);border:1px solid var(--border);}
+.verdict-shimmer{position:absolute;top:0;left:0;right:0;height:2px;animation:shimmer 2.5s infinite;}
+.verdict.take .verdict-shimmer{background:linear-gradient(90deg,transparent,rgba(0,212,170,.6),transparent);}
+.verdict.skip .verdict-shimmer{background:linear-gradient(90deg,transparent,rgba(240,64,96,.6),transparent);}
+.verdict.neutral .verdict-shimmer{background:linear-gradient(90deg,transparent,rgba(240,192,64,.6),transparent);}
+.verdict-head{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.verdict-icon{font-size:20px;line-height:1;}
+.verdict-title{font-size:16px;font-weight:700;letter-spacing:.04em;}
+.verdict.take .verdict-title{color:var(--accent);}
+.verdict.skip .verdict-title{color:var(--red);}
+.verdict.neutral .verdict-title{color:var(--gold);}
+.verdict-sub{font-size:8px;color:var(--muted2);}
+.verdict-text{font-size:9px;color:var(--muted2);line-height:1.7;margin-top:4px;}
+
+/* INPUT CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:5px;overflow:hidden;}
+.card-header{padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.card-title{font-size:8px;font-weight:600;letter-spacing:.12em;color:var(--muted2);}
+.card-body{padding:14px;}
+
+/* INPUTS */
+.input-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.input-group{display:flex;flex-direction:column;gap:5px;}
+.input-label{font-size:7px;color:var(--muted);letter-spacing:.1em;}
+.input-wrap{position:relative;}
+.input-prefix{position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted2);pointer-events:none;}
+input[type=number]{width:100%;background:var(--raised);border:1px solid var(--border);border-radius:3px;padding:7px 8px 7px 20px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--text);outline:none;transition:border-color .15s;}
+input[type=number]:focus{border-color:var(--accent);}
+input[type=number]::-webkit-inner-spin-button{opacity:0;}
+.input-hint{font-size:7px;color:var(--muted);margin-top:2px;}
+
+/* TICKER + STRATEGY ROW */
+.meta-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+.select-wrap select{width:100%;background:var(--raised);border:1px solid var(--border);border-radius:3px;padding:7px 8px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text);outline:none;cursor:pointer;}
+input.ticker-input{width:100%;background:var(--raised);border:1px solid var(--border);border-radius:3px;padding:7px 8px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--text);outline:none;letter-spacing:.06em;text-transform:uppercase;}
+input.ticker-input:focus{border-color:var(--accent);}
+
+/* RESULTS GRID */
+.results-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+.res-card{background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:10px 12px;text-align:center;}
+.res-label{font-size:6px;color:var(--muted);letter-spacing:.12em;margin-bottom:5px;}
+.res-val{font-size:18px;font-weight:700;line-height:1;}
+.res-sub{font-size:7px;color:var(--muted2);margin-top:3px;}
+
+/* GAUGE */
+.gauge-wrap{margin-top:12px;}
+.gauge-label-row{display:flex;justify-content:space-between;margin-bottom:4px;}
+.gauge-label{font-size:7px;color:var(--muted);}
+.gauge-track{height:8px;background:var(--raised);border-radius:4px;overflow:hidden;position:relative;}
+.gauge-zones{display:flex;height:100%;gap:0;}
+.gauge-zone-bad{background:rgba(240,64,96,.25);flex:2;}
+.gauge-zone-ok{background:rgba(240,192,64,.2);flex:1;}
+.gauge-zone-good{background:rgba(0,212,170,.2);flex:2;}
+.gauge-needle{position:absolute;top:-2px;width:3px;height:12px;background:var(--text);border-radius:2px;transform:translateX(-50%);transition:left .4s cubic-bezier(.34,1.56,.64,1);}
+
+/* HISTORICAL CONTEXT */
+.hist-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.hist-row:last-child{border-bottom:none;}
+.hist-strategy{font-size:9px;font-weight:600;min-width:70px;flex-shrink:0;}
+.hist-wr{font-size:8px;min-width:48px;}
+.hist-bar-track{flex:1;height:5px;background:var(--raised);border-radius:2px;overflow:hidden;}
+.hist-bar-fill{height:100%;border-radius:2px;}
+.hist-verdict{font-size:7px;font-weight:700;padding:1px 6px;border-radius:2px;flex-shrink:0;}
+.hv-take{background:rgba(0,212,170,.13);color:var(--accent);border:1px solid rgba(0,212,170,.28);}
+.hv-skip{background:rgba(240,64,96,.13);color:var(--red);border:1px solid rgba(240,64,96,.28);}
+.hv-edge{background:rgba(240,192,64,.12);color:var(--gold);border:1px solid rgba(240,192,64,.25);}
+
+/* CONTRACTS ROW */
+.contracts-row{display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.contracts-label{font-size:7px;color:var(--muted);flex-shrink:0;}
+input.contracts-input{width:70px;background:var(--raised);border:1px solid var(--border);border-radius:3px;padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--text);outline:none;text-align:center;}
+input.contracts-input:focus{border-color:var(--accent);}
+.pnl-preview{display:flex;gap:12px;margin-left:auto;}
+.pnl-stat{text-align:right;}
+.pnl-stat-label{font-size:6px;color:var(--muted);letter-spacing:.1em;}
+.pnl-stat-val{font-size:11px;font-weight:700;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo"><div class="logo-tri"></div>DARKFLOW</div>
+  <div class="topbar-tag">PRE-TRADE R/R CALCULATOR</div>
+  <div class="topbar-right">
+    <div class="live-dot"></div>
+    <span style="font-size:10px;color:var(--muted2)" id="clock"></span>
+  </div>
+</div>
+
+<div class="body">
+
+  <!-- VERDICT -->
+  <div class="verdict empty" id="verdict">
+    <div class="verdict-shimmer"></div>
+    <div class="verdict-head">
+      <div class="verdict-icon">◆</div>
+      <div>
+        <div class="verdict-title" style="color:var(--muted2);font-size:13px;">ENTER YOUR TRADE PARAMETERS</div>
+        <div class="verdict-sub">Entry · Target · Stop → instant verdict</div>
+      </div>
+    </div>
+    <div class="verdict-text" id="verdictText" style="color:var(--muted)">Fill in your entry, target, and stop price below. DARKFLOW will calculate your R/R, break-even win rate, and tell you whether this trade is worth taking based on your journal history.</div>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">TRADE PARAMETERS</span>
+    </div>
+    <div class="card-body">
+
+      <!-- META -->
+      <div class="meta-row">
+        <div class="input-group">
+          <div class="input-label">TICKER</div>
+          <input class="ticker-input" id="ticker" type="text" placeholder="SPX" maxlength="5" oninput="calc()"/>
+        </div>
+        <div class="input-group">
+          <div class="input-label">STRATEGY</div>
+          <div class="select-wrap">
+            <select id="strategy" onchange="calc()">
+              <option value="0DTE">0DTE</option>
+              <option value="SWING">SWING</option>
+              <option value="SCALP">SCALP</option>
+              <option value="HEDGE">HEDGE</option>
+            </select>
+          </div>
+        </div>
+        <div class="input-group">
+          <div class="input-label">SIDE</div>
+          <div class="select-wrap">
+            <select id="side" onchange="calc()">
+              <option value="CALL">CALL</option>
+              <option value="PUT">PUT</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRICES -->
+      <div class="input-grid">
+        <div class="input-group">
+          <div class="input-label">ENTRY PRICE</div>
+          <div class="input-wrap">
+            <span class="input-prefix">$</span>
+            <input type="number" id="entry" placeholder="2.40" step="0.01" min="0" oninput="calc()"/>
+          </div>
+          <div class="input-hint">your fill price</div>
+        </div>
+        <div class="input-group">
+          <div class="input-label">TARGET PRICE</div>
+          <div class="input-wrap">
+            <span class="input-prefix">$</span>
+            <input type="number" id="target" placeholder="4.80" step="0.01" min="0" oninput="calc()"/>
+          </div>
+          <div class="input-hint">where you plan to exit</div>
+        </div>
+        <div class="input-group">
+          <div class="input-label">STOP PRICE</div>
+          <div class="input-wrap">
+            <span class="input-prefix">$</span>
+            <input type="number" id="stop" placeholder="1.20" step="0.01" min="0" oninput="calc()"/>
+          </div>
+          <div class="input-hint">your max loss point</div>
+        </div>
+      </div>
+
+      <!-- RESULTS -->
+      <div class="results-grid" id="resultsGrid" style="opacity:.3;pointer-events:none;">
+        <div class="res-card">
+          <div class="res-label">R/R RATIO</div>
+          <div class="res-val" id="rrVal" style="color:var(--gold)">—</div>
+          <div class="res-sub" id="rrSub">reward per $1 risked</div>
+        </div>
+        <div class="res-card">
+          <div class="res-label">BREAK-EVEN WIN RATE</div>
+          <div class="res-val" id="beVal" style="color:var(--dim)">—</div>
+          <div class="res-sub" id="beSub">min wins needed to profit</div>
+        </div>
+        <div class="res-card">
+          <div class="res-label">YOUR EDGE</div>
+          <div class="res-val" id="edgeVal">—</div>
+          <div class="res-sub" id="edgeSub">vs your journal win rate</div>
+        </div>
+      </div>
+
+      <!-- R/R GAUGE -->
+      <div class="gauge-wrap" id="gaugeWrap" style="opacity:.3;">
+        <div class="gauge-label-row">
+          <span class="gauge-label">POOR (&lt;1R)</span>
+          <span class="gauge-label">ACCEPTABLE (1–2R)</span>
+          <span class="gauge-label">STRONG (&gt;2R)</span>
+        </div>
+        <div class="gauge-track">
+          <div class="gauge-zones">
+            <div class="gauge-zone-bad"></div>
+            <div class="gauge-zone-ok"></div>
+            <div class="gauge-zone-good"></div>
+          </div>
+          <div class="gauge-needle" id="needle" style="left:0%"></div>
+        </div>
+      </div>
+
+      <!-- CONTRACTS + P&L PREVIEW -->
+      <div class="contracts-row">
+        <span class="contracts-label">CONTRACTS</span>
+        <input class="contracts-input" type="number" id="contracts" value="10" min="1" max="999" oninput="calc()"/>
+        <div class="pnl-preview">
+          <div class="pnl-stat">
+            <div class="pnl-stat-label">MAX GAIN</div>
+            <div class="pnl-stat-val" id="maxGain" style="color:var(--accent)">—</div>
+          </div>
+          <div class="pnl-stat">
+            <div class="pnl-stat-label">MAX LOSS</div>
+            <div class="pnl-stat-val" id="maxLoss" style="color:var(--red)">—</div>
+          </div>
+          <div class="pnl-stat">
+            <div class="pnl-stat-label">EV @ YOUR WR</div>
+            <div class="pnl-stat-val" id="ev">—</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- HISTORICAL CONTEXT -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">YOUR JOURNAL — WIN RATE BY SETUP</span>
+      <span style="font-size:7px;color:var(--muted);margin-left:8px">from last 47 trades</span>
+    </div>
+    <div class="card-body" id="histBody"></div>
+  </div>
+
+</div>
+</div>
+
+<script>
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-US',{hour12:false});},1000);
+
+// Journal history — win rates by strategy + ticker
+const HISTORY = {
+  '0DTE':  { wr: 0.617, trades: 22, bestTicker:'SPX',  bestWR:0.74, worstTicker:'TSLA', worstWR:0.29 },
+  'SWING': { wr: 0.545, trades: 11, bestTicker:'NVDA', bestWR:0.67, worstTicker:'TSLA', worstWR:0.33 },
+  'SCALP': { wr: 0.556, trades:  9, bestTicker:'SPX',  bestWR:0.70, worstTicker:'AMD',  worstWR:0.40 },
+  'HEDGE': { wr: 0.400, trades:  5, bestTicker:'SPY',  bestWR:0.50, worstTicker:'QQQ',  worstWR:0.33 },
+};
+
+// Ticker-specific overrides
+const TICKER_WR = {
+  'SPX':{'0DTE':0.74,'SWING':0.62,'SCALP':0.70,'HEDGE':0.50},
+  'SPY':{'0DTE':0.62,'SWING':0.55,'SCALP':0.58,'HEDGE':0.50},
+  'NVDA':{'0DTE':0.55,'SWING':0.67,'SCALP':0.50,'HEDGE':0.40},
+  'TSLA':{'0DTE':0.29,'SWING':0.33,'SCALP':0.38,'HEDGE':0.30},
+  'AMD': {'0DTE':0.48,'SWING':0.44,'SCALP':0.40,'HEDGE':0.35},
+  'AAPL':{'0DTE':0.58,'SWING':0.60,'SCALP':0.55,'HEDGE':0.45},
+  'QQQ': {'0DTE':0.60,'SWING':0.52,'SCALP':0.56,'HEDGE':0.33},
+  'META':{'0DTE':0.52,'SWING':0.48,'SCALP':0.50,'HEDGE':0.40},
+};
+
+function fmt(n){return n>=1000?'$'+(n/1000).toFixed(1)+'K':'$'+n.toFixed(0);}
+
+function getWR(){
+  const t=(document.getElementById('ticker').value||'').toUpperCase();
+  const s=document.getElementById('strategy').value;
+  if(TICKER_WR[t]&&TICKER_WR[t][s]!==undefined) return TICKER_WR[t][s];
+  return HISTORY[s]?.wr || 0.55;
+}
+
+function calc(){
+  const entry=parseFloat(document.getElementById('entry').value);
+  const target=parseFloat(document.getElementById('target').value);
+  const stop=parseFloat(document.getElementById('stop').value);
+  const contracts=parseInt(document.getElementById('contracts').value)||1;
+  const strategy=document.getElementById('strategy').value;
+  const ticker=(document.getElementById('ticker').value||'').toUpperCase();
+
+  const valid = entry>0 && target>0 && stop>0 && target>entry && entry>stop;
+  document.getElementById('resultsGrid').style.opacity = valid?'1':'0.3';
+  document.getElementById('resultsGrid').style.pointerEvents = valid?'auto':'none';
+  document.getElementById('gaugeWrap').style.opacity = valid?'1':'0.3';
+
+  if(!valid){
+    setVerdict('empty','◆','ENTER YOUR TRADE PARAMETERS','Fill in your entry, target, and stop price. Entry must be between stop and target.');
+    return;
+  }
+
+  const reward = target - entry;
+  const risk   = entry  - stop;
+  const rr     = reward / risk;
+  const be     = 1 / (1 + rr);        // break-even win rate
+  const wr     = getWR();
+  const edge   = wr - be;             // positive = edge exists
+
+  const maxGain = reward * contracts * 100;
+  const maxLoss = risk   * contracts * 100;
+  const ev      = (wr * maxGain) - ((1-wr) * maxLoss);
+
+  // Update result cards
+  document.getElementById('rrVal').textContent = rr.toFixed(2)+'R';
+  document.getElementById('rrVal').style.color = rr>=2?'var(--accent)':rr>=1?'var(--gold)':'var(--red)';
+  document.getElementById('beVal').textContent = (be*100).toFixed(1)+'%';
+  document.getElementById('beVal').style.color = be<wr?'var(--accent)':'var(--red)';
+  document.getElementById('beSub').textContent = `you win ${(wr*100).toFixed(0)}% on this setup`;
+
+  const edgePct = (edge*100).toFixed(1);
+  document.getElementById('edgeVal').textContent = (edge>=0?'+':'')+edgePct+'%';
+  document.getElementById('edgeVal').style.color = edge>=0.1?'var(--accent)':edge>=0?'var(--gold)':'var(--red)';
+  document.getElementById('edgeSub').textContent = edge>=0.1?'strong edge':edge>0?'marginal edge':'no edge here';
+
+  // P&L preview
+  document.getElementById('maxGain').textContent = fmt(maxGain);
+  document.getElementById('maxLoss').textContent = '-'+fmt(maxLoss);
+  document.getElementById('ev').textContent = (ev>=0?'+':'')+fmt(ev);
+  document.getElementById('ev').style.color = ev>=0?'var(--accent)':'var(--red)';
+
+  // Gauge needle — map rr 0..4 to 0..100%
+  const needlePct = Math.min(95, Math.max(2, (rr/4)*100));
+  document.getElementById('needle').style.left = needlePct+'%';
+
+  // VERDICT
+  const tickerLabel = ticker||'this setup';
+  if(rr >= 2 && edge >= 0.1){
+    setVerdict('take','✓ TAKE THIS TRADE',
+      `${rr.toFixed(2)}R · ${(wr*100).toFixed(0)}% win rate · +$${Math.round(ev).toLocaleString()} expected value`,
+      `Your historical win rate on ${tickerLabel} ${strategy} trades is ${(wr*100).toFixed(0)}%. You only need to win ${(be*100).toFixed(0)}% to break even at ${rr.toFixed(2)}R. You have a ${edgePct}% edge on this trade. Max gain ${fmt(maxGain)} vs max loss ${fmt(maxLoss)} on ${contracts} contract${contracts>1?'s':''}. This is a high-quality setup — take it.`
+    );
+  } else if(rr >= 1.5 && edge >= 0){
+    setVerdict('neutral','◆ ACCEPTABLE TRADE',
+      `${rr.toFixed(2)}R · marginal edge · proceed with discipline`,
+      `R/R is acceptable at ${rr.toFixed(2)}R and you have a slight edge (${edgePct}%). However this is not your A+ setup. Only take this trade if the GEX regime and flow signals align. Expected value is ${fmt(Math.abs(ev))} ${ev>=0?'positive':'negative'} per trade at your current win rate.`
+    );
+  } else if(rr < 1){
+    setVerdict('skip','✗ SKIP THIS TRADE',
+      `Only ${rr.toFixed(2)}R — you need to win ${(be*100).toFixed(0)}% just to break even`,
+      `At ${rr.toFixed(2)}R you need a ${(be*100).toFixed(0)}% win rate to be profitable. Your historical win rate on ${tickerLabel} ${strategy} is ${(wr*100).toFixed(0)}%. You do not have the edge to justify this risk/reward. Widen your target or tighten your stop before entering.`
+    );
+  } else if(edge < 0){
+    setVerdict('skip','✗ NO EDGE',
+      `Your ${(wr*100).toFixed(0)}% win rate is below the ${(be*100).toFixed(0)}% needed to profit here`,
+      `Even though the R/R is ${rr.toFixed(2)}R, your historical win rate on ${tickerLabel} ${strategy} trades (${(wr*100).toFixed(0)}%) is below the break-even requirement (${(be*100).toFixed(0)}%). You would lose money on this trade over time. Find a better entry or skip it.`
+    );
+  } else {
+    setVerdict('neutral','◆ MARGINAL EDGE',
+      `${rr.toFixed(2)}R · ${(wr*100).toFixed(0)}% win rate · borderline`,
+      `This trade has a slim edge of ${edgePct}%. It is technically profitable but barely. Consider if there is a better entry point that improves your R/R above 2.0R, which is where your edge becomes meaningful.`
+    );
+  }
+
+  buildHist(rr, be, wr, strategy);
+}
+
+function setVerdict(cls, title, sub, text){
+  const el=document.getElementById('verdict');
+  el.className='verdict '+cls;
+  el.innerHTML=`<div class="verdict-shimmer"></div>
+    <div class="verdict-head">
+      <div class="verdict-icon">${cls==='take'?'✓':cls==='skip'?'✗':'◆'}</div>
+      <div>
+        <div class="verdict-title">${title}</div>
+        <div class="verdict-sub">${sub}</div>
+      </div>
+    </div>
+    <div class="verdict-text">${text}</div>`;
+}
+
+function buildHist(rr, be, currentWR, currentStrat){
+  const el=document.getElementById('histBody');
+  el.innerHTML='';
+  Object.entries(HISTORY).forEach(([strat,h])=>{
+    const isActive=strat===currentStrat;
+    const beHere = be;
+    const hasEdge = h.wr > beHere;
+    const edgeStrong = h.wr - beHere > 0.1;
+    const verdictClass = edgeStrong?'hv-take':hasEdge?'hv-edge':'hv-skip';
+    const verdictText = edgeStrong?'TAKE':hasEdge?'EDGE?':'SKIP';
+    el.innerHTML+=`<div class="hist-row" style="${isActive?'background:var(--raised);margin:0 -14px;padding:8px 14px;':''}">
+      <span class="hist-strategy" style="color:${isActive?'var(--text)':'var(--muted2)'}">${strat}${isActive?' ◀':''}</span>
+      <span class="hist-wr" style="color:${h.wr>beHere?'var(--accent)':'var(--red)'}">${(h.wr*100).toFixed(0)}% WR</span>
+      <div class="hist-bar-track">
+        <div class="hist-bar-fill" style="width:${h.wr*100}%;background:${h.wr>beHere?'var(--accent)':'var(--red)'}"></div>
+      </div>
+      <span style="font-size:7px;color:var(--muted);min-width:20px;text-align:right">${h.trades}T</span>
+      <span class="hist-verdict ${verdictClass}">${verdictText}</span>
+    </div>`;
+  });
+
+  // Add context note
+  const ticker=(document.getElementById('ticker').value||'').toUpperCase();
+  if(TICKER_WR[ticker]){
+    el.innerHTML+=`<div style="margin-top:10px;padding:8px 10px;background:var(--raised);border-radius:3px;border:1px solid var(--border)">
+      <div style="font-size:6px;color:var(--muted);letter-spacing:.1em;margin-bottom:4px">${ticker} SPECIFIC HISTORY</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        ${Object.entries(TICKER_WR[ticker]).map(([s,w])=>`
+          <div style="font-size:8px;color:${w>be?'var(--accent)':'var(--red)'}">
+            ${s}: <span style="font-weight:700">${(w*100).toFixed(0)}%</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }
+}
+
+// init
+buildHist(2, 0.33, 0.617, '0DTE');
+</script>
+</body>
+</html>

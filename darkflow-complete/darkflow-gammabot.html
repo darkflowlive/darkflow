@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DARKFLOW · GAMMA BOT</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080810;--surface:#0c0c18;--raised:#10101f;--hover:#14142a;
+  --border:#1c1c30;--bm:#252540;
+  --text:#e8e8f0;--dim:#b0b0c8;--muted2:#8888a8;--muted:#444460;
+  --accent:#00d4aa;--red:#f04060;--gold:#f0c040;--blue:#4888ff;--orange:#ff8040;--purple:#a855f7;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;-webkit-font-smoothing:antialiased;overflow:hidden;}
+.app{display:flex;flex-direction:column;height:100vh;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+@keyframes alertPop{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes scanline{0%{top:-5%}100%{top:105%}}
+@keyframes fillBar{from{width:0}to{width:var(--w)}}
+@keyframes countUp{from{opacity:0}to{opacity:1}}
+@keyframes borderPulse{0%,100%{border-color:rgba(240,192,64,.2)}50%{border-color:rgba(240,192,64,.6)}}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:var(--bm);}
+
+/* TOPBAR */
+.topbar{flex-shrink:0;height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;}
+.logo{font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:13px;letter-spacing:.12em;color:var(--accent);display:flex;align-items:center;gap:8px;margin-right:20px;flex-shrink:0;}
+.logo-tri{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--accent);}
+.nav{display:flex;height:100%;overflow-x:auto;}
+.nav-tab{height:100%;padding:0 13px;font-size:10px;font-weight:500;letter-spacing:.08em;white-space:nowrap;color:var(--muted);border:none;border-bottom:2px solid transparent;background:none;font-family:'IBM Plex Mono',monospace;cursor:pointer;}
+.nav-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;}
+
+/* LAYOUT */
+.body{flex:1;display:flex;overflow:hidden;}
+
+/* LEFT — CHART + LEVELS */
+.chart-panel{width:420px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.chart-header{flex-shrink:0;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;gap:10px;}
+.chart-ticker{font-size:14px;font-weight:700;}
+.chart-price{font-size:13px;font-weight:700;color:var(--accent);}
+.chart-change{font-size:9px;}
+canvas#miniChart{display:block;width:100%;}
+
+.levels-wrap{flex-shrink:0;border-top:1px solid var(--border);}
+.lev-header{padding:7px 14px;font-size:8px;font-weight:700;letter-spacing:.1em;color:var(--muted2);border-bottom:1px solid var(--border);background:var(--surface);}
+.lev-row{display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid rgba(28,28,48,.5);cursor:pointer;transition:background .1s;gap:10px;}
+.lev-row:last-child{border-bottom:none;}
+.lev-row:hover{background:var(--hover);}
+.lev-row.triggered{animation:borderPulse 1s ease 3;}
+.lev-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.lev-name{font-size:8px;font-weight:700;letter-spacing:.08em;width:80px;flex-shrink:0;}
+.lev-price{font-size:13px;font-weight:700;flex:1;}
+.lev-dist{font-size:8px;text-align:right;flex-shrink:0;width:56px;}
+.lev-status{font-size:7px;font-weight:700;padding:2px 6px;border-radius:2px;flex-shrink:0;}
+
+/* MIDDLE — PROBABILITY ENGINE */
+.prob-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border);}
+.prob-header{flex-shrink:0;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;gap:8px;}
+.prob-title{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--muted2);}
+.prob-body{flex:1;overflow-y:auto;padding:12px;}
+
+/* PROBABILITY CARD */
+.prob-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:10px;animation:alertPop .25s ease;}
+.pc-banner{padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.pc-level-tag{font-size:8px;font-weight:700;padding:3px 8px;border-radius:2px;letter-spacing:.08em;}
+.pc-ticker{font-size:13px;font-weight:700;}
+.pc-price{font-size:11px;font-weight:700;}
+.pc-time{font-size:8px;color:var(--muted);margin-left:auto;}
+.pc-body{padding:12px 14px;display:flex;flex-direction:column;gap:10px;}
+
+/* PROBABILITY BARS */
+.prob-scenario{display:flex;flex-direction:column;gap:5px;}
+.ps-top{display:flex;align-items:center;justify-content:space-between;}
+.ps-label{font-size:8px;font-weight:700;letter-spacing:.06em;}
+.ps-pct{font-size:16px;font-weight:700;}
+.ps-track{height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+.ps-fill{height:100%;border-radius:4px;animation:fillBar .6s ease forwards;}
+.ps-detail{font-size:7px;color:var(--muted2);line-height:1.6;}
+
+.divider-or{display:flex;align-items:center;gap:8px;margin:2px 0;}
+.divider-or::before,.divider-or::after{content:'';flex:1;height:1px;background:var(--border);}
+.divider-or span{font-size:7px;color:var(--muted);letter-spacing:.1em;}
+
+/* HISTORICAL ROW */
+.hist-strip{background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:8px 10px;}
+.hs-title{font-size:7px;color:var(--muted);letter-spacing:.1em;margin-bottom:6px;}
+.hs-row{display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:8px;}
+.hs-row:last-child{margin-bottom:0;}
+.hs-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.hs-outcome{width:16px;font-weight:700;flex-shrink:0;}
+.hs-desc{flex:1;color:var(--dim);}
+.hs-result{font-weight:700;flex-shrink:0;}
+
+/* VERDICT */
+.verdict{border-radius:4px;padding:10px 12px;display:flex;align-items:flex-start;gap:10px;}
+.verdict-icon{font-size:16px;flex-shrink:0;}
+.verdict-body{flex:1;}
+.verdict-title{font-size:9px;font-weight:700;letter-spacing:.06em;margin-bottom:3px;}
+.verdict-text{font-size:8px;color:var(--muted2);line-height:1.6;}
+
+/* RIGHT — BOT FEED */
+.bot-panel{width:300px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;}
+.bot-header{flex-shrink:0;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;gap:8px;}
+.bot-status{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 2s infinite;}
+.bot-feed{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+
+/* BOT MESSAGE */
+.bot-msg{border-radius:4px;padding:8px 10px;animation:slideIn .2s ease;}
+.bm-time{font-size:6px;color:var(--muted);letter-spacing:.1em;margin-bottom:4px;}
+.bm-text{font-size:8px;line-height:1.65;}
+.bm-text.alert{color:var(--gold);}
+.bm-text.bullish{color:var(--accent);}
+.bm-text.bearish{color:var(--red);}
+.bm-text.neutral{color:var(--muted2);}
+
+/* STAT ROW */
+.stat-row{display:flex;gap:0;border-top:1px solid var(--border);flex-shrink:0;}
+.sr{flex:1;padding:7px 10px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:1px;}
+.sr:last-child{border-right:none;}
+.sr-v{font-size:13px;font-weight:700;}
+.sr-l{font-size:6px;color:var(--muted);letter-spacing:.08em;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo"><div class="logo-tri"></div>DARKFLOW</div>
+  <div class="nav">
+    <button class="nav-tab">OVERVIEW</button>
+    <button class="nav-tab">OPTIONS FLOW</button>
+    <button class="nav-tab">GAMMA MAP</button>
+    <button class="nav-tab active">GAMMA AI</button>
+    <button class="nav-tab">AI ALERTS</button>
+    <button class="nav-tab">EARNINGS DATA</button>
+  </div>
+  <div class="topbar-right">
+    <div class="live-dot"></div>
+    <span style="font-size:10px;color:var(--muted2)" id="clk"></span>
+  </div>
+</div>
+
+<div class="body">
+
+  <!-- LEFT: MINI CHART + LEVELS -->
+  <div class="chart-panel">
+    <div class="chart-header">
+      <span class="chart-ticker">SPX</span>
+      <span class="chart-price" id="spotPrice">$5,718</span>
+      <span class="chart-change" id="spotChange" style="color:var(--accent)">+12.4 (+0.22%)</span>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:5px;font-size:7px;color:var(--muted)">
+        <div style="width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite"></div>
+        LIVE
+      </div>
+    </div>
+    <canvas id="miniChart" style="height:180px;"></canvas>
+    <div class="levels-wrap">
+      <div class="lev-header">GAMMA LEVELS · CLICK TO SIMULATE TOUCH</div>
+      <div id="levelsTable"></div>
+    </div>
+    <div class="stat-row">
+      <div class="sr"><span class="sr-v" style="color:var(--accent)" id="botFired">0</span><span class="sr-l">ALERTS FIRED</span></div>
+      <div class="sr"><span class="sr-v" style="color:var(--gold)">A/A+</span><span class="sr-l">THRESHOLD</span></div>
+      <div class="sr"><span class="sr-v" style="color:var(--text)" id="regimeLabel">LONG γ</span><span class="sr-l">REGIME</span></div>
+    </div>
+  </div>
+
+  <!-- MIDDLE: PROBABILITY ENGINE -->
+  <div class="prob-panel">
+    <div class="prob-header">
+      <span style="color:var(--gold);font-size:12px">◈</span>
+      <span class="prob-title">GAMMA BOT · PROBABILITY ENGINE</span>
+      <span style="margin-left:auto;font-size:7px;color:var(--muted)" id="probCount">0 scenarios fired</span>
+    </div>
+    <div class="prob-body" id="probBody">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;color:var(--muted);">
+        <div style="font-size:28px;">◈</div>
+        <div style="font-size:10px;font-weight:700;color:var(--dim);">WATCHING GAMMA LEVELS</div>
+        <div style="font-size:8px;color:var(--muted);text-align:center;line-height:2;letter-spacing:.06em;">
+          PROBABILITY CARD FIRES WHEN<br>
+          PRICE APPROACHES A KEY LEVEL<br><br>
+          CLICK ANY LEVEL TO SIMULATE
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: BOT FEED -->
+  <div class="bot-panel">
+    <div class="bot-header">
+      <div class="bot-status"></div>
+      <span style="font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--muted2)">GAMMA BOT FEED</span>
+    </div>
+    <div class="bot-feed" id="botFeed"></div>
+  </div>
+
+</div>
+</div>
+
+<script>
+setInterval(()=>document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-US',{hour12:false}),1000);
+
+// ── GAMMA LEVELS ──
+const LEVELS=[
+  {key:'king',  label:'KING NODE', price:5740, color:'var(--gold)',   gex:9.1,
+   long_pct:38, long_target:5780, long_target_label:'upper node $5,780',
+   short_pct:62, short_target:5720, short_target_label:'flip zone $5,720',
+   hist_reject:7, hist_total:10,
+   hist:[
+     {dir:1,desc:'Price squeezed through king node on high-vol day',result:'+1.4%',outcome:'broke'},
+     {dir:-1,desc:'Rejected at king node, faded to flip zone',result:'-1.8%',outcome:'rejected'},
+     {dir:-1,desc:'Double-tap rejection, dealers sold aggressively',result:'-2.1%',outcome:'rejected'},
+   ],
+   dealer_note:'Dealers are net short above this level — forced to sell rallies. King node is the gravitational center. Breaking above requires overwhelming buy flow.',
+   verdict:'FADE','verdict_color':'var(--red)',
+   verdict_text:'7/10 historical rejections at king node. Dealer short exposure above creates mechanical resistance. Probability strongly favors a fade back to flip zone.'},
+
+  {key:'call',  label:'CALL WALL', price:5750, color:'var(--accent)',  gex:7.4,
+   long_pct:28, long_target:5780, long_target_label:'squeeze to $5,780',
+   short_pct:72, short_target:5718, short_target_label:'back to spot $5,718',
+   hist_reject:8, hist_total:11,
+   hist:[
+     {dir:-1,desc:'Call wall held, faded 32pts back to put wall',result:'-0.6%',outcome:'rejected'},
+     {dir:-1,desc:'Intraday touch, closed below wall',result:'-0.4%',outcome:'rejected'},
+     {dir:1, desc:'Massive call buying broke wall, squeezed to $5,780',result:'+0.6%',outcome:'broke'},
+   ],
+   dealer_note:'$7.4B GEX at this strike. Dealers are short gamma here and must sell into any rally. A break above requires 3x normal buy flow to overcome dealer hedging.',
+   verdict:'FADE','verdict_color':'var(--red)',
+   verdict_text:'8/11 rejections at call wall. Dealers mechanically sell above this level. Only take longs if you see a sweep print confirm the break — otherwise fade is the highest probability play.'},
+
+  {key:'flip',  label:'FLIP ZONE', price:5720, color:'var(--blue)',   gex:0,
+   long_pct:55, long_target:5750, long_target_label:'call wall $5,750',
+   short_pct:45, short_target:5700, short_target_label:'put wall $5,700',
+   hist_reject:5, hist_total:10,
+   hist:[
+     {dir:1, desc:'Bounced off flip zone, reclaimed positive gamma',result:'+0.8%',outcome:'bounced'},
+     {dir:-1,desc:'Failed to hold flip, dropped to put wall',result:'-0.4%',outcome:'failed'},
+     {dir:1, desc:'Flip zone tested twice then ripped higher',result:'+1.2%',outcome:'bounced'},
+   ],
+   dealer_note:'Zero gamma at this level — no mechanical support or resistance from dealers. Direction depends entirely on whether buyers or sellers win the battle here.',
+   verdict:'NEUTRAL — WATCH DIRECTION','verdict_color':'var(--blue)',
+   verdict_text:'Flip zone is a coin flip without confirmation. Wait for price action — a reclaim and hold means bullish continuation. A failure and close below means negative gamma regime begins, amplifying any downside.'},
+
+  {key:'put',   label:'PUT WALL',  price:5700, color:'var(--red)',    gex:-7.7,
+   long_pct:68, long_target:5720, long_target_label:'flip zone $5,720',
+   short_pct:32, short_target:5680, short_target_label:'lower node $5,680',
+   hist_reject:7, hist_total:10,
+   hist:[
+     {dir:1, desc:'Put wall acted as support, bounced sharply',result:'+0.7%',outcome:'bounced'},
+     {dir:1, desc:'Dip buyers at put wall, V-shaped recovery',result:'+0.5%',outcome:'bounced'},
+     {dir:-1,desc:'Put wall breached on high volume, no support',result:'-1.1%',outcome:'broke'},
+   ],
+   dealer_note:'Dealers are long puts below this level — they must buy the underlying to hedge, creating a mechanical bid. This is the most reliable support level in positive gamma.',
+   verdict:'BUY THE LEVEL','verdict_color':'var(--accent)',
+   verdict_text:'7/10 bounces at put wall in positive gamma regime. Dealer buying creates a mechanical floor. Highest probability play: buy the touch, stop below $5,695. Target flip zone $5,720.'},
+
+  {key:'pain',  label:'MAX PAIN',  price:5720, color:'var(--orange)', gex:0,
+   long_pct:50, long_target:5740, long_target_label:'king node $5,740',
+   short_pct:50, short_target:5700, short_target_label:'put wall $5,700',
+   hist_reject:6, hist_total:10,
+   hist:[
+     {dir:1, desc:'Price pinned near max pain into close',result:'+0.1%',outcome:'pinned'},
+     {dir:-1,desc:'Price drifted toward max pain from above',result:'-0.3%',outcome:'pinned'},
+     {dir:1, desc:'Max pain acted as magnet, bounced off it',result:'+0.2%',outcome:'pinned'},
+   ],
+   dealer_note:'Max pain is where options market makers have maximum profitability at expiration. Price is magnetically drawn here into expiry. Strongest effect in the final 2 hours of expiry day.',
+   verdict:'PIN RISK — EXPIRY MAGNET','verdict_color':'var(--orange)',
+   verdict_text:'Max pain exerts gravitational pull especially on expiry day. Momentum trades fade, range contracts. Best played by avoiding directional bets near expiry — let time decay work if you sold premium near this level.'},
+];
+
+let spot=5718;
+let candles=[];
+let alertCount=0;
+let probCount=0;
+
+// ── GENERATE CANDLES ──
+function genCandles(){
+  candles=[];
+  let p=5690+Math.random()*20;
+  for(let i=0;i<60;i++){
+    const o=p,c=o+(Math.random()-.48)*5;
+    const h=Math.max(o,c)+Math.random()*3,l=Math.min(o,c)-Math.random()*3;
+    candles.push({o,h,l,c});p=c;
+  }
+  spot=candles[candles.length-1].c;
+}
+
+// ── DRAW MINI CHART ──
+const canvas=document.getElementById('miniChart');
+const ctx=canvas.getContext('2d');
+
+function drawMini(){
+  const W=canvas.offsetWidth,H=180;
+  canvas.width=W*devicePixelRatio;canvas.height=H*devicePixelRatio;
+  ctx.scale(devicePixelRatio,devicePixelRatio);
+
+  let lo=Infinity,hi=-Infinity;
+  candles.forEach(c=>{lo=Math.min(lo,c.l);hi=Math.max(hi,c.h);});
+  LEVELS.forEach(lv=>{lo=Math.min(lo,lv.price-8);hi=Math.max(hi,lv.price+8);});
+  const pad=(hi-lo)*.1;lo-=pad;hi+=pad;
+  const pY=p=>((hi-p)/(hi-lo)*H);
+  const cw=Math.max(2,(W/candles.length)*.65);
+
+  ctx.fillStyle='#0c0c18';ctx.fillRect(0,0,W,H);
+
+  // Gamma level lines
+  LEVELS.forEach(lv=>{
+    const y=pY(lv.price);
+    if(y<0||y>H)return;
+    ctx.strokeStyle=lv.color;ctx.lineWidth=1.5;ctx.globalAlpha=.7;
+    ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+    ctx.globalAlpha=1;
+    ctx.fillStyle=lv.color;ctx.font='700 7px IBM Plex Mono';ctx.textAlign='right';
+    ctx.fillText(lv.label+' $'+lv.price,W-3,y-3);
+  });
+
+  // Candles
+  candles.forEach((c,i)=>{
+    const x=(i+.5)*(W/candles.length);
+    const oY=pY(c.o),cY=pY(c.c),hY=pY(c.h),lY=pY(c.l);
+    const bull=c.c>=c.o;
+    ctx.strokeStyle=bull?'#00d4aa':'#f04060';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,hY);ctx.lineTo(x,lY);ctx.stroke();
+    const bTop=Math.min(oY,cY),bH=Math.max(1,Math.abs(oY-cY));
+    ctx.fillStyle=bull?'rgba(0,212,170,.8)':'rgba(240,64,96,.8)';
+    ctx.fillRect(x-cw/2,bTop,cw,bH);
+  });
+
+  // Spot line
+  const sY=pY(spot);
+  ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(0,sY);ctx.lineTo(W,sY);ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// ── RENDER LEVELS TABLE ──
+function renderLevels(){
+  document.getElementById('levelsTable').innerHTML=LEVELS.map(lv=>{
+    const dist=lv.price-spot;
+    const absDist=Math.abs(dist);
+    const pct=(absDist/spot*100).toFixed(2);
+    const above=dist>0;
+    const near=absDist<5;
+    return `<div class="lev-row${near?' triggered':''}" onclick="fireProbability('${lv.key}')">
+      <div class="lev-dot" style="background:${lv.color};box-shadow:0 0 5px ${lv.color}${near?';animation:pulse .8s infinite':''}"></div>
+      <span class="lev-name" style="color:${lv.color}">${lv.label}</span>
+      <span class="lev-price" style="color:${lv.color}">$${lv.price.toLocaleString()}</span>
+      <span class="lev-dist" style="color:${near?lv.color:'var(--muted)'}">
+        ${above?'+':'-'}${absDist.toFixed(0)}pt (${above?'+':'-'}${pct}%)
+      </span>
+      <span class="lev-status" style="background:${near?lv.color+'22':'rgba(28,28,48,.8)'};color:${near?lv.color:'var(--muted)'};border:1px solid ${near?lv.color:'var(--border)'}">
+        ${near?'● AT LEVEL':above?'▲ ABOVE':'▼ BELOW'}
+      </span>
+    </div>`;
+  }).join('');
+}
+
+// ── FIRE PROBABILITY CARD ──
+function fireProbability(key){
+  const lv=LEVELS.find(l=>l.key===key);if(!lv)return;
+  probCount++;
+  alertCount++;
+  document.getElementById('probCount').textContent=probCount+' scenario'+(probCount!==1?'s':'')+' fired';
+  document.getElementById('botFired').textContent=alertCount;
+
+  const t=new Date().toLocaleTimeString('en-US',{hour12:false});
+  const pb=document.getElementById('probBody');
+
+  // Remove empty state
+  pb.querySelector('div[style*="height:100%"]')?.remove();
+
+  const card=document.createElement('div');
+  card.className='prob-card';
+  const longColor=lv.long_pct>=50?'var(--accent)':'var(--muted2)';
+  const shortColor=lv.short_pct>=50?'var(--red)':'var(--muted2)';
+
+  card.innerHTML=`
+    <div class="pc-banner">
+      <span class="pc-level-tag" style="background:${lv.color}22;color:${lv.color};border:1px solid ${lv.color}44">${lv.label}</span>
+      <span class="pc-ticker">SPX</span>
+      <span class="pc-price" style="color:${lv.color}">$${lv.price.toLocaleString()}</span>
+      <span style="font-size:8px;color:var(--muted2);margin-left:4px">TOUCHED</span>
+      <span class="pc-time">${t}</span>
+    </div>
+    <div class="pc-body">
+
+      <!-- LONG SCENARIO -->
+      <div class="prob-scenario">
+        <div class="ps-top">
+          <span class="ps-label" style="color:${longColor}">▲ LONG FROM HERE → ${lv.long_target_label.toUpperCase()}</span>
+          <span class="ps-pct" style="color:${longColor}">${lv.long_pct}%</span>
+        </div>
+        <div class="ps-track"><div class="ps-fill" style="--w:${lv.long_pct}%;width:0%;background:${longColor}"></div></div>
+        <div class="ps-detail">Based on ${lv.hist_total} historical touches · ${lv.hist_total-lv.hist_reject} broke through · target +${((lv.long_target-lv.price)/lv.price*100).toFixed(1)}%</div>
+      </div>
+
+      <div class="divider-or"><span>OR</span></div>
+
+      <!-- SHORT SCENARIO -->
+      <div class="prob-scenario">
+        <div class="ps-top">
+          <span class="ps-label" style="color:${shortColor}">▼ SHORT FROM HERE → ${lv.short_target_label.toUpperCase()}</span>
+          <span class="ps-pct" style="color:${shortColor}">${lv.short_pct}%</span>
+        </div>
+        <div class="ps-track"><div class="ps-fill" style="--w:${lv.short_pct}%;width:0%;background:${shortColor}"></div></div>
+        <div class="ps-detail">Rejection rate ${lv.hist_reject}/${lv.hist_total} · target -${((lv.price-lv.short_target)/lv.price*100).toFixed(1)}%</div>
+      </div>
+
+      <!-- HISTORICAL -->
+      <div class="hist-strip">
+        <div class="hs-title">LAST ${lv.hist.length} TIMES PRICE HIT THIS LEVEL</div>
+        ${lv.hist.map(h=>`
+          <div class="hs-row">
+            <div class="hs-dot" style="background:${h.dir>0?'var(--accent)':'var(--red)'}"></div>
+            <span class="hs-outcome" style="color:${h.dir>0?'var(--accent)':'var(--red)'}">${h.outcome.toUpperCase()}</span>
+            <span class="hs-desc">${h.desc}</span>
+            <span class="hs-result" style="color:${h.dir>0?'var(--accent)':'var(--red)'}">${h.result}</span>
+          </div>`).join('')}
+      </div>
+
+      <!-- DEALER NOTE -->
+      <div style="background:rgba(72,136,255,.05);border:1px solid rgba(72,136,255,.15);border-radius:4px;padding:8px 10px;">
+        <div style="font-size:7px;color:var(--blue);letter-spacing:.1em;margin-bottom:3px;">◈ DEALER POSITIONING</div>
+        <div style="font-size:8px;color:var(--muted2);line-height:1.65;">${lv.dealer_note}</div>
+      </div>
+
+      <!-- VERDICT -->
+      <div class="verdict" style="background:${lv.verdict_color}18;border:1px solid ${lv.verdict_color}33;">
+        <span class="verdict-icon">⚡</span>
+        <div class="verdict-body">
+          <div class="verdict-title" style="color:${lv.verdict_color}">${lv.verdict}</div>
+          <div class="verdict-text">${lv.verdict_text}</div>
+        </div>
+      </div>
+
+    </div>`;
+
+  pb.insertBefore(card,pb.firstChild);
+
+  // Animate bars after insert
+  setTimeout(()=>{
+    card.querySelectorAll('.ps-fill').forEach(el=>{
+      el.style.width=el.style.getPropertyValue('--w')||el.style.cssText.match(/--w:([^;]+)/)?.[1]||'50%';
+    });
+  },50);
+
+  // Bot feed message
+  addBotMessage(lv,t);
+}
+
+// ── BOT FEED ──
+function addBotMessage(lv,t){
+  const feed=document.getElementById('botFeed');
+  const msg=document.createElement('div');
+  msg.className='bot-msg';
+  msg.style.cssText=`background:${lv.color}10;border:1px solid ${lv.color}25;border-left:2px solid ${lv.color}`;
+
+  const dominant=lv.long_pct>lv.short_pct?'long':'short';
+  const domPct=Math.max(lv.long_pct,lv.short_pct);
+  const cls=dominant==='long'?'bullish':'bearish';
+  const arrow=dominant==='long'?'▲':'▼';
+
+  msg.innerHTML=`
+    <div class="bm-time">${t}</div>
+    <div class="bm-text ${cls}">${arrow} SPX AT ${lv.label} $${lv.price.toLocaleString()}</div>
+    <div class="bm-text neutral" style="margin-top:3px;">${dominant==='long'?'LONG':'SHORT'} PROBABILITY: <span style="color:${lv.color};font-weight:700">${domPct}%</span></div>
+    <div class="bm-text neutral">HIST: ${lv.hist_reject}/${lv.hist_total} ${dominant==='short'?'REJECT':'BOUNCE'} · VERDICT: <span style="color:${lv.verdict_color};font-weight:700">${lv.verdict}</span></div>`;
+
+  feed.insertBefore(msg,feed.firstChild);
+}
+
+// ── PRICE SIMULATION ──
+function simPrice(){
+  if(!candles.length)return;
+  const last=candles[candles.length-1];
+  const move=(Math.random()-.49)*3.5;
+  last.c=Math.max(last.l-2,Math.min(last.h+2,last.c+move));
+  last.h=Math.max(last.h,last.c);
+  last.l=Math.min(last.l,last.c);
+  spot=last.c;
+
+  document.getElementById('spotPrice').textContent='$'+spot.toFixed(0);
+  const chg=spot-candles[0].o;
+  const el=document.getElementById('spotChange');
+  el.textContent=(chg>=0?'+':'')+chg.toFixed(1)+' ('+(chg>=0?'+':'')+(chg/candles[0].o*100).toFixed(2)+'%)';
+  el.style.color=chg>=0?'var(--accent)':'var(--red)';
+
+  // Auto-fire when price gets within 2pts of a level
+  LEVELS.forEach(lv=>{
+    if(Math.abs(spot-lv.price)<2&&!lv._fired){
+      lv._fired=true;
+      fireProbability(lv.key);
+      setTimeout(()=>lv._fired=false,30000);
+    }
+  });
+
+  renderLevels();
+  drawMini();
+}
+
+// ── INIT ──
+genCandles();
+new ResizeObserver(()=>{drawMini();}).observe(canvas);
+drawMini();
+renderLevels();
+
+// Boot message
+setTimeout(()=>{
+  const feed=document.getElementById('botFeed');
+  feed.innerHTML=`
+    <div class="bot-msg" style="background:rgba(0,212,170,.06);border:1px solid rgba(0,212,170,.2);border-left:2px solid var(--accent)">
+      <div class="bm-time">${new Date().toLocaleTimeString('en-US',{hour12:false})}</div>
+      <div class="bm-text bullish">GAMMA BOT ONLINE</div>
+      <div class="bm-text neutral" style="margin-top:3px;">MONITORING 5 GAMMA LEVELS · POSITIVE GAMMA REGIME · PROBABILITY ENGINE ARMED</div>
+    </div>
+    <div class="bot-msg" style="background:rgba(28,28,48,.4);border:1px solid var(--border)">
+      <div class="bm-time">${new Date().toLocaleTimeString('en-US',{hour12:false})}</div>
+      <div class="bm-text neutral">SPX $${spot.toFixed(0)} · BETWEEN FLIP $5,720 AND CALL WALL $5,750 · RANGE-BOUND UNTIL BREAKOUT</div>
+    </div>`;
+},300);
+
+setInterval(simPrice,1200);
+</script>
+</body>
+</html>

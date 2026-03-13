@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DARKFLOW · GEX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg-base:    #080810;
+  --bg-surface: #0c0c18;
+  --bg-raised:  #10101f;
+  --bg-hover:   #14142a;
+  --border:     #1c1c30;
+  --border-mid: #252540;
+  --text-primary:   #e8e8f0;
+  --text-secondary: #8888a8;
+  --text-muted:     #444460;
+  --text-dim:       #2a2a45;
+  --accent:  #00d4aa;
+  --red:     #f04060;
+  --gold:    #f0c040;
+  --blue:    #4888ff;
+  --orange:  #ff8040;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-sans: 'IBM Plex Sans', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;background:#080810;}
+body{background:var(--bg-base);color:var(--text-primary);font-family:var(--font-mono);font-size:11px;line-height:1;-webkit-font-smoothing:antialiased;}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+.topbar{flex-shrink:0;height:44px;background:var(--bg-surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:24px;}
+.logo{font-family:var(--font-sans);font-weight:600;font-size:13px;letter-spacing:0.12em;color:var(--accent);display:flex;align-items:center;gap:8px;}
+.logo-mark{width:18px;height:18px;background:var(--accent);clip-path:polygon(50% 0%,100% 100%,0% 100%);opacity:0.9;}
+.nav{display:flex;gap:0;height:100%;margin-left:8px;}
+.nav-tab{height:100%;padding:0 16px;display:flex;align-items:center;font-size:10px;font-weight:500;letter-spacing:0.08em;color:var(--text-muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;font-family:var(--font-mono);}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:16px;}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;}
+.clock{font-size:11px;color:var(--text-secondary);}
+
+/* ── REGIME PANEL — TWO ROW MOBILE LAYOUT ── */
+.regime-bar{
+  flex-shrink:0;
+  background:var(--bg-surface);
+  border-bottom:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+/* Row 1: badge + explanation */
+.regime-top{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:6px 12px;
+  border-bottom:1px solid var(--border);
+  min-height:32px;
+}
+.regime-badge{
+  display:flex;align-items:center;gap:6px;
+  flex-shrink:0;
+}
+.regime-badge.pos .regime-name{color:var(--accent);}
+.regime-badge.neg .regime-name{color:var(--red);}
+.regime-badge.trans .regime-name{color:var(--gold);}
+.regime-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;animation:pulse 2s infinite;}
+.regime-dot.pos{background:var(--accent);box-shadow:0 0 6px var(--accent);}
+.regime-dot.neg{background:var(--red);box-shadow:0 0 6px var(--red);}
+.regime-dot.trans{background:var(--gold);box-shadow:0 0 6px var(--gold);}
+.regime-label{font-size:7px;font-weight:600;letter-spacing:0.14em;color:var(--text-muted);}
+.regime-name{font-size:10px;font-weight:600;letter-spacing:0.04em;white-space:nowrap;}
+.regime-divider{width:1px;height:16px;background:var(--border);flex-shrink:0;}
+.regime-explain-body{
+  font-size:9px;color:var(--text-secondary);font-weight:300;
+  line-height:1.4;
+  /* Allow wrapping on 2 lines max */
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  flex:1;
+}
+
+/* Row 2: level pills — full width scrollable */
+.key-levels{
+  display:flex;
+  gap:6px;
+  overflow-x:auto;
+  padding:6px 12px;
+  align-items:center;
+  -webkit-overflow-scrolling:touch;
+}
+.key-levels::-webkit-scrollbar{display:none;}
+.level-pill{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 9px;
+  background:var(--bg-raised);
+  border:1px solid var(--border);
+  border-radius:3px;
+  flex-shrink:0;
+  white-space:nowrap;
+}
+.level-pill-label{font-size:7px;font-weight:600;letter-spacing:0.1em;color:var(--text-muted);}
+.level-pill-value{font-size:11px;font-weight:600;}
+.level-pill-sep{width:1px;height:10px;background:var(--border);}
+.level-pill-sub{font-size:8px;font-weight:500;}
+
+/* ── CONTROLS ── */
+.controls{flex-shrink:0;height:36px;background:var(--bg-surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:6px;overflow-x:auto;}
+.controls::-webkit-scrollbar{display:none;}
+.ctrl-sep{width:1px;height:16px;background:var(--border);flex-shrink:0;margin:0 2px;}
+.btn{height:24px;padding:0 9px;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--text-muted);font-size:9px;letter-spacing:0.08em;cursor:pointer;font-family:var(--font-mono);transition:all 0.12s;white-space:nowrap;flex-shrink:0;}
+.btn:hover{border-color:var(--border-mid);color:var(--text-secondary);}
+.btn.active{border-color:var(--accent);color:var(--accent);background:rgba(0,212,170,0.06);}
+.btn.active-red{border-color:var(--red);color:var(--red);background:rgba(240,64,96,0.06);}
+.controls-right{margin-left:auto;display:flex;gap:6px;align-items:center;flex-shrink:0;}
+
+/* ── STAT ROW ── */
+.statrow{flex-shrink:0;height:36px;background:var(--bg-base);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:28px;overflow-x:auto;}
+.stat{display:flex;gap:8px;align-items:baseline;flex-shrink:0;}
+.stat-label{font-size:8px;font-weight:500;letter-spacing:0.12em;color:var(--text-muted);}
+.stat-value{font-size:11px;font-weight:500;}
+.stat-div{width:1px;height:16px;background:var(--border);flex-shrink:0;}
+
+/* ── NOTES / GLOSSARY PANEL ── */
+.notes-panel{
+  flex-shrink:0;
+  background:var(--bg-surface);
+  border-bottom:1px solid var(--border);
+  overflow:hidden;
+  transition:max-height 0.3s ease;
+  max-height:0;
+}
+.notes-panel.open{ max-height:220px; }
+
+.notes-inner{
+  padding:12px 16px 14px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.notes-tabs{
+  display:flex;gap:4px;flex-wrap:wrap;
+}
+.notes-tab{
+  height:22px;padding:0 10px;
+  background:transparent;border:1px solid var(--border);
+  border-radius:2px;color:var(--text-muted);
+  font-size:8px;font-weight:600;letter-spacing:0.1em;
+  cursor:pointer;font-family:var(--font-mono);transition:all 0.12s;
+}
+.notes-tab:hover{color:var(--text-secondary);border-color:var(--border-mid);}
+.notes-tab.active{background:rgba(0,212,170,0.06);border-color:rgba(0,212,170,0.3);color:var(--accent);}
+
+.notes-content{
+  display:flex;gap:16px;overflow-x:auto;padding-bottom:2px;
+}
+.notes-card{
+  flex-shrink:0;min-width:200px;max-width:260px;
+  background:var(--bg-raised);border:1px solid var(--border);
+  border-radius:4px;padding:10px 12px;
+  display:flex;flex-direction:column;gap:6px;
+}
+.notes-card-header{
+  display:flex;align-items:center;gap:7px;
+}
+.notes-card-dot{
+  width:7px;height:7px;border-radius:50%;flex-shrink:0;
+}
+.notes-card-title{
+  font-size:9px;font-weight:600;letter-spacing:0.1em;
+}
+.notes-card-body{
+  font-size:9px;color:var(--text-muted);line-height:1.65;font-weight:300;
+}
+.notes-card-rule{
+  font-size:8px;font-weight:600;letter-spacing:0.08em;
+  padding:4px 8px;border-radius:2px;margin-top:2px;
+  border-left:2px solid;
+}
+
+/* ── HEATMAP BODY ── */
+.heatmap-wrap{flex:1;overflow:auto;position:relative;-webkit-overflow-scrolling:touch;}
+table{border-collapse:collapse;width:max-content;min-width:100%;}
+
+/* ── TABLE CELLS ── */
+.strike-col{
+  position:sticky;left:0;z-index:10;
+  width:90px;min-width:90px;
+  background:var(--bg-surface);
+  border-right:1px solid var(--border);
+  padding:0 12px;
+  height:28px;
+  font-size:10px;
+  font-weight:500;
+  text-align:right;
+  white-space:nowrap;
+  vertical-align:middle;
+}
+.roc-col{
+  width:18px;min-width:18px;
+  border-left:1px solid var(--border);
+  padding:0 4px;
+  height:28px;
+  text-align:center;
+  vertical-align:middle;
+}
+.data-cell{
+  height:28px;
+  min-width:68px;
+  text-align:center;
+  font-size:9px;
+  font-weight:400;
+  vertical-align:middle;
+  border:1px solid rgba(0,0,0,0.3);
+  transition:filter 0.2s;
+  cursor:default;
+  position:relative;
+}
+.data-cell:hover{filter:brightness(1.3);}
+
+/* ── HEADER ROW ── */
+.th-strike{position:sticky;left:0;z-index:11;background:var(--bg-raised);border-right:1px solid var(--border);border-bottom:2px solid var(--border-mid);padding:0 12px;height:32px;font-size:8px;font-weight:600;letter-spacing:0.12em;color:var(--text-muted);text-align:right;vertical-align:middle;white-space:nowrap;}
+.th-date{background:var(--bg-raised);border-bottom:2px solid var(--border-mid);border-left:1px solid var(--border);padding:0 6px;height:32px;font-size:8px;font-weight:500;letter-spacing:0.06em;color:var(--text-muted);text-align:center;vertical-align:middle;white-space:nowrap;}
+.th-date.today{color:var(--accent);font-weight:600;}
+.th-roc{background:var(--bg-raised);border-bottom:2px solid var(--border-mid);border-left:1px solid var(--border);padding:0 8px;height:32px;font-size:8px;font-weight:600;letter-spacing:0.12em;color:var(--text-muted);text-align:center;vertical-align:middle;}
+
+/* ── LEVEL ROWS ── */
+tr.row-flip td{position:relative;}
+tr.row-flip .strike-col{color:var(--gold)!important;font-weight:600;}
+tr.row-flip td.data-cell{border-top:2px solid rgba(240,192,64,0.6)!important;}
+
+tr.row-callwall .strike-col{color:var(--accent)!important;font-weight:600;}
+tr.row-putwall  .strike-col{color:var(--red)!important;font-weight:600;}
+tr.row-hvl      .strike-col{color:var(--blue)!important;font-weight:600;}
+tr.row-spot     .strike-col{color:var(--orange)!important;font-weight:700;}
+tr.row-spot td.data-cell{border-top:1px solid rgba(255,128,64,0.35)!important;border-bottom:1px solid rgba(255,128,64,0.35)!important;}
+
+/* ── FLIP PULSE ── */
+@keyframes flipPulse{
+  0%  {box-shadow:inset 0 0 0px rgba(240,192,64,0);}
+  50% {box-shadow:inset 0 0 12px rgba(240,192,64,0.25);}
+  100%{box-shadow:inset 0 0 0px rgba(240,192,64,0);}
+}
+tr.row-flip td.data-cell{animation:flipPulse 2.4s ease-in-out infinite;}
+tr.row-flip .strike-col{animation:flipPulse 2.4s ease-in-out infinite;}
+
+/* ── LEVEL TAGS ── */
+.level-tag{
+  display:inline-flex;align-items:center;height:14px;padding:0 5px;
+  border-radius:2px;font-size:7px;font-weight:600;letter-spacing:0.1em;
+  margin-left:5px;vertical-align:middle;
+}
+.tag-flip {background:rgba(240,192,64,0.15);color:var(--gold);border:1px solid rgba(240,192,64,0.4);}
+.tag-call {background:rgba(0,212,170,0.12);color:var(--accent);border:1px solid rgba(0,212,170,0.35);}
+.tag-put  {background:rgba(240,64,96,0.12);color:var(--red);border:1px solid rgba(240,64,96,0.35);}
+.tag-hvl  {background:rgba(72,136,255,0.12);color:var(--blue);border:1px solid rgba(72,136,255,0.35);}
+.tag-spot {background:rgba(255,128,64,0.12);color:var(--orange);border:1px solid rgba(255,128,64,0.35);}
+
+/* ── VELOCITY ALERT BANNER ── */
+.vel-banner{flex-shrink:0;border-bottom:1px solid var(--border);animation:velSlideIn 0.3s ease;}
+@keyframes velSlideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.vel-banner-inner{display:flex;align-items:center;gap:10px;padding:0 16px;height:36px;background:rgba(240,192,64,0.06);border-left:3px solid var(--gold);}
+.vel-banner.red-alert .vel-banner-inner{background:rgba(240,64,96,0.06);border-left-color:var(--red);}
+.vel-banner.green-alert .vel-banner-inner{background:rgba(0,212,170,0.06);border-left-color:var(--accent);}
+.vel-icon{font-size:13px;flex-shrink:0;}
+.vel-text{font-size:10px;font-weight:500;color:var(--text-primary);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.vel-action{font-size:9px;font-weight:600;letter-spacing:0.08em;flex-shrink:0;white-space:nowrap;color:var(--gold);}
+.vel-banner.red-alert .vel-action{color:var(--red);}
+.vel-banner.green-alert .vel-action{color:var(--accent);}
+.vel-dismiss{background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:4px;flex-shrink:0;}
+
+/* ── WHAT THIS MEANS ── */
+.wtm-btn{height:24px;padding:0 10px;background:rgba(72,136,255,0.08);border:1px solid rgba(72,136,255,0.3);border-radius:3px;color:var(--blue);font-size:8px;font-weight:600;letter-spacing:0.1em;cursor:pointer;font-family:var(--font-mono);transition:all 0.12s;white-space:nowrap;margin-top:8px;width:100%;}
+.wtm-btn:hover{background:rgba(72,136,255,0.14);}
+.wtm-card{margin-top:8px;padding:10px 12px;background:rgba(72,136,255,0.05);border:1px solid rgba(72,136,255,0.2);border-radius:4px;display:none;}
+.wtm-card.open{display:block;}
+.wtm-setup{font-size:9px;color:var(--text-secondary);line-height:1.65;margin-bottom:8px;}
+.wtm-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.wtm-row-label{font-size:8px;font-weight:600;letter-spacing:0.08em;color:var(--text-muted);}
+.wtm-pill{padding:2px 8px;border-radius:2px;font-size:8px;font-weight:600;}
+.wtm-bull{background:rgba(0,212,170,0.12);color:var(--accent);border:1px solid rgba(0,212,170,0.25);}
+.wtm-bear{background:rgba(240,64,96,0.12);color:var(--red);border:1px solid rgba(240,64,96,0.25);}
+.wtm-neutral{background:rgba(240,192,64,0.10);color:var(--gold);border:1px solid rgba(240,192,64,0.25);}
+
+/* ── STRIKE INSPECTOR PANEL ── */
+.inspector-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,0.5);
+  opacity:0;pointer-events:none;
+  transition:opacity 0.25s;
+}
+.inspector-overlay.open{opacity:1;pointer-events:all;}
+
+.inspector-panel{
+  position:fixed;bottom:0;left:0;right:0;z-index:501;
+  background:var(--bg-surface);
+  border-top:1px solid var(--border-mid);
+  border-radius:16px 16px 0 0;
+  padding:0 0 32px;
+  transform:translateY(100%);
+  transition:transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  max-height:70vh;
+  display:flex;flex-direction:column;
+}
+.inspector-panel.open{transform:translateY(0);}
+
+.inspector-handle{
+  width:36px;height:4px;border-radius:2px;
+  background:var(--border-mid);
+  margin:10px auto 0;flex-shrink:0;
+}
+.inspector-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 20px 0;flex-shrink:0;
+}
+.inspector-title{
+  display:flex;flex-direction:column;gap:3px;
+}
+.inspector-strike{font-size:20px;font-weight:600;color:var(--text-primary);letter-spacing:0.02em;}
+.inspector-date{font-size:10px;color:var(--text-muted);letter-spacing:0.1em;}
+.inspector-value{
+  text-align:right;
+}
+.inspector-gex{font-size:18px;font-weight:600;}
+.inspector-gex.pos{color:var(--accent);}
+.inspector-gex.neg{color:var(--red);}
+.inspector-close{
+  position:absolute;top:14px;right:16px;
+  width:28px;height:28px;border-radius:50%;
+  background:var(--bg-raised);border:1px solid var(--border);
+  color:var(--text-muted);font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+}
+
+/* Timeframe tabs */
+.inspector-tfs{
+  display:flex;gap:4px;padding:12px 20px 8px;flex-shrink:0;
+}
+.inspector-tf{
+  height:24px;padding:0 10px;
+  background:transparent;border:1px solid var(--border);
+  border-radius:3px;color:var(--text-muted);
+  font-size:9px;font-weight:600;letter-spacing:0.1em;
+  cursor:pointer;font-family:var(--font-mono);transition:all 0.12s;
+}
+.inspector-tf:hover{color:var(--text-secondary);border-color:var(--border-mid);}
+.inspector-tf.active{border-color:var(--accent);color:var(--accent);background:rgba(0,212,170,0.06);}
+
+/* Chart area */
+.inspector-chart{flex:1;padding:0 16px 8px;min-height:160px;position:relative;}
+.inspector-canvas{width:100%;height:100%;display:block;}
+
+/* Stats row */
+.inspector-stats{
+  display:flex;gap:0;padding:0 20px;flex-shrink:0;
+  border-top:1px solid var(--border);
+  margin-top:4px;
+}
+.inspector-stat{
+  flex:1;padding:10px 0;text-align:center;
+  border-right:1px solid var(--border);
+}
+.inspector-stat:last-child{border-right:none;}
+.inspector-stat-label{font-size:7px;font-weight:600;letter-spacing:0.12em;color:var(--text-muted);margin-bottom:3px;}
+.inspector-stat-value{font-size:12px;font-weight:600;}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border-mid);border-radius:2px;}
+
+/* ── ANIMATIONS ── */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* ── TICKER DROPDOWN ── */
+.ticker-wrap{position:relative;}
+.ticker-dropdown{position:absolute;top:calc(100% + 4px);left:0;min-width:180px;background:var(--bg-raised);border:1px solid var(--border-mid);border-radius:4px;z-index:200;max-height:220px;overflow-y:auto;box-shadow:0 16px 40px rgba(0,0,0,0.9);}
+.ticker-opt{padding:7px 12px;font-size:10px;cursor:pointer;letter-spacing:0.08em;color:var(--text-secondary);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.ticker-opt:hover{background:var(--bg-hover);color:var(--text-primary);}
+.ticker-opt.selected{color:var(--accent);}
+.ticker-opt-price{font-size:9px;color:var(--text-muted);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="logo"><div class="logo-mark"></div>DARKFLOW</div>
+    <nav class="nav">
+      <button class="nav-tab">OVERVIEW</button>
+      <button class="nav-tab">OPTIONS FLOW</button>
+      <button class="nav-tab active">GEX</button>
+      <button class="nav-tab">PREMIUM DIVERGENCE</button>
+      <button class="nav-tab">DARK POOL</button>
+      <button class="nav-tab">STRIKE MATRIX</button>
+      <button class="nav-tab">JOURNAL</button>
+      <button class="nav-tab">AI SIGNALS</button>
+    </nav>
+    <div class="topbar-right">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div class="status-dot"></div>
+        <span style="font-size:9px;letter-spacing:0.1em;color:var(--accent)">MARKET OPEN</span>
+      </div>
+      <span class="clock" id="clock">--:--:--</span>
+    </div>
+  </div>
+
+  <!-- REGIME PANEL -->
+  <div class="regime-bar" id="regimeBar">
+    <!-- Row 1: regime badge + explanation -->
+    <div class="regime-top">
+      <div class="regime-badge" id="regimeBadge">
+        <div class="regime-dot pos" id="regimeDot"></div>
+        <div>
+          <div class="regime-label">REGIME</div>
+          <div class="regime-name" id="regimeName">—</div>
+        </div>
+      </div>
+      <div class="regime-divider"></div>
+      <div class="regime-explain-body" id="regimeBody">—</div>
+    </div>
+    <!-- Row 2: key level pills -->
+    <div class="key-levels">
+      <div class="level-pill">
+        <span class="level-pill-label">CALL WALL</span>
+        <span class="level-pill-sep"></span>
+        <span class="level-pill-value" id="lvlCallWall" style="color:var(--accent)">—</span>
+        <span class="level-pill-sub" id="lvlCallWallGex" style="color:var(--text-muted)"></span>
+      </div>
+      <div class="level-pill">
+        <span class="level-pill-label">PUT WALL</span>
+        <span class="level-pill-sep"></span>
+        <span class="level-pill-value" id="lvlPutWall" style="color:var(--red)">—</span>
+        <span class="level-pill-sub" id="lvlPutWallGex" style="color:var(--text-muted)"></span>
+      </div>
+      <div class="level-pill" style="border-color:rgba(240,192,64,0.4);">
+        <span class="level-pill-label" style="color:var(--gold)">FLIP</span>
+        <span class="level-pill-sep"></span>
+        <span class="level-pill-value" id="lvlFlip" style="color:var(--gold)">—</span>
+        <span class="level-pill-sub" id="lvlFlipSub" style="color:var(--text-muted)"></span>
+      </div>
+      <div class="level-pill" style="border-color:rgba(72,136,255,0.3);">
+        <span class="level-pill-label" style="color:var(--blue)">HVL</span>
+        <span class="level-pill-sep"></span>
+        <span class="level-pill-value" id="lvlHVL" style="color:var(--blue)">—</span>
+      </div>
+      <div class="level-pill" style="border-color:rgba(255,128,64,0.3);">
+        <span class="level-pill-label" style="color:var(--orange)">SPOT</span>
+        <span class="level-pill-sep"></span>
+        <span class="level-pill-value" id="lvlSpot" style="color:var(--orange)">—</span>
+        <span class="level-pill-sub" id="lvlSpotSub"></span>
+      </div>
+      <div class="level-pill" style="border-color:rgba(240,192,64,0.4);background:rgba(240,192,64,0.06);">
+        <span class="level-pill-label" style="color:var(--gold)">👑 KING</span>
+        <span class="level-pill-sep"></span>
+        <span class="level-pill-value" id="lvlKing" style="color:var(--gold)">—</span>
+        <span class="level-pill-sub" id="lvlKingGex" style="color:var(--text-muted)"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROLS — clean, minimal -->
+  <div class="controls">
+    <div class="ticker-wrap">
+      <div class="ticker-display" id="tickerDisplay" style="cursor:pointer" onclick="toggleTickerDrop()">
+        <span id="tickerLabel">SPX</span>
+      </div>
+      <div class="ticker-dropdown" id="tickerDrop" style="display:none"></div>
+    </div>
+    <div class="ctrl-sep"></div>
+    <button class="btn active" id="modeGEX"    onclick="setMode('GEX')">GEX</button>
+    <button class="btn"        id="modeVANNA"  onclick="setMode('VANNA')">VANNA</button>
+    <div class="ctrl-sep"></div>
+    <button class="btn active" id="exp0DTE"    onclick="setExpiry('0DTE')">0DTE</button>
+    <button class="btn"        id="expWEEKLY"  onclick="setExpiry('WEEKLY')">WEEKLY</button>
+    <button class="btn"        id="expMONTHLY" onclick="setExpiry('MONTHLY')">MONTHLY</button>
+    <button class="btn"        id="expALL"     onclick="setExpiry('ALL')">ALL</button>
+    <div class="ctrl-sep"></div>
+    <button class="btn active" id="r5"  onclick="setRange(5)">5D</button>
+    <button class="btn"        id="r10" onclick="setRange(10)">10D</button>
+    <button class="btn"        id="r21" onclick="setRange(21)">1M</button>
+    <button class="btn"        id="r42" onclick="setRange(42)">2M</button>
+    <div class="controls-right">
+      <button class="btn" onclick="shiftDates(-1)">◀</button>
+      <button class="btn" onclick="shiftDates(1)">▶</button>
+      <div class="ctrl-sep"></div>
+      <button class="btn" id="strikesToggle" onclick="cycleStrikes()">20 STRIKES</button>
+      <button class="btn" id="notesToggle"   onclick="toggleNotes()" title="Glossary">?</button>
+    </div>
+  </div>
+
+  <!-- NOTES / GLOSSARY PANEL -->
+  <div class="notes-panel" id="notesPanel">
+    <div class="notes-inner">
+      <div class="notes-tabs">
+        <button class="notes-tab active" onclick="setNotesTab('regime')">MARKET REGIME</button>
+        <button class="notes-tab" onclick="setNotesTab('levels')">KEY LEVELS</button>
+        <button class="notes-tab" onclick="setNotesTab('gex')">WHAT IS GEX</button>
+        <button class="notes-tab" onclick="setNotesTab('hvl')">HVL &amp; FLIP</button>
+      </div>
+      <div class="notes-content" id="notesContent"></div>
+    </div>
+  </div>
+
+  <!-- VELOCITY ALERT BANNER -->
+  <div class="vel-banner" id="velBanner" style="display:none">
+    <div class="vel-banner-inner">
+      <span class="vel-icon">⚡</span>
+      <span class="vel-text" id="velText">—</span>
+      <span class="vel-action" id="velAction">—</span>
+      <button class="vel-dismiss" onclick="dismissVelBanner()">✕</button>
+    </div>
+  </div>
+
+  <!-- HEATMAP -->
+  <div class="heatmap-wrap">
+    <table id="heatTable"></table>
+  </div>
+
+</div>
+
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────────
+const TICKERS = ["SPX","SPY","QQQ","NDX","AAPL","TSLA","NVDA","AMZN","META","MSFT","AMD","GOOGL","NFLX","COIN","GS","JPM","IWM","PLTR","MU","INTC"];
+const PRICES  = {SPX:5710,SPY:571,QQQ:471,NDX:19800,AAPL:225,TSLA:310,NVDA:875,AMZN:198,META:590,MSFT:415,AMD:165,GOOGL:175,NFLX:920,COIN:210,GS:520,JPM:230,IWM:205,PLTR:78,MU:95,INTC:48};
+
+const rand    = (a,b) => Math.random()*(b-a)+a;
+const randInt = (a,b) => Math.floor(rand(a,b));
+const fmtV    = v => {
+  const a=Math.abs(v),s=v<0?"-":"";
+  if(a>=1e9) return s+"$"+(a/1e9).toFixed(2)+"B";
+  if(a>=1e6) return s+"$"+(a/1e6).toFixed(2)+"M";
+  if(a>=1e3) return s+"$"+(a/1e3).toFixed(1)+"K";
+  return s+"$"+a.toFixed(0);
+};
+const fmtShort = v => {
+  const a=Math.abs(v),s=v<0?"-":"";
+  if(a>=1e9) return s+(a/1e9).toFixed(1)+"B";
+  if(a>=1e6) return s+(a/1e6).toFixed(1)+"M";
+  if(a>=1e3) return s+(a/1e3).toFixed(0)+"K";
+  return null;
+};
+
+// ── STATE ──────────────────────────────────────────────────────
+let ticker    = "SPX";
+let mode      = "GEX";
+let numN      = 20;
+let dateRange = 5;
+let dateOffset= 0;
+let dataset   = null;
+let allDates  = [];
+let rocData   = {};
+let rocTimer  = null;
+
+// ── DATE HELPERS ───────────────────────────────────────────────
+function buildTradingDays(months=3) {
+  const days=[],now=new Date();
+  for(let i=0;i<months*22;i++){
+    const d=new Date(now);
+    d.setDate(d.getDate()-i);
+    if(d.getDay()!==0&&d.getDay()!==6)
+      days.push(d.toISOString().slice(0,10));
+  }
+  return days.reverse();
+}
+
+function fmtDate(d) {
+  return new Date(d+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"});
+}
+
+// ── BUILD GEX DATA ─────────────────────────────────────────────
+function buildGEX(sym, dates) {
+  const center = PRICES[sym]||200;
+  const step   = (sym==="SPX"||sym==="NDX") ? 5 : (center>200?5:1);
+  const half   = Math.floor(numN/2);
+  const strikes= Array.from({length:numN},(_,i)=>Math.round((center-half*step+i*step)/step)*step);
+
+  // Build raw data
+  const data={};
+  strikes.forEach(s=>{
+    const dist=(s-center)/center;
+    // Bell curve centered on ATM, with skew
+    const peak=Math.exp(-Math.pow(dist*15,2))*rand(1e6,8e6);
+    data[s]={};
+    dates.forEach((date,di)=>{
+      const wave=Math.sin(di*0.15+s*0.002)*rand(200000,800000);
+      const noise=rand(-300000,300000);
+      // Positive gamma above center, negative below (realistic skew)
+      const sign = s >= center
+        ? (Math.random()>0.25 ? 1 : -1)
+        : (Math.random()>0.55 ? 1 : -1);
+      data[s][date]=(peak+wave+noise)*sign;
+    });
+  });
+
+  // ── KEY LEVELS ────────────────────────────────────────────────
+  const today=dates[dates.length-1];
+
+  // Gamma flip: strike closest to zero crossing (pos→neg going downward)
+  // Sort strikes descending, find where value flips from pos to neg
+  const sortedDesc=[...strikes].sort((a,b)=>b-a);
+  let flipStrike=null;
+  for(let i=0;i<sortedDesc.length-1;i++){
+    const v1=data[sortedDesc[i]][today]||0;
+    const v2=data[sortedDesc[i+1]][today]||0;
+    if(v1>=0&&v2<0){ flipStrike=sortedDesc[i]; break; }
+    if(v1<0&&v2>=0){ flipStrike=sortedDesc[i+1]; break; }
+  }
+  if(!flipStrike) flipStrike=strikes[Math.floor(strikes.length*0.45)];
+
+  // Call wall: largest positive GEX above spot
+  let callWall=null,callWallVal=-Infinity;
+  strikes.filter(s=>s>=center).forEach(s=>{
+    const v=data[s][today]||0;
+    if(v>callWallVal){callWallVal=v;callWall=s;}
+  });
+
+  // Put wall: largest negative GEX below spot
+  let putWall=null,putWallVal=Infinity;
+  strikes.filter(s=>s<=center).forEach(s=>{
+    const v=data[s][today]||0;
+    if(v<putWallVal){putWallVal=v;putWall=s;}
+  });
+
+  // HVL: strike with smallest absolute GEX (lowest dealer hedging, most volatile)
+  let hvl=null,hvlVal=Infinity;
+  strikes.forEach(s=>{
+    const v=Math.abs(data[s][today]||0);
+    if(v<hvlVal){hvlVal=v;hvl=s;}
+  });
+
+  // Largest node overall
+  let largestNode=null,largestVal=0;
+  strikes.forEach(s=>{
+    const v=Math.abs(data[s][today]||0);
+    if(v>largestVal){largestVal=v;largestNode=s;}
+  });
+
+  return{strikes,data,flipStrike,callWall,callWallVal,putWall,putWallVal,hvl,largestNode,largestVal,center,today};
+}
+
+// ── REGIME ────────────────────────────────────────────────────
+const REGIMES = {
+  POSITIVE: {
+    cls:"pos-gamma", badgeCls:"pos", name:"POSITIVE GAMMA",
+    title:"Dealers are long gamma — market is self-stabilizing",
+    body:"Market makers hedge by selling into rallies and buying dips. Expect mean-reversion, tighter ranges, and lower realized volatility. Momentum plays lose edge. Fades and range strategies perform best."
+  },
+  NEGATIVE: {
+    cls:"neg-gamma", badgeCls:"neg", name:"NEGATIVE GAMMA",
+    title:"Dealers are short gamma — volatility is self-reinforcing",
+    body:"Market makers must chase price to hedge. Moves accelerate in both directions. Breakouts follow through, dips get sold harder. Trend-following, momentum, and vol plays gain edge. Wider stops required."
+  },
+  TRANSITION: {
+    cls:"transition", badgeCls:"trans", name:"GAMMA TRANSITION",
+    title:"Spot is near the flip point — regime is unstable",
+    body:"Dealer positioning is near-neutral. Small moves can tip gamma from positive to negative. Elevated two-way risk. Watch whether price holds above or reclaims the flip level. High conviction setups only."
+  }
+};
+
+function getRegime(ds) {
+  const netGex=ds.strikes.reduce((a,s)=>a+(ds.data[s][ds.today]||0),0);
+  const spotVsFlip=ds.center-ds.flipStrike;
+  const flipDist=Math.abs(spotVsFlip)/ds.center;
+  if(flipDist<0.005) return "TRANSITION";
+  return netGex>=0?"POSITIVE":"NEGATIVE";
+}
+
+// ── COLOR SCALE ───────────────────────────────────────────────
+function cellBg(v, maxV, isLargest) {
+  if(isLargest) return "rgba(240,192,64,0.18)";
+  if(v===undefined||v===null) return "var(--bg-base)";
+  const t=Math.min(Math.abs(v)/maxV,1);
+  if(t<0.04) return "var(--bg-base)";
+  if(v>0){
+    // Deep jewel teal — dark at low intensity, rich #005f5a at high
+    return "rgba(" + Math.round(0) + "," + Math.round(80+t*100) + "," + Math.round(85+t*85) + "," + (0.1+t*0.65) + ")";
+  } else {
+    // Deep jewel crimson — dark at low, rich #8c1020 at high
+    return "rgba(" + Math.round(85+t*125) + "," + Math.round(8+t*14) + "," + Math.round(16+t*24) + "," + (0.1+t*0.65) + ")";
+  }
+}
+function cellColor(v,maxV,isLargest){
+  if(isLargest) return "rgba(240,192,64,0.95)";
+  if(!v) return "transparent";
+  const t=Math.abs(v)/maxV;
+  if(t<0.04) return "transparent";
+  if(t<0.2) return v>0?"rgba(0,195,158,0.45)":"rgba(215,55,75,0.45)";
+  if(t<0.5) return v>0?"rgba(0,215,172,0.78)":"rgba(235,65,88,0.78)";
+  return "rgba(230,230,242,0.93)";
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function render() {
+  if(!dataset) return;
+  const ds     = dataset;
+  const today  = ds.today;
+
+  // Visible dates
+  const end   = allDates.length - dateOffset;
+  const start = Math.max(0, end - dateRange);
+  const vis   = allDates.slice(start, end);
+
+  // Max value for scale
+  const allVals = ds.strikes.flatMap(s=>vis.map(d=>Math.abs(ds.data[s]?.[d]||0)));
+  const maxV    = Math.max(...allVals, 1);
+
+  // Net stats (today)
+  const posGex  = ds.strikes.filter(s=>(ds.data[s]?.[today]||0)>0).reduce((a,s)=>a+(ds.data[s][today]),0);
+  const negGex  = ds.strikes.filter(s=>(ds.data[s]?.[today]||0)<0).reduce((a,s)=>a+(ds.data[s][today]),0);
+  const netGex  = posGex+negGex;
+
+  // Regime
+  const regimeKey = getRegime(ds);
+  const regime    = REGIMES[regimeKey];
+  const dotCls    = regime.badgeCls; // pos / neg / trans
+  document.getElementById("regimeBadge").className  = "regime-badge "+dotCls;
+  document.getElementById("regimeDot").className    = "regime-dot "+dotCls;
+  document.getElementById("regimeName").textContent = regime.name;
+  document.getElementById("regimeBody").textContent = regime.body;
+
+  // Key level cards
+  document.getElementById("lvlCallWall").textContent  = "$"+ds.callWall?.toLocaleString();
+  document.getElementById("lvlCallWallGex").textContent= fmtV(ds.callWallVal);
+  document.getElementById("lvlPutWall").textContent   = "$"+ds.putWall?.toLocaleString();
+  document.getElementById("lvlPutWallGex").textContent = fmtV(ds.putWallVal);
+  document.getElementById("lvlFlip").textContent      = "$"+ds.flipStrike?.toLocaleString();
+  document.getElementById("lvlHVL").textContent       = "$"+ds.hvl?.toLocaleString();
+  document.getElementById("lvlSpot").textContent      = "$"+ds.center?.toLocaleString();
+
+  const spotAboveFlip = ds.center > ds.flipStrike;
+  document.getElementById("lvlSpotSub").textContent = spotAboveFlip ? "↑ flip" : "↓ flip";
+  document.getElementById("lvlSpotSub").style.color = spotAboveFlip ? "var(--accent)" : "var(--red)";
+
+  document.getElementById("lvlKing").textContent    = "$"+ds.largestNode?.toLocaleString();
+  document.getElementById("lvlKingGex").textContent = fmtV(ds.largestVal)+" GEX";
+
+  // (stat row removed — data lives in inspector and regime bar)
+
+
+  // Build table
+  const tbl = document.getElementById("heatTable");
+  tbl.innerHTML = "";
+
+  // Header
+  const thead = tbl.createTHead();
+  const hrow  = thead.insertRow();
+  const th0   = document.createElement("th"); th0.className="th-strike"; th0.textContent="STRIKE"; hrow.appendChild(th0);
+  vis.forEach(d=>{
+    const th=document.createElement("th");
+    th.className="th-date"+(d===today?" today":"");
+    th.textContent=fmtDate(d)+(d===today?" ●":"");
+    hrow.appendChild(th);
+  });
+  const thRoc=document.createElement("th"); thRoc.className="th-roc"; thRoc.textContent="Δ 1m"; thRoc.style.opacity="0.4"; hrow.appendChild(thRoc);
+
+  // Body — strikes in descending order
+  const tbody = tbl.createTBody();
+  [...ds.strikes].reverse().forEach(strike=>{
+    const isCallWall = strike===ds.callWall;
+    const isPutWall  = strike===ds.putWall;
+    const isFlip     = strike===ds.flipStrike;
+    const isHVL      = strike===ds.hvl;
+    const isSpot     = strike===ds.center;
+    const isLargest  = strike===ds.largestNode;
+
+    const tr = tbody.insertRow();
+    if(isFlip)     tr.classList.add("row-flip");
+    if(isCallWall) tr.classList.add("row-callwall");
+    if(isPutWall)  tr.classList.add("row-putwall");
+    if(isHVL)      tr.classList.add("row-hvl");
+    if(isSpot)     tr.classList.add("row-spot");
+
+    // Strike cell
+    const tdS = document.createElement("td");
+    tdS.className = "strike-col";
+    let label = "$"+strike.toLocaleString();
+    let tags  = "";
+    if(isSpot)     tags += `<span class="level-tag tag-spot">SPOT</span>`;
+    if(isCallWall) tags += `<span class="level-tag tag-call">CALL WALL</span>`;
+    if(isPutWall)  tags += `<span class="level-tag tag-put">PUT WALL</span>`;
+    if(isFlip)     tags += `<span class="level-tag tag-flip">FLIP</span>`;
+    if(isHVL)      tags += `<span class="level-tag tag-hvl">HVL</span>`;
+    tdS.innerHTML = label + tags;
+    tr.appendChild(tdS);
+
+    // Data cells
+    vis.forEach(d=>{
+      const v   = ds.data[strike]?.[d];
+      const isL = isLargest && d===today;
+      const td  = document.createElement("td");
+      td.className="data-cell";
+      td.style.background = cellBg(v, maxV, isL);
+      td.style.color      = cellColor(v, maxV, isL);
+      if(v!==undefined){
+        const s=fmtShort(v);
+        if(s) td.textContent=s;
+        td.title = `$${strike.toLocaleString()} · ${fmtDate(d)} · ${fmtV(v)}`;
+      }
+      td.addEventListener("click", ()=>openStrikePanel(strike, d, v));
+      tr.appendChild(td);
+    });
+
+    // ROC — subtle dot indicator only, no number
+    const roc = rocData[strike]||0;
+    const tdR = document.createElement("td");
+    tdR.className = "roc-col";
+    const rocAbs = Math.abs(roc);
+    if(rocAbs > 500000) {
+      const dot = roc>0 ? "●" : "●";
+      tdR.innerHTML = `<span style="color:${roc>0?"var(--accent)":"var(--red)"};font-size:8px;opacity:0.7">${dot}</span>`;
+      tdR.title = `ROC: ${fmtV(roc)}`;
+    } else {
+      tdR.textContent = "";
+    }
+    tr.appendChild(tdR);
+  });
+}
+
+// ── TICKER DROPDOWN ───────────────────────────────────────────
+function buildTickerDrop() {
+  const dd = document.getElementById("tickerDrop");
+  dd.innerHTML = "";
+  TICKERS.forEach(t=>{
+    const d=document.createElement("div");
+    d.className="ticker-opt"+(t===ticker?" selected":"");
+    d.innerHTML=`<span>${t}</span><span class="ticker-opt-price">$${(PRICES[t]||0).toLocaleString()}</span>`;
+    d.onmousedown=()=>{ ticker=t; init(); toggleTickerDrop(); };
+    dd.appendChild(d);
+  });
+}
+function toggleTickerDrop() {
+  const dd=document.getElementById("tickerDrop");
+  const open=dd.style.display==="none";
+  dd.style.display=open?"block":"none";
+  if(open) buildTickerDrop();
+}
+document.addEventListener("click",e=>{
+  if(!e.target.closest(".ticker-wrap")) document.getElementById("tickerDrop").style.display="none";
+});
+
+// ── CONTROLS ─────────────────────────────────────────────────
+function setMode(m){
+  mode=m;
+  ["GEX","VANNA"].forEach(x=>document.getElementById("mode"+x).className="btn"+(x===m?" active":""));
+  render();
+}
+const STRIKE_CYCLE=[20,50,100];
+function cycleStrikes(){
+  const idx=STRIKE_CYCLE.indexOf(numN);
+  numN=STRIKE_CYCLE[(idx+1)%STRIKE_CYCLE.length];
+  document.getElementById("strikesToggle").textContent=numN+" STRIKES";
+  init();
+}
+function setN(n){
+  numN=n;
+  [20,50,100].forEach(x=>{ const el=document.getElementById("n"+x); if(el) el.className="btn"+(x===n?" active":""); });
+  init();
+}
+function setRange(r){
+  dateRange=r;
+  [[5,"5"],[10,"10"],[21,"21"],[42,"42"]].forEach(([x,id])=>document.getElementById("r"+id).className="btn"+(x===r?" active":""));
+  render();
+}
+function shiftDates(dir){
+  dateOffset=Math.max(0,Math.min(dateOffset+dir*dateRange, allDates.length-dateRange));
+  render();
+}
+
+// ── ROC UPDATER ───────────────────────────────────────────────
+function startROC() {
+  if(rocTimer) clearInterval(rocTimer);
+  rocTimer = setInterval(()=>{
+    if(!dataset) return;
+    dataset.strikes.forEach(s=>{ rocData[s]=(rocData[s]||0)+rand(-180000,180000); });
+    // Occasionally spike a key level to trigger velocity alert
+    if(Math.random()<0.35){
+      const keyStrikes=[dataset.flipStrike,dataset.callWall,dataset.putWall,dataset.largestNode].filter(Boolean);
+      const s=keyStrikes[Math.floor(Math.random()*keyStrikes.length)];
+      if(s) rocData[s]=(rocData[s]||0)+(Math.random()>0.5?1:-1)*rand(500000,900000);
+    }
+    checkVelocityAlerts(dataset);
+    render();
+  }, 8000);
+}
+
+// ── CLOCK ─────────────────────────────────────────────────────
+setInterval(()=>{
+  document.getElementById("clock").textContent=new Date().toLocaleTimeString("en-US",{hour12:false});
+},1000);
+
+// ── NOTES / GLOSSARY ─────────────────────────────────────────
+const NOTES = {
+  regime: [
+    { color:"var(--accent)", title:"POSITIVE GAMMA",
+      body:"Dealers are long gamma. To hedge, they sell when price rises and buy when it falls — acting as a natural shock absorber.",
+      rule:"Expect mean-reversion, tighter ranges, lower realized vol. Fade moves. Range strategies outperform.", ruleColor:"var(--accent)" },
+    { color:"var(--red)", title:"NEGATIVE GAMMA",
+      body:"Dealers are short gamma. They must buy as price rises and sell as it falls — amplifying every move in both directions.",
+      rule:"Expect trending, volatile sessions. Breakouts follow through. Momentum and vol plays gain edge.", ruleColor:"var(--red)" },
+    { color:"var(--gold)", title:"GAMMA TRANSITION",
+      body:"Spot is near the flip point. Dealer positioning is near-neutral — a small move can tip the regime either way.",
+      rule:"High two-way risk. Watch whether price reclaims or loses the flip level before sizing in.", ruleColor:"var(--gold)" },
+  ],
+  levels: [
+    { color:"var(--accent)", title:"CALL WALL",
+      body:"The strike with the largest positive gamma above spot. Dealers are heavily long here — strong resistance as they sell into rallies approaching this level.",
+      rule:"Acts as a ceiling. Price often stalls or rejects at the Call Wall.", ruleColor:"var(--accent)" },
+    { color:"var(--red)", title:"PUT WALL",
+      body:"The strike with the largest negative gamma below spot. Dealers are heavily short here — strong support as they buy dips approaching this level.",
+      rule:"Acts as a floor. Price often bounces or stabilizes near the Put Wall.", ruleColor:"var(--red)" },
+    { color:"var(--gold)", title:"👑 KING NODE",
+      body:"The single strike with the largest absolute gamma exposure across the entire chain. This is the gravitational center of dealer hedging activity for the session.",
+      rule:"Price is magnetically attracted to the King Node into expiration.", ruleColor:"var(--gold)" },
+  ],
+  gex: [
+    { color:"var(--accent)", title:"WHAT IS GEX",
+      body:"Gamma Exposure (GEX) measures how much dealers must buy or sell in the underlying for every 1% move in price. Large GEX = large hedging flows.",
+      rule:"Green = dealers are long gamma (stabilizing). Red = dealers are short gamma (destabilizing).", ruleColor:"var(--accent)" },
+    { color:"var(--blue)", title:"HOW TO READ THE HEATMAP",
+      body:"Each cell shows the GEX at that strike on that date. Bright green = large positive gamma. Deep red = large negative gamma. Black = negligible exposure.",
+      rule:"Scan vertically to see how positioning has shifted day over day at each strike.", ruleColor:"var(--blue)" },
+    { color:"var(--text-secondary)", title:"ROC — RATE OF CHANGE",
+      body:"The rightmost column shows how quickly GEX is changing at each strike in the last minute. Large ROC means positioning is actively shifting.",
+      rule:"⚡ appears when ROC exceeds threshold — watch these strikes for sudden dealer hedging bursts.", ruleColor:"var(--gold)" },
+  ],
+  hvl: [
+    { color:"var(--blue)", title:"HVL — HIGH VOLATILITY LEVEL",
+      body:"The strike where dealers have the least gamma exposure. With minimal hedging obligation here, price action becomes unpredictable and sharp moves are more likely.",
+      rule:"If spot reaches HVL, expect volatility to spike. Dealers have no incentive to dampen the move.", ruleColor:"var(--blue)" },
+    { color:"var(--gold)", title:"GAMMA FLIP POINT",
+      body:"The exact strike where aggregate dealer gamma crosses from positive to negative. Above the flip = dealers stabilize. Below the flip = dealers accelerate.",
+      rule:"The flip level is the most important line on the chart. It defines the entire market regime.", ruleColor:"var(--gold)" },
+    { color:"var(--orange)", title:"SPOT vs FLIP",
+      body:"Where spot price sits relative to the gamma flip determines whether you're in a trending or mean-reverting environment right now.",
+      rule:"Spot above flip → fade rallies, buy dips. Spot below flip → ride trends, use wider stops.", ruleColor:"var(--orange)" },
+  ],
+};
+
+let notesTab = "regime";
+let notesOpen = false;
+
+function toggleNotes() {
+  notesOpen = !notesOpen;
+  const panel = document.getElementById("notesPanel");
+  const btn   = document.getElementById("notesToggle");
+  panel.classList.toggle("open", notesOpen);
+  btn.classList.toggle("active", notesOpen);
+  if(notesOpen) renderNotes();
+}
+
+function setNotesTab(tab) {
+  notesTab = tab;
+  document.querySelectorAll(".notes-tab").forEach((b,i)=>{
+    const tabs=["regime","levels","gex","hvl"];
+    b.classList.toggle("active", tabs[i]===tab);
+  });
+  renderNotes();
+}
+
+function renderNotes() {
+  const cards = NOTES[notesTab] || [];
+  const el    = document.getElementById("notesContent");
+  el.innerHTML = cards.map(c=>`
+    <div class="notes-card">
+      <div class="notes-card-header">
+        <div class="notes-card-dot" style="background:${c.color};box-shadow:0 0 5px ${c.color}44"></div>
+        <div class="notes-card-title" style="color:${c.color}">${c.title}</div>
+      </div>
+      <div class="notes-card-body">${c.body}</div>
+      <div class="notes-card-rule" style="color:${c.ruleColor};border-color:${c.ruleColor};background:${c.ruleColor}0d">${c.rule}</div>
+    </div>
+  `).join("");
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+function init() {
+  allDates = buildTradingDays(3);
+  rocData  = {};
+  dataset  = buildGEX(ticker, allDates);
+  document.getElementById("tickerLabel").textContent = ticker;
+  render();
+  startROC();
+}
+
+init();
+</script>
+
+<!-- STRIKE INSPECTOR OVERLAY -->
+<div class="inspector-overlay" id="inspectorOverlay" onclick="closeStrikePanel()"></div>
+<div class="inspector-panel" id="inspectorPanel">
+  <div class="inspector-handle"></div>
+  <div class="inspector-header">
+    <div class="inspector-title">
+      <div class="inspector-strike" id="inspStrike">—</div>
+      <div class="inspector-date"   id="inspDate">—</div>
+    </div>
+    <div class="inspector-value">
+      <div class="inspector-gex pos" id="inspGex">—</div>
+    </div>
+    <div class="inspector-close" onclick="closeStrikePanel()">✕</div>
+  </div>
+  <div class="inspector-tfs">
+    <button class="inspector-tf"        onclick="setInspTF('1m')">1M</button>
+    <button class="inspector-tf"        onclick="setInspTF('5m')">5M</button>
+    <button class="inspector-tf"        onclick="setInspTF('15m')">15M</button>
+    <button class="inspector-tf active" onclick="setInspTF('30m')">30M</button>
+    <button class="inspector-tf"        onclick="setInspTF('1h')">1H</button>
+    <button class="inspector-tf"        onclick="setInspTF('1d')">1D</button>
+  </div>
+  <div class="inspector-chart">
+    <canvas class="inspector-canvas" id="inspCanvas" height="180"></canvas>
+  </div>
+  <div class="inspector-stats">
+    <div class="inspector-stat">
+      <div class="inspector-stat-label">OPEN</div>
+      <div class="inspector-stat-value" id="inspOpen">—</div>
+    </div>
+    <div class="inspector-stat">
+      <div class="inspector-stat-label">HIGH</div>
+      <div class="inspector-stat-value" id="inspHigh" style="color:var(--accent)">—</div>
+    </div>
+    <div class="inspector-stat">
+      <div class="inspector-stat-label">LOW</div>
+      <div class="inspector-stat-value" id="inspLow" style="color:var(--red)">—</div>
+    </div>
+    <div class="inspector-stat">
+      <div class="inspector-stat-label">CHANGE</div>
+      <div class="inspector-stat-value" id="inspChange">—</div>
+    </div>
+    <div class="inspector-stat">
+      <div class="inspector-stat-label">TREND</div>
+      <div class="inspector-stat-value" id="inspTrend">—</div>
+    </div>
+  </div>
+
+  <!-- WHAT THIS MEANS -->
+  <div style="padding:0 20px 4px;">
+    <button class="wtm-btn" onclick="toggleWTM()">💡 WHAT THIS MEANS FOR MY TRADE</button>
+    <div class="wtm-card" id="wtmCard">
+      <div class="wtm-setup" id="wtmSetup">—</div>
+      <div class="wtm-row"><span class="wtm-row-label">BIAS</span><span class="wtm-pill" id="wtmBias">—</span></div>
+      <div class="wtm-row"><span class="wtm-row-label">SETUP</span><span class="wtm-pill" id="wtmSetupType">—</span></div>
+      <div class="wtm-row"><span class="wtm-row-label">TARGET</span><span class="wtm-pill wtm-neutral" id="wtmTarget">—</span></div>
+      <div class="wtm-row"><span class="wtm-row-label">STOP</span><span class="wtm-pill wtm-bear" id="wtmStop">—</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STRIKE INSPECTOR ─────────────────────────────────────────
+let inspStrike = null;
+let inspDate   = null;
+let inspBaseV  = 0;
+let inspTF     = "30m";
+let inspSeries = [];
+
+const TF_LABELS = {"1m":"1 MIN","5m":"5 MIN","15m":"15 MIN","30m":"30 MIN","1h":"1 HOUR","1d":"1 DAY"};
+
+function buildInspSeries(baseV, tf) {
+  const pts = 60;
+  const vol = Math.abs(baseV)*(tf==="1m"?0.004:tf==="5m"?0.01:tf==="15m"?0.022:tf==="30m"?0.038:tf==="1h"?0.06:0.13);
+  const drift=(Math.random()-0.48)*vol*0.3;
+  let v=baseV*rand(0.82,1.18);
+  const series=[];
+  for(let i=0;i<pts;i++){
+    v+=drift+rand(-vol,vol);
+    v+=(baseV-v)*0.04;
+    series.push(v);
+  }
+  series[series.length-1]=baseV;
+  return series;
+}
+
+function drawInspChart() {
+  const canvas=document.getElementById("inspCanvas");
+  if(!canvas||!inspSeries.length) return;
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.offsetWidth||300;
+  const H=180;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  const ctx=canvas.getContext("2d");
+  ctx.scale(dpr,dpr);
+
+  const pts=inspSeries;
+  const PL=52,PR=12,PT=16,PB=28;
+  const cW=W-PL-PR,cH=H-PT-PB;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle="#0c0c18"; ctx.fillRect(0,0,W,H);
+
+  const minV=Math.min(...pts),maxV=Math.max(...pts),vRange=maxV-minV||1;
+  const toX=i=>PL+cW*(i/(pts.length-1));
+  const toY=v=>PT+cH*(1-(v-minV)/vRange);
+  const zeroY=toY(0);
+  const isPos=inspBaseV>=0;
+  const lc=isPos?"#00d4aa":"#f04060";
+
+  // Grid
+  ctx.strokeStyle="#1c1c30"; ctx.lineWidth=0.5;
+  for(let i=0;i<=4;i++){const y=PT+cH*(i/4);ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(W-PR,y);ctx.stroke();}
+
+  // Zero
+  if(zeroY>PT&&zeroY<PT+cH){
+    ctx.strokeStyle="#333355";ctx.lineWidth=1;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(PL,zeroY);ctx.lineTo(W-PR,zeroY);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Fill
+  ctx.beginPath();
+  pts.forEach((v,i)=>i===0?ctx.moveTo(toX(i),toY(v)):ctx.lineTo(toX(i),toY(v)));
+  ctx.lineTo(toX(pts.length-1),zeroY);ctx.lineTo(toX(0),zeroY);ctx.closePath();
+  ctx.fillStyle=isPos?"rgba(0,212,170,0.12)":"rgba(240,64,96,0.10)";ctx.fill();
+
+  // Line
+  ctx.beginPath();ctx.strokeStyle=lc;ctx.lineWidth=2;ctx.lineJoin="round";
+  pts.forEach((v,i)=>i===0?ctx.moveTo(toX(i),toY(v)):ctx.lineTo(toX(i),toY(v)));
+  ctx.stroke();
+
+  // End dot
+  const last=pts[pts.length-1];
+  ctx.beginPath();ctx.arc(toX(pts.length-1),toY(last),4,0,Math.PI*2);
+  ctx.fillStyle=lc;ctx.fill();
+  ctx.beginPath();ctx.arc(toX(pts.length-1),toY(last),7,0,Math.PI*2);
+  ctx.strokeStyle=lc+"55";ctx.lineWidth=2;ctx.stroke();
+
+  // Y labels
+  ctx.fillStyle="#444460";ctx.font="9px 'IBM Plex Mono',monospace";ctx.textAlign="right";
+  for(let i=0;i<=4;i++){
+    const v=minV+(vRange*i/4);
+    ctx.fillText((fmtShort(v)||fmtV(v).replace("$","")),PL-4,PT+cH*(1-i/4)+3);
+  }
+
+  // X labels — show time ago
+  ctx.fillStyle="#2a2a45";ctx.textAlign="center";
+  const tfMins={"1m":1,"5m":5,"15m":15,"30m":30,"1h":60,"1d":390};
+  const step=tfMins[inspTF];
+  [0,0.25,0.5,0.75,1].forEach((pct,ti)=>{
+    const idx=Math.round(pct*(pts.length-1));
+    const ago=Math.round(step*(1-pct));
+    const label=ti===4?"NOW":(inspTF==="1d"?`${Math.round(ago/60)}h ago`:`${ago}m ago`);
+    ctx.fillText(label,toX(idx),H-8);
+  });
+
+  // Stats
+  const open=pts[0],hi=Math.max(...pts),lo=Math.min(...pts),close=pts[pts.length-1];
+  const chg=close-open,chgPct=(chg/Math.abs(open)*100).toFixed(1);
+  const trend=pts.slice(-12).reduce((a,v,i,arr)=>i===0?0:a+(v>arr[i-1]?1:-1),0);
+  document.getElementById("inspOpen").textContent=fmtV(open);
+  document.getElementById("inspHigh").textContent=fmtV(hi);
+  document.getElementById("inspLow").textContent=fmtV(lo);
+  const cEl=document.getElementById("inspChange");
+  cEl.textContent=(chg>=0?"+":"")+fmtV(chg)+" ("+chgPct+"%)";
+  cEl.style.color=chg>=0?"var(--accent)":"var(--red)";
+  const tEl=document.getElementById("inspTrend");
+  tEl.textContent=trend>4?"↑ RISING":trend<-4?"↓ FALLING":"→ FLAT";
+  tEl.style.color=trend>4?"var(--accent)":trend<-4?"var(--red)":"var(--text-muted)";
+}
+
+function openStrikePanel(strike,date,v){
+  inspStrike=strike;inspDate=date;inspBaseV=v||0;
+  wtmOpen=false;
+  document.getElementById("wtmCard").classList.remove("open");
+  document.getElementById("inspStrike").textContent="$"+strike.toLocaleString();
+  document.getElementById("inspDate").textContent=TF_LABELS[inspTF]+" · "+fmtDate(date);
+  const gEl=document.getElementById("inspGex");
+  gEl.textContent=fmtV(inspBaseV);
+  gEl.className="inspector-gex "+(inspBaseV>=0?"pos":"neg");
+  inspSeries=buildInspSeries(inspBaseV,inspTF);
+  document.getElementById("inspectorOverlay").classList.add("open");
+  document.getElementById("inspectorPanel").classList.add("open");
+  setTimeout(drawInspChart,60);
+}
+
+function closeStrikePanel(){
+  document.getElementById("inspectorOverlay").classList.remove("open");
+  document.getElementById("inspectorPanel").classList.remove("open");
+}
+
+function setInspTF(tf){
+  inspTF=tf;
+  document.querySelectorAll(".inspector-tf").forEach(b=>{
+    b.classList.toggle("active",b.textContent===tf.toUpperCase());
+  });
+  inspSeries=buildInspSeries(inspBaseV,tf);
+  document.getElementById("inspDate").textContent=TF_LABELS[tf]+" · "+fmtDate(inspDate);
+  drawInspChart();
+}
+window.addEventListener("resize",()=>{if(inspStrike)drawInspChart();});
+
+// ── EXPIRY SELECTOR ───────────────────────────────────────────
+let expiry = "0DTE";
+const EXPIRY_MULT = {"0DTE":1.0,"WEEKLY":0.72,"MONTHLY":0.45,"ALL":1.28};
+function setExpiry(e){
+  expiry=e;
+  ["0DTE","WEEKLY","MONTHLY","ALL"].forEach(x=>{
+    document.getElementById("exp"+x).className="btn"+(x===e?" active":"");
+  });
+  render();
+}
+
+// ── VELOCITY ALERT BANNER ─────────────────────────────────────
+let velDismissed = false;
+let lastVelStrike = null;
+
+const VEL_PLAYBOOKS = {
+  FLIP_POS: {
+    cls:"green-alert",
+    action:"FADE BREAKOUTS — BUY DIPS",
+    text:(s)=>`⚡ $${s.toLocaleString()} FLIP ZONE — GEX building fast. Dealers going long gamma. Market stabilizing.`
+  },
+  FLIP_NEG: {
+    cls:"red-alert",
+    action:"RIDE TRENDS — WIDER STOPS",
+    text:(s)=>`⚡ $${s.toLocaleString()} FLIP ZONE — GEX collapsing fast. Dealers going short gamma. Volatility expanding.`
+  },
+  KING_BUILD: {
+    cls:"green-alert",
+    action:"PRICE MAGNET — WATCH FOR PIN",
+    text:(s)=>`👑 $${s.toLocaleString()} KING NODE — Largest node accumulating fast. Strong gravitational pull on price.`
+  },
+  CALL_WALL: {
+    cls:"green-alert",
+    action:"RESISTANCE — FADE RALLIES",
+    text:(s)=>`🧱 $${s.toLocaleString()} CALL WALL — GEX spiking. Dealers will sell into any rally toward this level.`
+  },
+  PUT_WALL: {
+    cls:"red-alert",
+    action:"SUPPORT — BUY DIPS",
+    text:(s)=>`🛡 $${s.toLocaleString()} PUT WALL — GEX spiking. Dealers forced to buy any dip toward this level.`
+  }
+};
+
+function checkVelocityAlerts(ds) {
+  if(velDismissed) return;
+  // Find biggest ROC spike
+  let maxRoc=0, maxStrike=null;
+  ds.strikes.forEach(s=>{
+    const r=Math.abs(rocData[s]||0);
+    if(r>maxRoc){maxRoc=r;maxStrike=s;}
+  });
+  if(!maxStrike||maxRoc<400000) return;
+  if(maxStrike===lastVelStrike) return;
+  lastVelStrike=maxStrike;
+
+  // Classify alert type
+  let pb;
+  const roc=rocData[maxStrike]||0;
+  if(maxStrike===ds.flipStrike) pb=roc>0?VEL_PLAYBOOKS.FLIP_POS:VEL_PLAYBOOKS.FLIP_NEG;
+  else if(maxStrike===ds.largestNode) pb=VEL_PLAYBOOKS.KING_BUILD;
+  else if(maxStrike===ds.callWall) pb=VEL_PLAYBOOKS.CALL_WALL;
+  else if(maxStrike===ds.putWall) pb=VEL_PLAYBOOKS.PUT_WALL;
+  else pb=roc>0?VEL_PLAYBOOKS.FLIP_POS:VEL_PLAYBOOKS.FLIP_NEG;
+
+  const banner=document.getElementById("velBanner");
+  banner.className="vel-banner "+pb.cls;
+  banner.style.display="block";
+  document.getElementById("velText").textContent=pb.text(maxStrike);
+  document.getElementById("velAction").textContent=pb.action;
+}
+
+function dismissVelBanner(){
+  document.getElementById("velBanner").style.display="none";
+  velDismissed=true;
+  setTimeout(()=>{ velDismissed=false; lastVelStrike=null; },30000);
+}
+
+// ── WHAT THIS MEANS ───────────────────────────────────────────
+let wtmOpen = false;
+
+const WTM_LOGIC = {
+  // Positive GEX strike above spot = call wall / resistance
+  CALL_RESIST: {
+    setup: "This strike has significant positive gamma above spot. Dealers are short calls here and must sell the underlying into any rally approaching this level. Price typically stalls or reverses.",
+    bias:"BEARISH", biasClass:"wtm-bear",
+    type:"FADE / SHORT CALLS", typeClass:"wtm-bear",
+    target:(s)=>"$"+(s-10).toLocaleString()+" — $"+(s-5).toLocaleString(),
+    stop:(s)=>"Above $"+s.toLocaleString()+" with volume"
+  },
+  // Negative GEX strike below spot = put wall / support
+  PUT_SUPPORT: {
+    setup: "This strike has significant negative gamma below spot. Dealers are long puts and must buy the underlying as price falls toward this level. Strong mechanical support.",
+    bias:"BULLISH", biasClass:"wtm-bull",
+    type:"BUY DIPS / BULL SPREADS", typeClass:"wtm-bull",
+    target:(s)=>"$"+(s+5).toLocaleString()+" — $"+(s+15).toLocaleString(),
+    stop:(s)=>"Below $"+s.toLocaleString()+" close"
+  },
+  // Flip zone
+  FLIP: {
+    setup: "Spot is near the gamma flip. This is the most important level on the chart. Above = dealers stabilize. Below = dealers accelerate. A close on either side defines the regime.",
+    bias:"NEUTRAL — WATCH REGIME", biasClass:"wtm-neutral",
+    type:"BREAKOUT OR FADE — WAIT FOR CONFIRM", typeClass:"wtm-neutral",
+    target:(s)=>"Defined by regime flip direction",
+    stop:(s)=>"Tight — flip reclaim or rejection"
+  },
+  // King node
+  KING: {
+    setup: "This is the largest gamma node on the board. Price is magnetically attracted here into expiration. Dealers have the most hedging obligation at this exact strike.",
+    bias:"PIN TARGET", biasClass:"wtm-neutral",
+    type:"SELL PREMIUM AROUND THIS STRIKE", typeClass:"wtm-bull",
+    target:(s)=>"$"+s.toLocaleString()+" pin into expiry",
+    stop:(s)=>"Node unwind > 30% in size"
+  },
+  // HVL zone
+  HVL: {
+    setup: "This is the High Volatility Level — lowest dealer hedging obligation. If spot reaches here, dealers have no incentive to dampen the move. Expect sharp, fast price action.",
+    bias:"VOLATILE", biasClass:"wtm-bear",
+    type:"LONG VOL — BUY STRADDLES / STRANGLES", typeClass:"wtm-neutral",
+    target:(s)=>"Let the move develop",
+    stop:(s)=>"Vol crush if range-bound"
+  },
+  // Generic positive
+  POS_GEX: {
+    setup: "Positive gamma node. Dealers are long calls at this strike and will sell the underlying as price rises here — creating resistance and dampening upward momentum.",
+    bias:"RESISTANCE", biasClass:"wtm-bear",
+    type:"FADE / CREDIT SPREADS ABOVE", typeClass:"wtm-bear",
+    target:(s)=>"Reversion to $"+(s-10).toLocaleString(),
+    stop:(s)=>"Close above $"+s.toLocaleString()
+  },
+  // Generic negative
+  NEG_GEX: {
+    setup: "Negative gamma node. Dealers are short calls here and must buy as price falls — creating mechanical support. Look for bounces and potential reversal setups.",
+    bias:"SUPPORT", biasClass:"wtm-bull",
+    type:"LONG / BULL SPREADS ON TOUCH", typeClass:"wtm-bull",
+    target:(s)=>"$"+(s+10).toLocaleString()+" reversion",
+    stop:(s)=>"Break below $"+s.toLocaleString()
+  }
+};
+
+function getWTMLogic(strike, gexVal, ds) {
+  if(strike===ds.flipStrike)   return WTM_LOGIC.FLIP;
+  if(strike===ds.largestNode)  return WTM_LOGIC.KING;
+  if(strike===ds.hvl)          return WTM_LOGIC.HVL;
+  if(strike===ds.callWall)     return WTM_LOGIC.CALL_RESIST;
+  if(strike===ds.putWall)      return WTM_LOGIC.PUT_SUPPORT;
+  return gexVal>=0 ? WTM_LOGIC.POS_GEX : WTM_LOGIC.NEG_GEX;
+}
+
+function toggleWTM(){
+  wtmOpen=!wtmOpen;
+  const card=document.getElementById("wtmCard");
+  card.classList.toggle("open",wtmOpen);
+  if(wtmOpen && inspStrike && dataset){
+    const gexVal=dataset.data[inspStrike]?.[dataset.today]||0;
+    const logic=getWTMLogic(inspStrike,gexVal,dataset);
+    document.getElementById("wtmSetup").textContent=logic.setup;
+    const biasEl=document.getElementById("wtmBias");
+    biasEl.textContent=logic.bias; biasEl.className="wtm-pill "+logic.biasClass;
+    const typeEl=document.getElementById("wtmSetupType");
+    typeEl.textContent=logic.type; typeEl.className="wtm-pill "+logic.typeClass;
+    document.getElementById("wtmTarget").textContent=logic.target(inspStrike);
+    document.getElementById("wtmStop").textContent=logic.stop(inspStrike);
+  }
+}
+
+</script>
+</body>
+</html>
