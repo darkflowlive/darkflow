@@ -294,26 +294,7 @@ const TICKERS={
   },
 };
 
-const ECON=[
-  {name:'CPI — Core Inflation',date:'Jan 15',impact:'high',prev:'3.3%',est:'3.2%',actual:null},
-  {name:'FOMC Rate Decision',date:'Jan 29',impact:'high',prev:'5.25–5.5%',est:'5.25–5.5%',actual:null},
-  {name:'NFP Jobs Report',date:'Feb 7',impact:'high',prev:'227K',est:'185K',actual:null},
-  {name:'PCE Price Index',date:'Jan 31',impact:'high',prev:'2.6%',est:'2.5%',actual:null},
-  {name:'GDP Q4 Advance',date:'Jan 30',impact:'med',prev:'3.1%',est:'2.7%',actual:null},
-  {name:'Retail Sales',date:'Jan 16',impact:'med',prev:'+0.3%',est:'+0.4%',actual:null},
-  {name:'ISM Manufacturing',date:'Feb 3',impact:'med',prev:'49.3',est:'49.8',actual:null},
-  {name:'Michigan Sentiment',date:'Jan 17',impact:'low',prev:'74.0',est:'74.5',actual:null},
-];
-
-const ER_CAL=[
-  {ticker:'TSLA',name:'Tesla',when:'Jan 22 AMC',em:'±9.4%',sector:'Auto'},
-  {ticker:'META',name:'Meta',when:'Jan 29 AMC',em:'±7.3%',sector:'Tech'},
-  {ticker:'MSFT',name:'Microsoft',when:'Jan 29 AMC',em:'±4.1%',sector:'Tech'},
-  {ticker:'AAPL',name:'Apple',when:'Jan 30 AMC',em:'±5.2%',sector:'Tech'},
-  {ticker:'NVDA',name:'NVIDIA',when:'Feb 21 AMC',em:'±8.7%',sector:'Semi'},
-  {ticker:'AMZN',name:'Amazon',when:'Feb 6 AMC',em:'±5.8%',sector:'Tech'},
-  {ticker:'GOOGL',name:'Alphabet',when:'Feb 4 AMC',em:'±6.2%',sector:'Tech'},
-];
+let ECON=[];let ER_CAL=[];async function loadEarningsData(){try{const base=window.location.hostname==='localhost'?'':'https://www.darkflow.live';const[ahR,pmR]=await Promise.all([fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/earnings/afterhours')),fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/earnings/premarket'))]);const ahJ=await ahR.json();const pmJ=await pmR.json();const mapRow=(row,timing)=>({sym:row.symbol||row.ticker||'',name:row.full_name||row.name||row.symbol||'',date:row.date||new Date().toISOString().slice(0,10),timing,eps:row.eps_estimate!=null?parseFloat(row.eps_estimate):null,rev:row.revenue_estimate!=null?parseFloat(row.revenue_estimate)/1e9:null,move:row.expected_move!=null?parseFloat(row.expected_move):null,sector:row.sector||''});ER_CAL=[...(ahJ.data||[]).map(r=>mapRow(r,'AMC')),...(pmJ.data||[]).map(r=>mapRow(r,'BMO'))].sort((a,b)=>new Date(a.date)-new Date(b.date));const econR=await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/market/economic-calendar'));const econJ=await econR.json();ECON=(econJ.data||[]).map(row=>({date:row.date||'',event:row.event_name||row.name||'',impact:row.impact||'medium',prev:row.previous||null,est:row.estimate||null,actual:row.actual||null}));if(typeof renderCals==='function')renderCals();}catch(e){console.error('Earnings:',e);}};
 
 // ── RENDER CALENDARS ──
 function renderCals(){
@@ -353,19 +334,7 @@ function quickLoad(t){
   loadTicker();
 }
 
-function loadTicker(){
-  const raw=document.getElementById('searchInput').value.trim().toUpperCase();
-  if(!raw)return;
-  const data=TICKERS[raw];
-  document.getElementById('loadingState').style.display='flex';
-  document.getElementById('content').innerHTML='';
-  document.getElementById('loadingMsg').textContent='Analyzing '+raw+' earnings history...';
-  setTimeout(()=>{
-    document.getElementById('loadingState').style.display='none';
-    if(data) renderTicker(raw,data);
-    else renderNotFound(raw);
-  }, 900);
-}
+async function loadTicker(sym){try{const base=window.location.hostname==='localhost'?'':'https://www.darkflow.live';const[histR,ivR]=await Promise.all([fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/earnings')),fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank'))]);const histJ=await histR.json();const ivJ=await ivR.json();const history=histJ.data||[];const ivData=ivJ.data&&ivJ.data[0]?ivJ.data[0]:null;if(!history.length){if(typeof renderNotFound==='function')renderNotFound(sym);return;}const tickerData={sym,history:history.map(h=>({date:h.report_date||h.date||'',eps_est:parseFloat(h.eps_estimate)||0,eps_act:parseFloat(h.eps_actual)||0,beat:h.eps_actual!=null&&h.eps_estimate!=null&&parseFloat(h.eps_actual)>parseFloat(h.eps_estimate),move:parseFloat(h.one_day_price_change_percent)||0,timing:h.report_time||'AMC'})),ivRank:ivData?parseFloat(ivData.iv_rank_1y)||0:null,price:ivData?parseFloat(ivData.close)||0:null};if(typeof renderTicker==='function')renderTicker(tickerData);}catch(e){if(typeof renderNotFound==='function')renderNotFound(sym);}}
 
 function renderNotFound(t){
   document.getElementById('content').innerHTML=`
@@ -598,6 +567,8 @@ function daysUntil(dateStr){
 // ── INIT ──
 renderCals();
 quickLoad('NVDA');
+
+loadEarningsData();setInterval(loadEarningsData,300000);
 </script>
 </body>
 </html>
