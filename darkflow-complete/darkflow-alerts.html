@@ -219,73 +219,31 @@ let alerts=[];
 let selectedId=null;
 
 // ── DEMO ALERT POOL ──
-const ALERT_POOL=[
-  {id:1,grade:'A+',ticker:'NVDA',type:'CALL',strike:'$920',expiry:'Feb 21',premium:6800000,signal:'SWEEP',
-   score:97,time:null,
-   summary:'3-leg sweep — 5,200 contracts hit across CBOE, PHLX, ISE simultaneously. 14x normal call volume at this strike. Stock consolidating at $882 — identical setup to the Nov 20 print that paid +377%.',
-   factors:[
-     {label:'Premium size ($6.8M — top 2% of all prints)',pct:98,color:'var(--accent)'},
-     {label:'Unusual vs avg volume (14x normal)',pct:95,color:'var(--accent)'},
-     {label:'GEX regime (positive gamma — bullish)',pct:88,color:'var(--accent)'},
-     {label:'Historical match (3/3 similar prints paid)',pct:100,color:'var(--gold)'},
-     {label:'Speed of prior similar trades (avg 5 days)',pct:85,color:'var(--blue)'},
-   ],
-   hist:[
-     {date:'Nov 20',detail:'NVDA CALL $800 sweep · $6.8M',result:'+377%',speed:'12 days',grade:'A+'},
-     {date:'Sep 14',detail:'NVDA CALL $780 sweep · $4.1M',result:'+198%',speed:'8 days',grade:'A'},
-     {date:'Jul 8',detail:'NVDA CALL $740 sweep · $3.9M',result:'+134%',speed:'5 days',grade:'A-'},
-   ],
-   watch:'Watch for price to hold above $880. A break above $890 confirms the setup. GEX king node at $910 — above that, dealers are forced to buy. Target window: 5–10 days.'},
-
-  {id:2,grade:'A+',ticker:'META',type:'CALL',strike:'$640',expiry:'Feb 28',premium:4200000,signal:'SWEEP',
-   score:95,time:null,
-   summary:'Massive sweep — 4,800 contracts in under 4 minutes. Dark pool showed $2.1B META accumulation over the past 5 trading days. Earnings in 12 days — classic pre-earnings positioning.',
-   factors:[
-     {label:'Premium size ($4.2M — top 5%)',pct:92,color:'var(--accent)'},
-     {label:'Dark pool confirmation ($2.1B accumulation)',pct:96,color:'var(--accent)'},
-     {label:'Earnings catalyst (12 days out)',pct:90,color:'var(--gold)'},
-     {label:'Historical match (2/2 similar pre-ER sweeps paid)',pct:100,color:'var(--gold)'},
-     {label:'GEX regime (positive above $610)',pct:82,color:'var(--blue)'},
-   ],
-   hist:[
-     {date:'Oct 22',detail:'META CALL $580 sweep · $3.8M pre-ER',result:'+224%',speed:'4 days',grade:'A+'},
-     {date:'Jul 19',detail:'META CALL $490 sweep · $2.9M pre-ER',result:'+156%',speed:'6 days',grade:'A'},
-   ],
-   watch:'Earnings Jan 29 AMC. The trade is pre-earnings premium expansion. IV should climb into the print. Watch for any weakness to $615 as an entry opportunity — that\'s the GEX flip level.'},
-
-  {id:3,grade:'A',ticker:'SPY',type:'PUT',strike:'$560',expiry:'Feb 7',premium:5400000,signal:'BLOCK',
-   score:91,time:null,
-   summary:'Institutional block — single counterparty, 19,000 contracts. GEX just turned negative — the $568 flip zone was breached on close yesterday. This is a macro hedge from a large fund responding to the regime change.',
-   factors:[
-     {label:'Premium size ($5.4M — top 3%)',pct:94,color:'var(--accent)'},
-     {label:'GEX regime flip (negative gamma = amplified moves)',pct:92,color:'var(--red)'},
-     {label:'Signal type (block = institutional, not retail)',pct:88,color:'var(--accent)'},
-     {label:'Historical match (4/5 similar GEX-flip puts paid)',pct:80,color:'var(--blue)'},
-     {label:'Speed expectation (regime flips resolve in 3–7 days)',pct:85,color:'var(--blue)'},
-   ],
-   hist:[
-     {date:'Nov 8',detail:'SPY PUT $565 sweep · $4.4M (GEX flip)',result:'+189%',speed:'3 days',grade:'A'},
-     {date:'Aug 30',detail:'SPY PUT $540 block · $6.1M (GEX flip)',result:'+143%',speed:'5 days',grade:'A-'},
-     {date:'Jun 11',detail:'SPY PUT $520 sweep · $3.2M (GEX flip)',result:'+98%',speed:'7 days',grade:'B+'},
-   ],
-   watch:'GEX is now negative — dealers are short gamma which amplifies downside. Key level: $565 support. A break below that opens $555. Do not fight this regime until GEX flips back positive.'},
-
-  {id:4,grade:'A',ticker:'TSLA',type:'CALL',strike:'$280',expiry:'Feb 14',premium:2900000,signal:'SWEEP',
-   score:88,time:null,
-   summary:'Aggressive sweep — 8,200 contracts bought on ask across 3 exchanges. TSLA at $255, down 6% on the week. Contrarian bet — buyer fading weakness ahead of earnings Jan 22.',
-   factors:[
-     {label:'Premium size ($2.9M — top 8%)',pct:84,color:'var(--accent)'},
-     {label:'Sweep aggression (bought on ask, 3 exchanges)',pct:90,color:'var(--accent)'},
-     {label:'Earnings catalyst (8 days)',pct:86,color:'var(--gold)'},
-     {label:'Historical match (TSLA contrarian sweeps 2/3 paid)',pct:67,color:'var(--gold)'},
-     {label:'GEX setup (below flip = higher volatility expected)',pct:78,color:'var(--blue)'},
-   ],
-   hist:[
-     {date:'Dec 28',detail:'TSLA CALL $260 sweep · $1.9M (contrarian)',result:'+156%',speed:'1 day',grade:'A-'},
-     {date:'Sep 30',detail:'TSLA CALL $240 sweep · $2.4M (contrarian)',result:'+88%',speed:'3 days',grade:'B+'},
-   ],
-   watch:'High risk/high reward. TSLA is below its GEX flip ($262) — this amplifies moves in both directions. If earnings beat, this flies. If miss, pain is real. Only take this if you\'ve sized for the risk. Use R/R calculator before entering.'},
-];
+let ALERT_POOL=[];let alertsScanned=0;let alertsFired=0;
+async function loadAlerts(){try{
+const base=window.location.hostname==='localhost'?'':'https://www.darkflow.live';
+const r=await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/option-trades/flow-alerts'));
+const json=await r.json();const rows=json.data||[];alertsScanned=rows.length;
+const graded=rows.map(row=>{
+const prem=parseFloat(row.total_premium)||0;const volOI=parseFloat(row.volume_oi_ratio)||0;
+const isSweep=row.has_sweep||(row.alert_rule||'').includes('Ascending');const isFloor=row.has_floor;
+const type=(row.type||'call').toUpperCase();
+let grade='B';
+if(prem>1000000&&volOI>2&&(isSweep||isFloor))grade='A+';
+else if(prem>500000&&volOI>1.5)grade='A';
+else if(prem>250000&&(isSweep||isFloor||volOI>1))grade='B+';
+const t=new Date(row.created_at);
+return{id:row.id,
+time:t.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),
+ticker:row.ticker,side:type,strike:parseFloat(row.strike)||0,expiry:row.expiry,
+prem,grade,isSweep,isFloor,volOI:volOI.toFixed(2),
+score:grade==='A+'?98:grade==='A'?88:grade==='B+'?75:60,
+rule:row.alert_rule||'',underlying:parseFloat(row.underlying_price)||0};});
+alertsFired=graded.filter(a=>a.grade==='A'||a.grade==='A+').length;
+ALERT_POOL=graded;
+const aGrades=graded.filter(a=>a.grade==='A'||a.grade==='A+');
+if(aGrades.length>0&&typeof renderAlerts==='function')renderAlerts(aGrades);
+}catch(e){console.error('Alerts:',e);}};
 
 let poolIdx=0;
 
@@ -437,6 +395,9 @@ function selectAlert(id){
 
 // ── INIT ──
 startScanning();
+
+loadAlerts();
+setInterval(loadAlerts,15000);
 </script>
 </body>
 </html>
