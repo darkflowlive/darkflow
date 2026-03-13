@@ -390,7 +390,7 @@ function render(){
     tr.innerHTML=`
       <td style="width:14px;text-align:center">${f.repeat?'<span style="color:var(--gold);font-size:9px">🔁</span>':''}</td>
       <td style="color:var(--muted2)">${f.time}</td>
-      <td style="font-weight:700">${f.ticker}</td>
+      <td style="font-weight:700">${(f.ticker || currentTicker || 'SPY')}</td>
       <td style="color:var(--dim)">$${f.price.toFixed(2)}</td>
       <td style="color:var(--dim)">${fmtS(f.size)}</td>
       <td style="font-weight:600;color:var(--purple)">${fmtN(f.notional)}</td>
@@ -415,7 +415,7 @@ function render(){
       const dr=document.createElement('tr');dr.className='detail-row';
       dr.innerHTML=`<td colspan="13" style="border-bottom:1px solid rgba(168,85,247,.15)">
         <div class="detail-inner">
-          ${[['TICKER',f.ticker,'var(--text)'],['PRICE','$'+f.price.toFixed(2),'var(--dim)'],['SHARES',fmtS(f.size),'var(--dim)'],['NOTIONAL',fmtN(f.notional),'var(--purple)'],['VS ASK',f.vsAsk,ec],['VWAP','$'+f.vwap.toFixed(2),'var(--dim)'],['VS VWAP',(parseFloat(vd)>0?'+':'')+vd,vc],['EXCHANGE',f.exch,'var(--muted2)'],['VOL %',f.volPct+'%',f.volPct>10?'var(--gold)':'var(--muted2)']].map(([l,v,c])=>`<div class="d-stat"><div class="d-label">${l}</div><div class="d-val" style="color:${c}">${v}</div></div>`).join('')}
+          ${[['TICKER',(f.ticker || currentTicker || 'SPY'),'var(--text)'],['PRICE','$'+f.price.toFixed(2),'var(--dim)'],['SHARES',fmtS(f.size),'var(--dim)'],['NOTIONAL',fmtN(f.notional),'var(--purple)'],['VS ASK',f.vsAsk,ec],['VWAP','$'+f.vwap.toFixed(2),'var(--dim)'],['VS VWAP',(parseFloat(vd)>0?'+':'')+vd,vc],['EXCHANGE',f.exch,'var(--muted2)'],['VOL %',f.volPct+'%',f.volPct>10?'var(--gold)':'var(--muted2)']].map(([l,v,c])=>`<div class="d-stat"><div class="d-label">${l}</div><div class="d-val" style="color:${c}">${v}</div></div>`).join('')}
           <div class="wtm"><div class="wtm-label">▸ WHAT THIS MEANS</div><div class="wtm-text">${f.note}</div></div>
         </div>
       </td>`;
