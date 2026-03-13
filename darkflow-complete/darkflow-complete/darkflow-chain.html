@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DARKFLOW · CHAIN</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080810;--surface:#0c0c18;--raised:#10101f;--hover:#14142a;
+  --border:#1c1c30;--bm:#252540;
+  --text:#e8e8f0;--dim:#b0b0c8;--muted2:#8888a8;--muted:#444460;
+  --accent:#00d4aa;--red:#f04060;--gold:#f0c040;--blue:#4888ff;--orange:#ff8040;--purple:#a855f7;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;overflow:hidden;-webkit-font-smoothing:antialiased;}
+.app{display:flex;flex-direction:column;height:100vh;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+@keyframes rowIn{from{background:rgba(240,192,64,.08)}to{background:transparent}}
+::-webkit-scrollbar{width:3px;height:3px;}::-webkit-scrollbar-thumb{background:var(--bm);}
+
+/* TOPBAR */
+.topbar{flex-shrink:0;height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;}
+.logo{font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:13px;letter-spacing:.12em;color:var(--accent);display:flex;align-items:center;gap:8px;margin-right:20px;flex-shrink:0;}
+.logo-tri{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--accent);}
+.nav{display:flex;height:100%;overflow-x:auto;}
+.nav-tab{height:100%;padding:0 13px;display:flex;align-items:center;font-size:10px;font-weight:500;letter-spacing:.08em;white-space:nowrap;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;border-top:none;border-left:none;border-right:none;background:none;font-family:'IBM Plex Mono',monospace;}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;}
+
+/* REGIME */
+.regime{flex-shrink:0;margin:10px 16px 0;border-radius:6px;padding:9px 14px;display:flex;gap:14px;align-items:flex-start;position:relative;overflow:hidden;background:rgba(240,192,64,.05);border:1px solid rgba(240,192,64,.18);}
+.regime-shimmer{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(240,192,64,.5),transparent);animation:shimmer 3s infinite;}
+.regime-dot{width:9px;height:9px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold);animation:pulse 2s infinite;margin-top:2px;flex-shrink:0;}
+.regime-body{flex:1;min-width:0;}
+.regime-headline{display:flex;align-items:baseline;gap:10px;margin-bottom:3px;}
+.regime-title{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--gold);}
+.regime-sub{font-size:8px;color:var(--muted2);}
+.regime-text{font-size:8px;color:var(--muted2);line-height:1.65;}
+.regime-stats{display:flex;gap:14px;flex-shrink:0;align-items:center;}
+.rstat{display:flex;flex-direction:column;align-items:flex-end;}
+.rstat-l{font-size:6px;color:var(--muted);letter-spacing:.1em;}
+.rstat-v{font-size:12px;font-weight:700;}
+
+/* CONTROLS */
+.controls{flex-shrink:0;height:38px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:6px;margin-top:10px;overflow-x:auto;}
+.ctrl-label{font-size:7px;color:var(--muted);flex-shrink:0;letter-spacing:.1em;margin-right:2px;}
+.fdiv{width:1px;height:14px;background:var(--border);flex-shrink:0;margin:0 6px;}
+.fbtn{height:22px;padding:0 9px;border-radius:2px;font-size:7px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace;flex-shrink:0;background:transparent;border:1px solid var(--border);color:var(--muted);letter-spacing:.06em;transition:all .12s;}
+.fbtn.on{border-color:var(--accent);color:var(--accent);background:rgba(0,212,170,.07);}
+.fbtn.on-gold{border-color:var(--gold);color:var(--gold);background:rgba(240,192,64,.07);}
+.spot-pill{background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.25);border-radius:2px;padding:2px 10px;font-size:9px;font-weight:600;color:var(--accent);flex-shrink:0;}
+.ivr-pill{background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.25);border-radius:2px;padding:2px 10px;font-size:9px;font-weight:600;color:var(--gold);flex-shrink:0;}
+
+/* CHAIN TABLE */
+.chain-wrap{flex:1;overflow:auto;}
+table{width:100%;border-collapse:collapse;min-width:900px;}
+
+/* COLUMN HEADERS */
+thead tr th{padding:5px 8px;font-size:7px;font-weight:600;letter-spacing:.1em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:10;background:var(--surface);}
+th.call-h{text-align:right;color:rgba(0,212,170,.6);}
+th.put-h{text-align:left;color:rgba(240,64,96,.6);}
+th.center-h{text-align:center;background:var(--raised);color:var(--muted2);}
+
+/* ROWS */
+td{padding:0 8px;height:28px;font-size:9px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:middle;}
+tr.chain-row{cursor:pointer;transition:background .08s;}
+tr.chain-row:hover{background:var(--hover);}
+tr.chain-row.itm-call td.call-side{background:rgba(0,212,170,.04);}
+tr.chain-row.itm-put td.put-side{background:rgba(240,64,96,.04);}
+tr.chain-row.spot-row td{background:rgba(0,212,170,.06)!important;border-top:1px solid rgba(0,212,170,.3);border-bottom:1px solid rgba(0,212,170,.3);}
+tr.chain-row.unusual-row{animation:rowIn .8s ease;}
+
+/* SIDES */
+td.call-side{text-align:right;}
+td.put-side{text-align:left;}
+td.center-td{text-align:center;background:var(--raised);font-weight:700;font-size:10px;border-left:1px solid var(--bm);border-right:1px solid var(--bm);}
+
+/* OI BAR */
+.oi-bar{display:inline-flex;align-items:center;gap:4px;}
+.oi-track{width:44px;height:4px;background:var(--raised);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle;}
+.oi-fill-call{height:100%;border-radius:2px;background:rgba(0,212,170,.5);}
+.oi-fill-put{height:100%;border-radius:2px;background:rgba(240,64,96,.5);}
+
+/* GEX DOT */
+.gex-pos{color:var(--accent);}
+.gex-neg{color:var(--red);}
+
+/* UNUSUAL */
+.unusual-flag{color:var(--gold);font-size:8px;}
+
+/* SPREAD */
+.spread-tight{color:var(--accent);}
+.spread-wide{color:var(--red);}
+.spread-mid{color:var(--muted2);}
+
+/* DETAIL ROW */
+tr.detail-row td{padding:0;height:auto;}
+.detail-inner{padding:8px 12px 10px;display:flex;gap:8px;flex-wrap:wrap;background:var(--raised);}
+.d-stat{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:5px 10px;}
+.d-label{font-size:6px;color:var(--muted);letter-spacing:.1em;margin-bottom:2px;}
+.d-val{font-size:9px;font-weight:600;}
+.wtm{flex:1;min-width:220px;background:var(--bg);border-radius:4px;padding:8px 12px;border:1px solid var(--border);}
+.wtm-label{font-size:7px;font-weight:600;letter-spacing:.1em;color:var(--gold);margin-bottom:4px;}
+.wtm-text{font-size:9px;color:var(--muted2);line-height:1.65;}
+
+/* GUIDED MODE */
+.guided-wrap{padding:0;display:none;}
+.guided-wrap.active{display:block;}
+.chain-wrap.guided-active{display:none;}
+
+/* GUIDED ACTION BANNER */
+.action-banner{margin:10px 16px;border-radius:5px;padding:10px 16px;display:flex;align-items:center;gap:14px;border:1px solid;}
+.action-banner.buy-calls{background:rgba(0,212,170,.07);border-color:rgba(0,212,170,.3);}
+.action-banner.buy-puts{background:rgba(240,64,96,.07);border-color:rgba(240,64,96,.3);}
+.action-banner.stay-flat{background:rgba(240,192,64,.07);border-color:rgba(240,192,64,.25);}
+.action-icon{font-size:22px;flex-shrink:0;}
+.action-body{flex:1;}
+.action-title{font-size:13px;font-weight:700;letter-spacing:.04em;margin-bottom:3px;}
+.action-sub{font-size:8px;color:var(--muted2);line-height:1.6;}
+
+/* GUIDED TABLE */
+.guided-table-wrap{overflow-x:auto;padding:0 0 16px;}
+table.guided{width:100%;border-collapse:collapse;min-width:500px;}
+table.guided th{padding:5px 16px;font-size:7px;font-weight:600;letter-spacing:.1em;color:var(--muted);border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10;}
+table.guided th.gc{text-align:right;color:rgba(0,212,170,.6);}
+table.guided th.gp{text-align:left;color:rgba(240,64,96,.6);}
+table.guided th.gs{text-align:center;background:var(--raised);}
+table.guided tr.grow{cursor:default;transition:background .08s;}
+table.guided tr.grow:hover{background:var(--hover);}
+table.guided td{padding:0 16px;height:36px;vertical-align:middle;border-bottom:1px solid var(--border);font-size:10px;}
+table.guided td.gc{text-align:right;}
+table.guided td.gp{text-align:left;}
+table.guided td.gs{text-align:center;background:var(--raised);border-left:1px solid var(--bm);border-right:1px solid var(--bm);font-weight:700;font-size:11px;}
+
+/* GUIDED BADGES */
+.gbadge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:2px;font-size:7px;font-weight:700;letter-spacing:.08em;}
+.gb-wall{background:rgba(0,212,170,.12);color:var(--accent);border:1px solid rgba(0,212,170,.3);}
+.gb-floor{background:rgba(240,64,96,.12);color:var(--red);border:1px solid rgba(240,64,96,.3);}
+.gb-pain{background:rgba(240,192,64,.12);color:var(--gold);border:1px solid rgba(240,192,64,.3);}
+.gb-unusual{background:rgba(168,85,247,.12);color:var(--purple);border:1px solid rgba(168,85,247,.3);}
+.gb-spot{background:rgba(0,212,170,.08);color:var(--accent);border:1px solid rgba(0,212,170,.2);}
+
+/* GUIDED PLAIN ENGLISH */
+.gpe{font-size:8px;color:var(--muted2);display:block;line-height:1.4;margin-top:1px;}
+
+/* GUIDED strength bar */
+.gstr{display:flex;align-items:center;gap:6px;justify-content:flex-end;}
+.gstr-track{width:52px;height:5px;background:var(--raised);border-radius:2px;overflow:hidden;}
+.gstr-fill-c{height:100%;border-radius:2px;background:var(--accent);}
+.gstr-fill-p{height:100%;border-radius:2px;background:var(--red);}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo"><div class="logo-tri"></div>DARKFLOW</div>
+  <div class="nav">
+    <button class="nav-tab">OVERVIEW</button>
+    <button class="nav-tab">OPTIONS FLOW</button>
+    <button class="nav-tab">GEX</button>
+    <button class="nav-tab">PREMIUM DIVERGENCE</button>
+    <button class="nav-tab">DARK POOL</button>
+    <button class="nav-tab active">STRIKE MATRIX</button>
+    <button class="nav-tab">JOURNAL</button>
+    <button class="nav-tab">AI SIGNALS</button>
+  </div>
+  <div class="topbar-right">
+    <div class="live-dot"></div>
+    <span style="font-size:10px;color:var(--muted2)" id="clock"></span>
+  </div>
+</div>
+
+<!-- REGIME -->
+<div class="regime">
+  <div class="regime-shimmer"></div>
+  <div class="regime-dot"></div>
+  <div class="regime-body">
+    <div class="regime-headline">
+      <span class="regime-title">ELEVATED IV · PREMIUM SELLERS FAVORED</span>
+      <span class="regime-sub">IV Rank 74 · options are expensive relative to last 52 weeks</span>
+    </div>
+    <div class="regime-text">IV rank of 74 means options are pricing in more uncertainty than 74% of the past year. This is a premium-selling environment — buying options here means paying up. The $5,720–$5,730 strikes show the heaviest call OI, acting as a ceiling. Put OI clusters at $5,680–$5,700, providing a floor. Dealers are net short gamma between these levels — expect choppy, mean-reverting price action until one wall breaks.</div>
+  </div>
+  <div class="regime-stats">
+    <div class="rstat"><div class="rstat-l">IV RANK</div><div class="rstat-v" style="color:var(--gold)">74</div></div>
+    <div class="rstat"><div class="rstat-l">PUT/CALL OI</div><div class="rstat-v" style="color:var(--accent)">0.82</div></div>
+    <div class="rstat"><div class="rstat-l">MAX PAIN</div><div class="rstat-v" style="color:var(--gold)">$5,720</div></div>
+  </div>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <div class="spot-pill">SPOT $5,718</div>
+  <div class="ivr-pill">IVR 74</div>
+  <div class="fdiv"></div>
+  <span class="ctrl-label">EXPIRY</span>
+  <button class="fbtn on" id="e0" onclick="setExp('0DTE',this)">0DTE</button>
+  <button class="fbtn" id="e1" onclick="setExp('1W',this)">1W</button>
+  <button class="fbtn" id="e2" onclick="setExp('2W',this)">2W</button>
+  <button class="fbtn" id="e3" onclick="setExp('1M',this)">1M</button>
+  <div class="fdiv"></div>
+  <span class="ctrl-label">FILTER</span>
+  <button class="fbtn on-gold" id="fUnusual" onclick="toggleUnusual()">⚡ UNUSUAL</button>
+  <button class="fbtn" id="fITM" onclick="toggleITM()">HIDE ITM</button>
+  <button class="fbtn" id="fGuided" onclick="toggleGuided()" style="margin-left:auto;border-color:var(--purple);color:var(--purple)">GUIDED MODE</button>
+  <span style="font-size:7px;color:var(--muted);flex-shrink:0;margin-left:8px" id="strikeCount"></span>
+</div>
+
+<!-- CHAIN TABLE -->
+<div class="chain-wrap">
+<table>
+  <thead>
+    <tr>
+      <!-- CALLS -->
+      <th class="call-h">GEX</th>
+      <th class="call-h">OI</th>
+      <th class="call-h">VOL/OI</th>
+      <th class="call-h">IV</th>
+      <th class="call-h">BID×ASK</th>
+      <th class="call-h">LAST</th>
+      <!-- CENTER -->
+      <th class="center-h" style="min-width:72px">STRIKE</th>
+      <!-- PUTS -->
+      <th class="put-h">LAST</th>
+      <th class="put-h">BID×ASK</th>
+      <th class="put-h">IV</th>
+      <th class="put-h">VOL/OI</th>
+      <th class="put-h">OI</th>
+      <th class="put-h">GEX</th>
+    </tr>
+  </thead>
+  <tbody id="chainBody"></tbody>
+</table>
+</div>
+
+<!-- GUIDED MODE VIEW -->
+<div class="guided-wrap" id="guidedWrap">
+  <div id="actionBanner"></div>
+  <div class="guided-table-wrap">
+    <table class="guided">
+      <thead>
+        <tr>
+          <th class="gc" style="min-width:180px">CALLS — RESISTANCE</th>
+          <th class="gs" style="min-width:100px">STRIKE</th>
+          <th class="gp" style="min-width:180px">PUTS — SUPPORT</th>
+        </tr>
+      </thead>
+      <tbody id="guidedBody"></tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+<script>
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-US',{hour12:false});},1000);
+
+const SPOT=5718;
+let expFilter='0DTE', showUnusual=true, hideITM=false, expandedStrike=null;
+
+// ── CHAIN DATA ────────────────────────────────────────────────
+function genChain(){
+  const strikes=[5650,5660,5670,5675,5680,5685,5690,5695,5700,5705,5710,5715,5720,5725,5730,5735,5740,5745,5750,5755,5760,5770,5780,5790,5800];
+  return strikes.map(s=>{
+    const distFromSpot=(s-SPOT);
+    const otmCall=s>SPOT, otmPut=s<SPOT;
+    const atm=Math.abs(distFromSpot)<10;
+
+    // IV smile — higher at wings
+    const baseIV=16.4+Math.pow(Math.abs(distFromSpot)/100,1.8)*12;
+    const callIV=baseIV+(otmCall?1.2:-0.8);
+    const putIV=baseIV+(otmPut?2.1:-0.4);
+
+    // Prices (rough BS approximation feel)
+    const callLast=Math.max(0.05, atm?8.40:(otmCall?Math.max(0.05,8.40-distFromSpot*0.18):8.40+Math.abs(distFromSpot)*0.82));
+    const putLast=Math.max(0.05, atm?7.90:(otmPut?Math.max(0.05,7.90+distFromSpot*0.18):7.90+Math.abs(distFromSpot)*0.78));
+    const cSpread=callLast>5?0.30:callLast>1?0.15:0.05;
+    const pSpread=putLast>5?0.30:putLast>1?0.15:0.05;
+
+    // OI — heavy at round strikes
+    const isRound=s%25===0||s%20===0;
+    const callOI=Math.round((isRound?8000:2000)+Math.random()*4000+(otmCall&&s<=5750?3000:0));
+    const putOI=Math.round((isRound?7500:1800)+Math.random()*4000+(otmPut&&s>=5690?3500:0));
+
+    // Volume — some unusual strikes
+    const unusual=(s===5730||s===5700||s===5750||s===5690);
+    const callVol=unusual&&otmCall?Math.round(callOI*(0.4+Math.random()*0.3)):Math.round(callOI*(0.05+Math.random()*0.15));
+    const putVol=unusual&&otmPut?Math.round(putOI*(0.38+Math.random()*0.28)):Math.round(putOI*(0.04+Math.random()*0.12));
+
+    // GEX
+    const callGex=otmCall?(callOI*callLast*0.01*(-1)):(callOI*callLast*0.01);
+    const putGex=otmPut?(putOI*putLast*0.01):(putOI*putLast*0.01*(-1));
+
+    return {
+      strike:s, atm,
+      call:{iv:callIV,last:callLast,bid:callLast-cSpread/2,ask:callLast+cSpread/2,oi:callOI,vol:callVol,gex:callGex,spread:cSpread,itm:s<SPOT},
+      put:{iv:putIV,last:putLast,bid:putLast-pSpread/2,ask:putLast+pSpread/2,oi:putOI,vol:putVol,gex:putGex,spread:pSpread,itm:s>SPOT},
+      unusual,
+    };
+  });
+}
+
+const CHAIN_DATA=genChain();
+const MAX_OI=Math.max(...CHAIN_DATA.map(r=>Math.max(r.call.oi,r.put.oi)));
+
+function fmtOI(n){return n>=1000?(n/1000).toFixed(1)+'K':n;}
+function fmtVOIR(v,o){const r=v/o;return r>0.3?{txt:(r*100).toFixed(0)+'%',cls:'unusual-flag'}:{txt:(r*100).toFixed(0)+'%',cls:''};}
+function fmtSpread(s,last){
+  const pct=s/last;
+  return pct<0.03?'spread-tight':pct<0.08?'spread-mid':'spread-wide';
+}
+function fmtGex(g){
+  const abs=Math.abs(g);
+  const str=abs>=1000?(abs/1000).toFixed(1)+'K':abs.toFixed(0);
+  return {txt:(g>0?'+':'-')+str,cls:g>0?'gex-pos':'gex-neg'};
+}
+
+// WTM notes per strike
+const WTM={
+  5750:"CALL WALL — Largest call OI on the board. Dealers are heavily short gamma here. Strong resistance as they sell into any rally toward this level. Above $5,750 the squeeze potential is significant.",
+  5730:"KEY RESISTANCE — Heavy call volume today (unusual). Someone is positioning for a move above $5,730. Watch for a breakout attempt. If price holds above, next target is the $5,750 call wall.",
+  5720:"MAX PAIN — Options market makers are most profitable if SPX pins $5,720 at expiry. Gravitational pull into close. Expect chop and mean reversion near this level.",
+  5710:"ATM ZONE — Highest gamma per dollar here. Dealers are most active hedging near this strike. Small moves cause large dealer flows. Scalping environment — tight stops.",
+  5700:"PUT SUPPORT — Heavy put OI creates a dealer buy-the-dip floor. If price approaches $5,700, dealers will buy futures to hedge their short puts. Strong mechanical support.",
+  5690:"UNUSUAL PUT ACTIVITY — Vol/OI spike on puts at this strike. Someone bought protection here aggressively. Either institutional hedge or bearish directional bet. Watch for follow-on flow.",
+};
+
+function getWTM(s){
+  return WTM[s]||`Strike $${s.toLocaleString()} — ${s>SPOT?'OTM call, '+Math.round(((s-SPOT)/SPOT)*100*10)/10+'% above spot. Dealers are net short delta and buying the underlying as price rises toward this level.':'OTM put, '+Math.round(((SPOT-s)/SPOT)*100*10)/10+'% below spot. Dealers are net long delta and selling the underlying as price falls toward this level.'}`;
+}
+
+function render(){
+  const rows=CHAIN_DATA.filter(r=>{
+    if(showUnusual&&!r.unusual&&!r.atm) return false;
+    if(hideITM&&(r.call.itm||r.put.itm)) return false;
+    return true;
+  });
+  // if unusual filter gives nothing meaningful, show all
+  const display = (showUnusual && rows.length < 4) ? CHAIN_DATA : rows;
+
+  document.getElementById('strikeCount').textContent=display.length+' STRIKES';
+  const tbody=document.getElementById('chainBody');
+  tbody.innerHTML='';
+
+  display.forEach(r=>{
+    const isSpot=r.atm;
+    const isExp=expandedStrike===r.strike;
+    const cg=fmtGex(r.call.gex), pg=fmtGex(r.put.gex);
+    const cVOI=fmtVOIR(r.call.vol,r.call.oi), pVOI=fmtVOIR(r.put.vol,r.put.oi);
+    const cOIPct=r.call.oi/MAX_OI, pOIPct=r.put.oi/MAX_OI;
+    const cSpreadCls=fmtSpread(r.call.spread,r.call.last);
+    const pSpreadCls=fmtSpread(r.put.spread,r.put.last);
+
+    const tr=document.createElement('tr');
+    tr.className='chain-row'+(isSpot?' spot-row':'')+(r.call.itm?' itm-call':'')+(r.put.itm?' itm-put':'')+(r.unusual?' unusual-row':'');
+    tr.onclick=()=>{expandedStrike=isExp?null:r.strike;render();};
+
+    tr.innerHTML=`
+      <!-- CALLS -->
+      <td class="call-side"><span class="${cg.cls}" style="font-size:8px">${cg.txt}</span></td>
+      <td class="call-side">
+        <div class="oi-bar" style="justify-content:flex-end">
+          <span style="font-size:8px;color:var(--dim)">${fmtOI(r.call.oi)}</span>
+          <div class="oi-track"><div class="oi-fill-call" style="width:${cOIPct*100}%"></div></div>
+        </div>
+      </td>
+      <td class="call-side"><span class="${cVOI.cls}" style="font-size:8px">${cVOI.txt}</span></td>
+      <td class="call-side" style="color:var(--gold);font-size:8px">${r.call.iv.toFixed(1)}%</td>
+      <td class="call-side" style="font-size:8px"><span class="${cSpreadCls}">${r.call.bid.toFixed(2)}×${r.call.ask.toFixed(2)}</span></td>
+      <td class="call-side" style="font-weight:600;color:var(--accent)">${r.call.last.toFixed(2)}</td>
+      <!-- STRIKE -->
+      <td class="center-td" style="color:${isSpot?'var(--accent)':r.strike>SPOT?'var(--accent)':'var(--red)'}">
+        ${r.unusual?'<span class="unusual-flag">⚡</span> ':''}
+        $${r.strike.toLocaleString()}
+        ${isSpot?'<span style="font-size:7px;color:var(--accent);display:block;letter-spacing:.06em">SPOT</span>':''}
+      </td>
+      <!-- PUTS -->
+      <td class="put-side" style="font-weight:600;color:var(--red)">${r.put.last.toFixed(2)}</td>
+      <td class="put-side" style="font-size:8px"><span class="${pSpreadCls}">${r.put.bid.toFixed(2)}×${r.put.ask.toFixed(2)}</span></td>
+      <td class="put-side" style="color:var(--gold);font-size:8px">${r.put.iv.toFixed(1)}%</td>
+      <td class="put-side"><span class="${pVOI.cls}" style="font-size:8px">${pVOI.txt}</span></td>
+      <td class="put-side">
+        <div class="oi-bar">
+          <div class="oi-track"><div class="oi-fill-put" style="width:${pOIPct*100}%"></div></div>
+          <span style="font-size:8px;color:var(--dim)">${fmtOI(r.put.oi)}</span>
+        </div>
+      </td>
+      <td class="put-side"><span class="${pg.cls}" style="font-size:8px">${pg.txt}</span></td>
+    `;
+    tbody.appendChild(tr);
+
+    // EXPANDED DETAIL
+    if(isExp){
+      const dr=document.createElement('tr');
+      dr.className='detail-row';
+      dr.innerHTML=`<td colspan="13">
+        <div class="detail-inner">
+          <div style="display:flex;gap:20px;flex:1;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:7px;color:rgba(0,212,170,.6);letter-spacing:.1em;margin-bottom:6px;font-weight:600">CALL $${r.strike}</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                ${[['LAST','$'+r.call.last.toFixed(2),'var(--accent)'],['BID','$'+r.call.bid.toFixed(2),'var(--dim)'],['ASK','$'+r.call.ask.toFixed(2),'var(--dim)'],['IV',r.call.iv.toFixed(1)+'%','var(--gold)'],['OI',fmtOI(r.call.oi),'var(--dim)'],['VOL',fmtOI(r.call.vol),'var(--dim)'],['GEX',cg.txt,r.call.gex>0?'var(--accent)':'var(--red)']].map(([l,v,c])=>`<div class="d-stat"><div class="d-label">${l}</div><div class="d-val" style="color:${c}">${v}</div></div>`).join('')}
+              </div>
+            </div>
+            <div>
+              <div style="font-size:7px;color:rgba(240,64,96,.6);letter-spacing:.1em;margin-bottom:6px;font-weight:600">PUT $${r.strike}</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                ${[['LAST','$'+r.put.last.toFixed(2),'var(--red)'],['BID','$'+r.put.bid.toFixed(2),'var(--dim)'],['ASK','$'+r.put.ask.toFixed(2),'var(--dim)'],['IV',r.put.iv.toFixed(1)+'%','var(--gold)'],['OI',fmtOI(r.put.oi),'var(--dim)'],['VOL',fmtOI(r.put.vol),'var(--dim)'],['GEX',pg.txt,r.put.gex>0?'var(--accent)':'var(--red)']].map(([l,v,c])=>`<div class="d-stat"><div class="d-label">${l}</div><div class="d-val" style="color:${c}">${v}</div></div>`).join('')}
+              </div>
+            </div>
+          </div>
+          <div class="wtm">
+            <div class="wtm-label">▸ WHAT THIS MEANS</div>
+            <div class="wtm-text">${getWTM(r.strike)}</div>
+          </div>
+        </div>
+      </td>`;
+      tbody.appendChild(dr);
+    }
+  });
+}
+
+function setExp(e,el){
+  expFilter=e;
+  document.querySelectorAll('.fbtn').forEach(b=>{if(['e0','e1','e2','e3'].includes(b.id))b.className='fbtn';});
+  el.className='fbtn on';
+  expandedStrike=null;
+  render();
+}
+
+function toggleUnusual(){
+  showUnusual=!showUnusual;
+  document.getElementById('fUnusual').className='fbtn'+(showUnusual?' on-gold':'');
+  render();
+}
+
+function toggleITM(){
+  hideITM=!hideITM;
+  document.getElementById('fITM').className='fbtn'+(hideITM?' on':'');
+  render();
+}
+
+render();
+
+// ── GUIDED MODE ────────────────────────────────────────────────
+let guidedMode = false;
+
+// Identify key strikes
+function getKeyStrikes(){
+  // Call wall = highest call OI above spot
+  const callWall = CHAIN_DATA.filter(r=>r.strike>SPOT).sort((a,b)=>b.call.oi-a.call.oi)[0];
+  // Put floor = highest put OI below spot
+  const putFloor = CHAIN_DATA.filter(r=>r.strike<SPOT).sort((a,b)=>b.put.oi-a.put.oi)[0];
+  // Max pain = strike where total OI is highest (simplified)
+  const maxPain = CHAIN_DATA.sort((a,b)=>(b.call.oi+b.put.oi)-(a.call.oi+a.put.oi))[0];
+  // Unusual = vol/OI spikes
+  const unusual = CHAIN_DATA.filter(r=>r.unusual);
+  return { callWall, putFloor, maxPain, unusual };
+}
+
+function getStrikeRole(r, keys){
+  const roles=[];
+  if(r.strike===keys.callWall?.strike) roles.push('wall');
+  if(r.strike===keys.putFloor?.strike) roles.push('floor');
+  if(r.strike===keys.maxPain?.strike) roles.push('pain');
+  if(keys.unusual.find(u=>u.strike===r.strike)) roles.push('unusual');
+  if(r.atm) roles.push('spot');
+  return roles;
+}
+
+function getPlainEnglish(r, roles, side){
+  if(side==='call'){
+    if(roles.includes('wall')) return 'Biggest resistance above — dealers will sell here';
+    if(roles.includes('pain')) return 'Max pain — market may pin here at expiry';
+    if(roles.includes('unusual')) return '⚡ Heavy call buying today — someone is positioning';
+    if(roles.includes('spot')) return 'At the money — most sensitive to price moves';
+    if(r.strike>SPOT) return `${((r.strike-SPOT)/SPOT*100).toFixed(1)}% above spot — resistance`;
+    return 'In the money call';
+  } else {
+    if(roles.includes('floor')) return 'Biggest support below — dealers will buy here';
+    if(roles.includes('pain')) return 'Max pain — market may pin here at expiry';
+    if(roles.includes('unusual')) return '⚡ Heavy put buying today — someone buying protection';
+    if(roles.includes('spot')) return 'At the money — most sensitive to price moves';
+    if(r.strike<SPOT) return `${((SPOT-r.strike)/SPOT*100).toFixed(1)}% below spot — support`;
+    return 'In the money put';
+  }
+}
+
+function renderGuided(){
+  const keys = getKeyStrikes();
+  const tbody = document.getElementById('guidedBody');
+  tbody.innerHTML='';
+
+  // Action banner
+  const callWallDist = keys.callWall ? keys.callWall.strike - SPOT : 999;
+  const putFloorDist = keys.putFloor ? SPOT - keys.putFloor.strike : 999;
+  const hasUnusualCalls = keys.unusual.some(u=>u.strike>SPOT);
+  const hasUnusualPuts  = keys.unusual.some(u=>u.strike<SPOT);
+  let action, actionCls, actionIcon, actionSub;
+
+  if(hasUnusualCalls && callWallDist > 15){
+    action='BUY CALLS'; actionCls='buy-calls'; actionIcon='↑';
+    actionSub=`Unusual call buying detected and the $${keys.callWall?.strike} wall is ${callWallDist} points away. Room to run. Flow is bullish.`;
+  } else if(hasUnusualPuts && putFloorDist > 15){
+    action='BUY PUTS'; actionCls='buy-puts'; actionIcon='↓';
+    actionSub=`Unusual put buying detected and the $${keys.putFloor?.strike} floor is ${putFloorDist} points away. Downside open. Flow is bearish.`;
+  } else if(callWallDist < 10 && putFloorDist < 10){
+    action='STAY FLAT — PINNED'; actionCls='stay-flat'; actionIcon='↔';
+    actionSub=`Spot is sandwiched between the $${keys.callWall?.strike} call wall (${callWallDist}pts up) and $${keys.putFloor?.strike} put floor (${putFloorDist}pts down). High pin risk. Chop environment — avoid directional bets.`;
+  } else if(callWallDist < putFloorDist){
+    action='STAY FLAT — NEAR WALL'; actionCls='stay-flat'; actionIcon='↔';
+    actionSub=`Only ${callWallDist} points from the $${keys.callWall?.strike} call wall. Upside is capped. Risk/reward does not favor calls here. Wait for a pullback or a wall break.`;
+  } else {
+    action='CAUTIOUSLY BULLISH'; actionCls='buy-calls'; actionIcon='↑';
+    actionSub=`Put floor at $${keys.putFloor?.strike} (${putFloorDist}pts down) is holding. Call wall at $${keys.callWall?.strike} (${callWallDist}pts up) gives room. No unusual put activity. Lean long with stops below the floor.`;
+  }
+
+  document.getElementById('actionBanner').innerHTML=`
+    <div class="action-banner ${actionCls}" style="margin:10px 16px 4px;">
+      <div class="action-icon">${actionIcon}</div>
+      <div class="action-body">
+        <div class="action-title" style="color:${actionCls==='buy-calls'?'var(--accent)':actionCls==='buy-puts'?'var(--red)':'var(--gold)'}">${action}</div>
+        <div class="action-sub">${actionSub}</div>
+      </div>
+    </div>`;
+
+  // Only show key strikes in guided mode
+  const keyStrikes = new Set([
+    ...CHAIN_DATA.filter(r=>r.unusual).map(r=>r.strike),
+    keys.callWall?.strike, keys.putFloor?.strike, keys.maxPain?.strike,
+    ...CHAIN_DATA.filter(r=>r.atm).map(r=>r.strike),
+    // nearest 2 OTM calls
+    ...CHAIN_DATA.filter(r=>r.strike>SPOT).slice(0,3).map(r=>r.strike),
+    // nearest 2 OTM puts
+    ...CHAIN_DATA.filter(r=>r.strike<SPOT).slice(-3).map(r=>r.strike),
+  ].filter(Boolean));
+
+  const display = CHAIN_DATA.filter(r=>keyStrikes.has(r.strike))
+    .sort((a,b)=>b.strike-a.strike);
+
+  const maxOI2=Math.max(...display.map(r=>Math.max(r.call.oi,r.put.oi)));
+
+  display.forEach(r=>{
+    const roles=getStrikeRole(r,keys);
+    const cPE=getPlainEnglish(r,roles,'call');
+    const pPE=getPlainEnglish(r,roles,'put');
+    const cPct=r.call.oi/maxOI2, pPct=r.put.oi/maxOI2;
+    const isSpot=r.atm;
+    const isWall=roles.includes('wall'), isFloor=roles.includes('floor');
+    const isPain=roles.includes('pain'), isUnusual=roles.includes('unusual');
+
+    const badges=[];
+    if(isWall) badges.push('<span class="gbadge gb-wall">CALL WALL</span>');
+    if(isFloor) badges.push('<span class="gbadge gb-floor">PUT FLOOR</span>');
+    if(isPain) badges.push('<span class="gbadge gb-pain">MAX PAIN</span>');
+    if(isUnusual) badges.push('<span class="gbadge gb-unusual">⚡ UNUSUAL</span>');
+    if(isSpot) badges.push('<span class="gbadge gb-spot">SPOT</span>');
+
+    const tr=document.createElement('tr');
+    tr.className='grow'+(isSpot?' spot-row':'');
+    tr.innerHTML=`
+      <td class="gc">
+        <div class="gstr" style="margin-bottom:3px">
+          <div class="gstr-track"><div class="gstr-fill-c" style="width:${cPct*100}%"></div></div>
+          <span style="font-weight:700;color:var(--accent);font-size:11px">$${r.call.last.toFixed(2)}</span>
+        </div>
+        <span class="gpe" style="text-align:right;display:block">${cPE}</span>
+      </td>
+      <td class="gs" style="color:${isSpot?'var(--accent)':r.strike>SPOT?'var(--dim)':'var(--muted2)'}">
+        $${r.strike.toLocaleString()}
+        <div style="display:flex;gap:3px;justify-content:center;margin-top:3px;flex-wrap:wrap">${badges.join('')}</div>
+      </td>
+      <td class="gp">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+          <span style="font-weight:700;color:var(--red);font-size:11px">$${r.put.last.toFixed(2)}</span>
+          <div class="gstr-track"><div class="gstr-fill-p" style="width:${pPct*100}%"></div></div>
+        </div>
+        <span class="gpe">${pPE}</span>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function toggleGuided(){
+  guidedMode=!guidedMode;
+  const btn=document.getElementById('fGuided');
+  const chainWrap=document.querySelector('.chain-wrap');
+  const guidedWrap=document.getElementById('guidedWrap');
+  if(guidedMode){
+    btn.style.background='rgba(168,85,247,.12)';
+    btn.style.borderColor='var(--purple)';
+    btn.style.color='var(--purple)';
+    btn.textContent='PRO MODE';
+    chainWrap.style.display='none';
+    guidedWrap.style.display='block';
+    renderGuided();
+  } else {
+    btn.style.background='';
+    btn.style.borderColor='var(--purple)';
+    btn.style.color='var(--purple)';
+    btn.textContent='GUIDED MODE';
+    chainWrap.style.display='';
+    guidedWrap.style.display='none';
+  }
+}
+</script>
+</body>
+</html>

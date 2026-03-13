@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DARKFLOW · JOURNAL</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080810;--surface:#0c0c18;--raised:#10101f;--hover:#14142a;
+  --border:#1c1c30;--bm:#252540;
+  --text:#e8e8f0;--dim:#b0b0c8;--muted2:#8888a8;--muted:#444460;
+  --accent:#00d4aa;--red:#f04060;--gold:#f0c040;--blue:#4888ff;--orange:#ff8040;--purple:#a855f7;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;overflow:hidden;-webkit-font-smoothing:antialiased;}
+.app{display:flex;flex-direction:column;height:100vh;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+::-webkit-scrollbar{width:3px;height:3px;}::-webkit-scrollbar-thumb{background:var(--bm);}
+
+/* TOPBAR */
+.topbar{flex-shrink:0;height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;}
+.logo{font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:13px;letter-spacing:.12em;color:var(--accent);display:flex;align-items:center;gap:8px;margin-right:20px;flex-shrink:0;}
+.logo-tri{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--accent);}
+.nav{display:flex;height:100%;overflow-x:auto;}
+.nav-tab{height:100%;padding:0 13px;display:flex;align-items:center;font-size:10px;font-weight:500;letter-spacing:.08em;white-space:nowrap;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;border-top:none;border-left:none;border-right:none;background:none;font-family:'IBM Plex Mono',monospace;}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;}
+
+/* BODY SCROLL */
+.body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.inner{padding:12px 16px;display:flex;flex-direction:column;gap:12px;}
+
+/* AI COACH BANNER */
+.coach-banner{border-radius:6px;padding:11px 14px;position:relative;overflow:hidden;background:rgba(0,212,170,.05);border:1px solid rgba(0,212,170,.2);}
+.coach-shimmer{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,212,170,.5),transparent);animation:shimmer 3s infinite;}
+.coach-head{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.coach-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:pulse 2s infinite;}
+.coach-title{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.04em;}
+.coach-sub{font-size:8px;color:var(--muted2);}
+.coach-text{font-size:8px;color:var(--muted2);line-height:1.7;}
+.coach-insights{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+.insight{background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:6px 10px;flex:1;min-width:160px;}
+.insight-label{font-size:6px;color:var(--muted);letter-spacing:.1em;margin-bottom:3px;}
+.insight-val{font-size:10px;font-weight:600;}
+.insight-sub{font-size:7px;color:var(--muted2);margin-top:1px;}
+
+/* STAT GRID */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:10px 12px;}
+.stat-label{font-size:6px;color:var(--muted);letter-spacing:.12em;margin-bottom:4px;}
+.stat-val{font-size:16px;font-weight:700;line-height:1;}
+.stat-sub{font-size:7px;color:var(--muted2);margin-top:3px;}
+.stat-bar{height:3px;border-radius:2px;margin-top:6px;background:var(--border);}
+.stat-bar-fill{height:100%;border-radius:2px;}
+
+/* STREAK */
+.streak-row{display:flex;gap:4px;align-items:center;margin-top:6px;flex-wrap:wrap;}
+.streak-dot{width:14px;height:14px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;flex-shrink:0;}
+.streak-dot.w{background:rgba(0,212,170,.2);color:var(--accent);border:1px solid rgba(0,212,170,.3);}
+.streak-dot.l{background:rgba(240,64,96,.2);color:var(--red);border:1px solid rgba(240,64,96,.3);}
+.streak-dot.cur{box-shadow:0 0 6px currentColor;}
+
+/* BREAKDOWN SECTION */
+.section{background:var(--surface);border:1px solid var(--border);border-radius:5px;overflow:hidden;}
+.section-header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);}
+.section-title{font-size:8px;font-weight:600;letter-spacing:.12em;color:var(--muted2);}
+.section-body{padding:10px 12px;}
+
+/* MINI BARS */
+.mini-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.mini-bar-label{font-size:8px;color:var(--dim);min-width:44px;flex-shrink:0;}
+.mini-bar-track{flex:1;height:6px;background:var(--raised);border-radius:3px;overflow:hidden;}
+.mini-bar-fill{height:100%;border-radius:3px;}
+.mini-bar-val{font-size:8px;font-weight:600;min-width:44px;text-align:right;flex-shrink:0;}
+.mini-bar-count{font-size:7px;color:var(--muted);min-width:28px;text-align:right;flex-shrink:0;}
+
+/* TIME GRID */
+.time-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.time-cell{border-radius:2px;padding:4px 2px;text-align:center;}
+.time-label{font-size:6px;color:var(--muted);margin-bottom:2px;}
+.time-val{font-size:8px;font-weight:600;}
+
+/* TRADE TABLE */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;min-width:700px;}
+thead tr{background:var(--surface);}
+th{padding:5px 10px;font-size:7px;font-weight:600;letter-spacing:.12em;color:var(--muted);text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:0 10px;height:28px;font-size:10px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:middle;}
+tr.trade-row{cursor:pointer;transition:background .1s;}
+tr.trade-row:hover{background:var(--hover);}
+tr.trade-row.expanded{background:var(--raised);}
+tr.detail-row td{padding:0;height:auto;}
+.detail-inner{padding:8px 12px 10px 32px;display:flex;gap:8px;flex-wrap:wrap;}
+.d-stat{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:4px 9px;}
+.d-label{font-size:6px;color:var(--muted);letter-spacing:.1em;margin-bottom:2px;}
+.d-val{font-size:9px;font-weight:600;}
+.coach-note{flex:1;min-width:200px;background:var(--bg);border-radius:4px;padding:8px 10px;border:1px solid rgba(0,212,170,.12);}
+.coach-note-label{font-size:7px;font-weight:600;letter-spacing:.1em;color:var(--accent);margin-bottom:4px;}
+.coach-note-text{font-size:9px;color:var(--muted2);line-height:1.65;}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:1px 6px;border-radius:2px;font-size:7px;font-weight:700;letter-spacing:.07em;}
+.b-win{background:rgba(0,212,170,.13);color:var(--accent);border:1px solid rgba(0,212,170,.28);}
+.b-loss{background:rgba(240,64,96,.13);color:var(--red);border:1px solid rgba(240,64,96,.28);}
+.b-0dte{background:rgba(255,128,64,.13);color:var(--orange);border:1px solid rgba(255,128,64,.28);}
+.b-swing{background:rgba(72,136,255,.13);color:var(--blue);border:1px solid rgba(72,136,255,.28);}
+.b-scalp{background:rgba(168,85,247,.13);color:var(--purple);border:1px solid rgba(168,85,247,.28);}
+
+/* TWO COL */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo"><div class="logo-tri"></div>DARKFLOW</div>
+  <div class="nav">
+    <button class="nav-tab">OVERVIEW</button>
+    <button class="nav-tab">OPTIONS FLOW</button>
+    <button class="nav-tab">GEX</button>
+    <button class="nav-tab">PREMIUM DIVERGENCE</button>
+    <button class="nav-tab">DARK POOL</button>
+    <button class="nav-tab">STRIKE MATRIX</button>
+    <button class="nav-tab active">JOURNAL</button>
+    <button class="nav-tab">AI SIGNALS</button>
+  </div>
+  <div class="topbar-right">
+    <div class="live-dot"></div>
+    <span style="font-size:10px;color:var(--muted2)" id="clock"></span>
+  </div>
+</div>
+
+<div class="body">
+<div class="inner">
+
+<!-- AI COACH -->
+<div class="coach-banner">
+  <div class="coach-shimmer"></div>
+  <div class="coach-head">
+    <div class="coach-dot"></div>
+    <span class="coach-title">AI COACH</span>
+    <span class="coach-sub">Based on your last 47 trades</span>
+  </div>
+  <div class="coach-text">Your edge is clear but you're giving it back at the wrong times. You win 71% of 0DTE trades before 11:30am — but only 38% after 2pm. Your average winner is 2.3× your average loser, which is excellent. The problem: you're overtrading in the afternoon when your setup quality drops. Cut your post-2pm trades by half and your monthly P&L would increase by an estimated <span style="color:var(--accent);font-weight:600">+$2,840</span>. Also — SPX is your best ticker by far. TSLA is costing you money. Consider removing it from your watchlist entirely.</div>
+  <div class="coach-insights">
+    <div class="insight">
+      <div class="insight-label">BIGGEST EDGE</div>
+      <div class="insight-val" style="color:var(--accent)">0DTE before 11:30am</div>
+      <div class="insight-sub">71% win rate · avg +$412</div>
+    </div>
+    <div class="insight">
+      <div class="insight-label">BIGGEST LEAK</div>
+      <div class="insight-val" style="color:var(--red)">Trades after 2pm</div>
+      <div class="insight-sub">38% win rate · avg -$284</div>
+    </div>
+    <div class="insight">
+      <div class="insight-label">BEST TICKER</div>
+      <div class="insight-val" style="color:var(--accent)">SPX</div>
+      <div class="insight-sub">74% win rate · +$4,820 total</div>
+    </div>
+    <div class="insight">
+      <div class="insight-label">WORST TICKER</div>
+      <div class="insight-val" style="color:var(--red)">TSLA</div>
+      <div class="insight-sub">29% win rate · -$1,640 total</div>
+    </div>
+  </div>
+</div>
+
+<!-- STAT GRID -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-label">TOTAL P&L (30D)</div>
+    <div class="stat-val" style="color:var(--accent)">+$8,240</div>
+    <div class="stat-sub">47 trades · 30 days</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:72%;background:var(--accent)"></div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">WIN RATE</div>
+    <div class="stat-val" style="color:var(--accent)">61.7%</div>
+    <div class="stat-sub">29W · 18L</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:61.7%;background:var(--accent)"></div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">AVG WIN / AVG LOSS</div>
+    <div class="stat-val" style="color:var(--gold)">2.3×</div>
+    <div class="stat-sub">+$642 avg win · -$278 avg loss</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:78%;background:var(--gold)"></div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">CURRENT STREAK</div>
+    <div class="stat-val" style="color:var(--accent)">W3</div>
+    <div class="stat-sub">3 wins in a row</div>
+    <div class="streak-row" id="streakRow"></div>
+  </div>
+</div>
+
+<!-- BREAKDOWN ROW -->
+<div class="two-col">
+
+  <!-- STRATEGY -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">STRATEGY BREAKDOWN</span>
+    </div>
+    <div class="section-body">
+      <div class="mini-bar-row">
+        <span class="mini-bar-label">0DTE</span>
+        <div class="mini-bar-track"><div class="mini-bar-fill" style="width:74%;background:var(--accent)"></div></div>
+        <span class="mini-bar-val" style="color:var(--accent)">+$5,120</span>
+        <span class="mini-bar-count" style="color:var(--muted2)">22T</span>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-bar-label">SWING</span>
+        <div class="mini-bar-track"><div class="mini-bar-fill" style="width:48%;background:var(--blue)"></div></div>
+        <span class="mini-bar-val" style="color:var(--blue)">+$2,840</span>
+        <span class="mini-bar-count" style="color:var(--muted2)">11T</span>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-bar-label">SCALP</span>
+        <div class="mini-bar-track"><div class="mini-bar-fill" style="width:30%;background:var(--purple)"></div></div>
+        <span class="mini-bar-val" style="color:var(--purple)">+$920</span>
+        <span class="mini-bar-count" style="color:var(--muted2)">9T</span>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-bar-label">HEDGE</span>
+        <div class="mini-bar-track"><div class="mini-bar-fill" style="width:12%;background:var(--red)"></div></div>
+        <span class="mini-bar-val" style="color:var(--red)">-$640</span>
+        <span class="mini-bar-count" style="color:var(--muted2)">5T</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TICKER BREAKDOWN -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">TICKER BREAKDOWN</span>
+    </div>
+    <div class="section-body">
+      <div class="mini-bar-row">
+        <span class="mini-bar-label">SPX</span>
+        <div class="mini-bar-track"><div class="mini-bar-fill" style="width:82%;background:var(--accent)"></div></div>
+        <span class="mini-bar-val" style="color:var(--accent)">+$4,820</span>
+        <span class="mini-bar-count" style="color:var(--muted2)">74%</span>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-bar-label">SPY</span>
+        <div class="mini-bar-track"><div class="mini-bar-fill" style="width:55%;background:var(--accent)"></div></div>
+        <span class="mini-bar-val" style="color:var(--accent)">+$2,480</span>
+        <span class="mini-bar-count" style="color:var(--muted2)">62%</span>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-bar-label">NVDA</span>
+        <div class="mini-bar-track"><div class="mini-bar-fill" style="width:40%;background:var(--gold)"></div></div>
+        <span class="mini-bar-val" style="color:var(--gold)">+$1,580</span>
+        <span class="mini-bar-count" style="color:var(--muted2)">55%</span>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-bar-label">TSLA</span>
+        <div class="mini-bar-track"><div class="mini-bar-fill" style="width:18%;background:var(--red)"></div></div>
+        <span class="mini-bar-val" style="color:var(--red)">-$1,640</span>
+        <span class="mini-bar-count" style="color:var(--muted2)">29%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TIME OF DAY -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-title">P&L BY TIME OF DAY</span>
+    <span style="font-size:7px;color:var(--muted);margin-left:8px">your edge lives in the morning</span>
+  </div>
+  <div class="section-body">
+    <div class="time-grid" id="timeGrid"></div>
+  </div>
+</div>
+
+<!-- TRADE LOG -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-title">TRADE LOG</span>
+    <span style="font-size:7px;color:var(--muted);margin-left:8px">click any row for AI coaching note</span>
+    <div style="margin-left:auto;display:flex;gap:4px;">
+      <button class="badge b-0dte" style="cursor:pointer" onclick="setTF('ALL')">ALL</button>
+      <button class="badge b-0dte" style="cursor:pointer" onclick="setTF('0DTE')">0DTE</button>
+      <button class="badge b-swing" style="cursor:pointer" onclick="setTF('SWING')">SWING</button>
+      <button class="badge b-scalp" style="cursor:pointer" onclick="setTF('SCALP')">SCALP</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:14px"></th>
+          <th>DATE</th>
+          <th>TICKER</th>
+          <th>STRATEGY</th>
+          <th>SIDE</th>
+          <th>ENTRY</th>
+          <th>EXIT</th>
+          <th>SIZE</th>
+          <th>P&L</th>
+          <th>R/R</th>
+          <th>HOLD TIME</th>
+          <th>RESULT</th>
+        </tr>
+      </thead>
+      <tbody id="tradeBody"></tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- inner -->
+</div><!-- body -->
+</div><!-- app -->
+
+<script>
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-US',{hour12:false});},1000);
+
+const TRADES=[
+  {id:1, date:"Mar 12",ticker:"SPX", strategy:"0DTE", side:"CALL",entry:2.40,exit:4.80,size:10,pnl:2400, rr:2.0, hold:"42m", result:"WIN", time:"09:48", coach:"Textbook open-range breakout trade. You entered right at the gamma flip and rode the dealer hedging. This is your highest-probability setup — keep doing exactly this."},
+  {id:2, date:"Mar 12",ticker:"SPY", strategy:"0DTE", side:"CALL",entry:1.14,exit:2.10,size:15,pnl:1440, rr:1.8, hold:"1h 12m",result:"WIN", time:"10:22", coach:"Good discipline on the entry — you waited for the regime confirmation. Exit was slightly early, left about $400 on the table, but taking profit is never wrong."},
+  {id:3, date:"Mar 11",ticker:"NVDA",strategy:"SWING",side:"CALL",entry:3.20,exit:5.90,size:5, pnl:1350, rr:2.7, hold:"1D",  result:"WIN", time:"11:05", coach:"Excellent. You caught the dark pool accumulation signal and held overnight. This is the exact kind of trade DARKFLOW is built for — you used the data and trusted it."},
+  {id:4, date:"Mar 11",ticker:"TSLA",strategy:"0DTE", side:"PUT", entry:1.80,exit:0.60,size:8, pnl:-960, rr:0.4, hold:"28m", result:"LOSS",time:"14:22", coach:"This is your pattern — TSLA puts after 2pm. You've taken this trade 5 times in the last 30 days and lost 4 of them. The afternoon gamma environment on TSLA is noisy. Please stop taking this trade."},
+  {id:5, date:"Mar 11",ticker:"SPX", strategy:"SCALP",side:"PUT", entry:1.20,exit:1.90,size:12,pnl:840,  rr:1.4, hold:"18m", result:"WIN", time:"10:44", coach:"Clean scalp on the put wall bounce. Short hold, disciplined exit. Your scalps are improving — you're getting better at reading the intraday GEX levels."},
+  {id:6, date:"Mar 10",ticker:"SPY", strategy:"SWING",side:"CALL",entry:2.10,exit:1.20,size:6, pnl:-540, rr:0.6, hold:"2D",  result:"LOSS",time:"09:55", coach:"You held this through a regime shift from positive to negative gamma. When regime flips, close your directional swings immediately — that's rule #1 in a regime change. Update your exit rules."},
+  {id:7, date:"Mar 10",ticker:"SPX", strategy:"0DTE", side:"CALL",entry:1.80,exit:4.20,size:10,pnl:2400, rr:2.3, hold:"55m", result:"WIN", time:"09:38", coach:"Another strong morning 0DTE on SPX. You're 8 for 9 on this exact setup. This is your A+ trade. Size up here when the setup is clean."},
+  {id:8, date:"Mar 08",ticker:"NVDA",strategy:"SCALP",side:"CALL",entry:2.40,exit:1.80,size:5, pnl:-300, rr:0.5, hold:"14m", result:"LOSS",time:"13:55", coach:"You chased this entry 40 cents above your planned level. When you miss your entry, skip the trade. Chasing is your second biggest leak after TSLA afternoon trades."},
+  {id:9, date:"Mar 07",ticker:"SPX", strategy:"0DTE", side:"PUT", entry:2.20,exit:5.60,size:8, pnl:2720, rr:3.1, hold:"1h 8m",result:"WIN", time:"10:15", coach:"Best trade of the month. You caught the regime flip signal and sized up appropriately. This is what good trading looks like — setup, signal, size, execute."},
+  {id:10,date:"Mar 07",ticker:"TSLA",strategy:"SWING",side:"CALL",entry:4.20,exit:2.80,size:4, pnl:-560, rr:0.5, hold:"2D",  result:"LOSS",time:"11:30", coach:"TSLA swing in choppy tape. You know better. The GEX structure on TSLA was neutral all week — no edge. You were gambling, not trading."},
+  {id:11,date:"Mar 06",ticker:"SPY", strategy:"0DTE", side:"CALL",entry:0.90,exit:2.10,size:20,pnl:2400, rr:2.4, hold:"38m", result:"WIN", time:"09:52", coach:"Great sizing on a high-confidence morning setup. You read the call wall correctly and had conviction. This is the trader you are when you follow your rules."},
+  {id:12,date:"Mar 05",ticker:"SPX", strategy:"SCALP",side:"CALL",entry:1.40,exit:0.80,size:10,pnl:-600, rr:0.5, hold:"9m",  result:"LOSS",time:"15:15", coach:"End of day scalp with no setup. You were bored. Boredom trading is a real pattern in your journal — 6 of your last 8 losses happened after 3pm or when there was no clear GEX level in play."},
+];
+
+let tradeFilter='ALL', expandedId=null;
+
+// TIME OF DAY DATA
+const TIME_DATA=[
+  {label:"9:30",pnl:+3240,trades:8,wr:87},
+  {label:"10:00",pnl:+2180,trades:9,wr:77},
+  {label:"10:30",pnl:+1420,trades:7,wr:71},
+  {label:"11:00",pnl:+840, trades:6,wr:66},
+  {label:"11:30",pnl:+240, trades:5,wr:60},
+  {label:"12:00",pnl:-120, trades:3,wr:33},
+  {label:"14:00",pnl:-840, trades:5,wr:40},
+  {label:"15:00",pnl:-1240,trades:4,wr:25},
+];
+
+// STREAK (last 15 trades)
+const STREAK_DATA=['W','W','L','W','W','W','L','L','W','W','L','W','W','W','W'];
+
+function buildStreak(){
+  const el=document.getElementById('streakRow');
+  STREAK_DATA.forEach((r,i)=>{
+    const d=document.createElement('div');
+    d.className='streak-dot '+r.toLowerCase()+(i===STREAK_DATA.length-1?' cur':'');
+    d.textContent=r;
+    el.appendChild(d);
+  });
+}
+
+function buildTimeGrid(){
+  const el=document.getElementById('timeGrid');
+  const maxAbs=Math.max(...TIME_DATA.map(t=>Math.abs(t.pnl)));
+  TIME_DATA.forEach(t=>{
+    const pos=t.pnl>=0;
+    const intensity=Math.abs(t.pnl)/maxAbs;
+    const bg=pos?`rgba(0,212,170,${0.06+intensity*0.22})`:`rgba(240,64,96,${0.06+intensity*0.22})`;
+    const border=pos?`rgba(0,212,170,${0.2+intensity*0.3})`:`rgba(240,64,96,${0.2+intensity*0.3})`;
+    const vc=pos?'var(--accent)':'var(--red)';
+    el.innerHTML+=`<div class="time-cell" style="background:${bg};border:1px solid ${border};border-radius:3px;padding:6px 4px;">
+      <div class="time-label" style="color:var(--muted);font-size:6px;text-align:center">${t.label}</div>
+      <div class="time-val" style="color:${vc};text-align:center;font-size:9px">${t.pnl>=0?'+':''}$${Math.abs(t.pnl/100).toFixed(1)}k</div>
+      <div style="font-size:6px;color:var(--muted);text-align:center;margin-top:1px">${t.wr}% WR</div>
+    </div>`;
+  });
+}
+
+function fmtPnl(p){return (p>=0?'+':'')+`$${Math.abs(p).toLocaleString()}`;}
+
+function setTF(f){tradeFilter=f;expandedId=null;renderTrades();}
+
+function renderTrades(){
+  const rows=TRADES.filter(t=>tradeFilter==='ALL'||t.strategy===tradeFilter);
+  const tbody=document.getElementById('tradeBody');
+  tbody.innerHTML='';
+  rows.forEach(t=>{
+    const isWin=t.result==='WIN';
+    const isExp=expandedId===t.id;
+    const pc=isWin?'var(--accent)':'var(--red)';
+    const stBadge=t.strategy==='0DTE'?'b-0dte':t.strategy==='SWING'?'b-swing':'b-scalp';
+    const tr=document.createElement('tr');
+    tr.className='trade-row'+(isExp?' expanded':'');
+    tr.onclick=()=>{expandedId=isExp?null:t.id;renderTrades();};
+    tr.innerHTML=`
+      <td style="text-align:center"><span style="color:${pc};font-size:8px">${isWin?'●':'●'}</span></td>
+      <td style="color:var(--muted2)">${t.date}</td>
+      <td style="font-weight:700">${t.ticker}</td>
+      <td><span class="badge ${stBadge}">${t.strategy}</span></td>
+      <td style="color:${t.side==='CALL'?'var(--accent)':'var(--red)'}">${t.side}</td>
+      <td style="color:var(--dim)">$${t.entry.toFixed(2)}</td>
+      <td style="color:var(--dim)">$${t.exit.toFixed(2)}</td>
+      <td style="color:var(--muted2)">${t.size}c</td>
+      <td style="font-weight:700;color:${pc}">${fmtPnl(t.pnl)}</td>
+      <td style="color:${t.rr>=2?'var(--accent)':t.rr>=1?'var(--gold)':'var(--red)'}">${t.rr.toFixed(1)}R</td>
+      <td style="color:var(--muted2)">${t.hold}</td>
+      <td><span class="badge ${isWin?'b-win':'b-loss'}">${t.result}</span></td>
+    `;
+    tbody.appendChild(tr);
+    if(isExp){
+      const dr=document.createElement('tr');
+      dr.className='detail-row';
+      dr.innerHTML=`<td colspan="12" style="border-bottom:1px solid rgba(0,212,170,.1)">
+        <div class="detail-inner">
+          ${[['DATE',t.date,'var(--dim)'],['TICKER',t.ticker,'var(--text)'],['ENTRY','$'+t.entry.toFixed(2),'var(--dim)'],['EXIT','$'+t.exit.toFixed(2),'var(--dim)'],['SIZE',t.size+'c','var(--muted2)'],['P&L',fmtPnl(t.pnl),pc],['R/R',t.rr.toFixed(1)+'R',t.rr>=2?'var(--accent)':t.rr>=1?'var(--gold)':'var(--red)'],['HOLD',t.hold,'var(--muted2)'],['TIME',t.time,'var(--muted2)']].map(([l,v,c])=>`<div class="d-stat"><div class="d-label">${l}</div><div class="d-val" style="color:${c}">${v}</div></div>`).join('')}
+          <div class="coach-note">
+            <div class="coach-note-label">▸ AI COACH NOTE</div>
+            <div class="coach-note-text">${t.coach}</div>
+          </div>
+        </div>
+      </td>`;
+      tbody.appendChild(dr);
+    }
+  });
+}
+
+buildStreak();
+buildTimeGrid();
+renderTrades();
+</script>
+</body>
+</html>

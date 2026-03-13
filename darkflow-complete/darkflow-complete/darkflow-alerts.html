@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DARKFLOW · LIVE ALERTS</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080810;--surface:#0c0c18;--raised:#10101f;--hover:#14142a;
+  --border:#1c1c30;--bm:#252540;
+  --text:#e8e8f0;--dim:#b0b0c8;--muted2:#8888a8;--muted:#444460;
+  --accent:#00d4aa;--red:#f04060;--gold:#f0c040;--blue:#4888ff;--orange:#ff8040;--purple:#a855f7;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;-webkit-font-smoothing:antialiased;overflow:hidden;}
+.app{display:flex;flex-direction:column;height:100vh;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glow{0%,100%{box-shadow:0 0 20px rgba(240,192,64,.2)}50%{box-shadow:0 0 40px rgba(240,192,64,.5)}}
+@keyframes scanline{0%{top:-5%}100%{top:105%}}
+@keyframes breathe{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:.9;transform:scale(1.04)}}
+@keyframes alertDrop{from{opacity:0;transform:translateY(-20px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes countUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes flashBorder{0%,100%{border-color:rgba(240,192,64,.25)}50%{border-color:rgba(240,192,64,.8)}}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:var(--bm);}
+
+/* TOPBAR */
+.topbar{flex-shrink:0;height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;}
+.logo{font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:13px;letter-spacing:.12em;color:var(--accent);display:flex;align-items:center;gap:8px;margin-right:20px;flex-shrink:0;}
+.logo-tri{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--accent);}
+.nav{display:flex;height:100%;overflow-x:auto;}
+.nav-tab{height:100%;padding:0 13px;font-size:10px;font-weight:500;letter-spacing:.08em;white-space:nowrap;color:var(--muted);border:none;border-bottom:2px solid transparent;background:none;font-family:'IBM Plex Mono',monospace;cursor:pointer;}
+.nav-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;}
+
+/* STATUS BAR */
+.status-bar{flex-shrink:0;height:36px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:20px;}
+.sb-item{display:flex;align-items:center;gap:6px;font-size:8px;letter-spacing:.1em;}
+.sb-dot{width:5px;height:5px;border-radius:50%;}
+.sb-val{font-weight:700;}
+.sb-divider{width:1px;height:14px;background:var(--border);}
+.threshold-toggle{margin-left:auto;display:flex;align-items:center;gap:6px;background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.25);border-radius:3px;padding:4px 10px;cursor:pointer;}
+.threshold-toggle span{font-size:8px;font-weight:700;letter-spacing:.1em;color:var(--gold);}
+
+/* QUIET STATE */
+.quiet-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;position:relative;overflow:hidden;}
+.quiet-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,212,170,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,170,.015) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;}
+.quiet-scanline{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,170,.06),transparent);animation:scanline 8s linear infinite;}
+.quiet-center{display:flex;flex-direction:column;align-items:center;gap:20px;z-index:1;}
+.quiet-icon{width:64px;height:64px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;animation:breathe 4s ease-in-out infinite;}
+.quiet-title{font-size:22px;font-weight:700;letter-spacing:.06em;color:var(--dim);}
+.quiet-title span{color:var(--accent);}
+.quiet-sub{font-size:10px;color:var(--muted);letter-spacing:.14em;text-align:center;line-height:2;}
+.quiet-stats{display:flex;gap:32px;margin-top:8px;}
+.qs{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.qs-val{font-size:20px;font-weight:700;}
+.qs-label{font-size:7px;color:var(--muted);letter-spacing:.12em;}
+.scanning-bar{width:180px;height:2px;background:var(--border);border-radius:1px;overflow:hidden;margin-top:4px;}
+.scanning-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--blue));border-radius:1px;animation:shimmer 2s linear infinite;width:40%;}
+.quiet-last{font-size:8px;color:var(--muted);letter-spacing:.1em;margin-top:4px;}
+
+/* ACTIVE STATE */
+.active-screen{flex:1;display:flex;overflow:hidden;}
+.alerts-col{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px;}
+.detail-col{width:340px;flex-shrink:0;border-left:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;}
+
+/* ALERT CARD */
+.alert-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden;cursor:pointer;transition:border-color .15s;animation:alertDrop .35s ease;}
+.alert-card:hover{border-color:var(--bm);}
+.alert-card.selected{border-color:rgba(240,192,64,.4);}
+.alert-card.grade-ap{border-left:3px solid var(--gold);animation:alertDrop .35s ease, flashBorder 1.5s ease 3;}
+.alert-card.grade-a{border-left:3px solid var(--accent);}
+.ac-top{padding:10px 14px;display:flex;align-items:center;gap:10px;}
+.ac-grade{width:36px;height:36px;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
+.ac-grade-val{font-size:14px;font-weight:700;line-height:1;}
+.ac-grade-lbl{font-size:5px;letter-spacing:.1em;opacity:.7;}
+.ac-main{flex:1;min-width:0;}
+.ac-ticker{font-size:14px;font-weight:700;}
+.ac-detail{font-size:9px;color:var(--muted2);margin-top:2px;}
+.ac-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
+.ac-premium{font-size:11px;font-weight:700;}
+.ac-time{font-size:8px;color:var(--muted);}
+.ac-body{padding:0 14px 12px;display:flex;flex-direction:column;gap:8px;}
+.ac-intel{font-size:8px;color:var(--muted2);line-height:1.65;padding:8px 10px;border-radius:4px;}
+.ac-pills{display:flex;gap:5px;flex-wrap:wrap;}
+.ac-pill{font-size:7px;font-weight:700;padding:2px 7px;border-radius:2px;letter-spacing:.06em;}
+.ac-hist{background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:8px 10px;}
+.ac-hist-title{font-size:7px;color:var(--muted);letter-spacing:.1em;margin-bottom:5px;}
+.ac-hist-row{display:flex;align-items:center;gap:8px;font-size:8px;margin-bottom:3px;}
+.ac-hist-row:last-child{margin-bottom:0;}
+
+/* DETAIL PANEL */
+.dp-header{flex-shrink:0;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--surface);}
+.dp-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);padding:20px;text-align:center;}
+.dp-content{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;}
+
+/* SCORE METER */
+.score-meter{background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:12px 14px;}
+.sm-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+.sm-label{font-size:7px;color:var(--muted);letter-spacing:.1em;}
+.sm-val{font-size:20px;font-weight:700;}
+.sm-track{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:6px;}
+.sm-fill{height:100%;border-radius:4px;transition:width .8s ease;}
+.sm-ticks{display:flex;justify-content:space-between;font-size:6px;color:var(--muted);}
+
+/* FACTOR ROWS */
+.factor{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(28,28,48,.5);}
+.factor:last-child{border-bottom:none;}
+.factor-label{font-size:8px;color:var(--muted2);flex:1;}
+.factor-bar{width:80px;height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.factor-fill{height:100%;border-radius:3px;}
+.factor-val{font-size:8px;font-weight:700;width:30px;text-align:right;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo"><div class="logo-tri"></div>DARKFLOW</div>
+  <div class="nav">
+    <button class="nav-tab">OVERVIEW</button>
+    <button class="nav-tab">OPTIONS FLOW</button>
+    <button class="nav-tab">FLOW SCANNER</button>
+    <button class="nav-tab active">AI ALERTS</button>
+    <button class="nav-tab">GAMMA MAP</button>
+    <button class="nav-tab">EARNINGS DATA</button>
+  </div>
+  <div class="topbar-right">
+    <div class="live-dot"></div>
+    <span style="font-size:10px;color:var(--muted2)" id="clk"></span>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <div class="sb-item">
+    <div class="sb-dot" style="background:var(--accent);box-shadow:0 0 5px var(--accent)"></div>
+    <span style="color:var(--muted)">SCANNING</span>
+    <span class="sb-val" style="color:var(--accent)" id="scanCount">0</span>
+    <span style="color:var(--muted)">prints today</span>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-item">
+    <div class="sb-dot" style="background:var(--gold)"></div>
+    <span style="color:var(--muted)">FIRED</span>
+    <span class="sb-val" style="color:var(--gold)" id="firedCount">0</span>
+    <span style="color:var(--muted)">A/A+ alerts</span>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-item">
+    <div class="sb-dot" style="background:var(--muted)"></div>
+    <span style="color:var(--muted)">FILTERED OUT</span>
+    <span class="sb-val" style="color:var(--muted)" id="filteredOut">0</span>
+    <span style="color:var(--muted)">below threshold</span>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-item" style="color:var(--muted2)">
+    THRESHOLD
+    <span class="sb-val" style="color:var(--gold);margin-left:4px">A / A+ ONLY</span>
+  </div>
+  <div class="threshold-toggle" onclick="demoFire()">
+    <span>⚡ FIRE DEMO ALERT</span>
+  </div>
+</div>
+
+<!-- QUIET SCREEN -->
+<div class="quiet-screen" id="quietScreen">
+  <div class="quiet-grid"></div>
+  <div class="quiet-scanline"></div>
+  <div class="quiet-center">
+    <div class="quiet-icon">◈</div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+      <div class="quiet-title">Patience <span>Pays.</span></div>
+      <div class="quiet-sub">
+        SCANNING ALL FLOW IN REAL TIME<br>
+        ONLY A AND A+ PRINTS WILL WAKE THIS SCREEN
+      </div>
+    </div>
+    <div class="scanning-bar"><div class="scanning-fill"></div></div>
+    <div class="quiet-stats">
+      <div class="qs"><span class="qs-val" style="color:var(--accent)" id="qScan">0</span><span class="qs-label">SCANNED</span></div>
+      <div class="qs"><span class="qs-val" style="color:var(--muted2)" id="qFiltered">0</span><span class="qs-label">FILTERED</span></div>
+      <div class="qs"><span class="qs-val" style="color:var(--gold)">A/A+</span><span class="qs-label">THRESHOLD</span></div>
+    </div>
+    <div class="quiet-last" id="quietLast">Last scan: just now</div>
+  </div>
+</div>
+
+<!-- ACTIVE SCREEN -->
+<div class="active-screen" id="activeScreen" style="display:none;">
+  <div class="alerts-col" id="alertsCol"></div>
+  <div class="detail-col" id="detailCol">
+    <div class="dp-header">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--muted2)">AI SIGNAL BREAKDOWN</div>
+      <div style="font-size:7px;color:var(--muted);margin-top:2px;">Select an alert to see full scoring</div>
+    </div>
+    <div class="dp-empty" id="dpEmpty">
+      <div style="font-size:28px">◈</div>
+      <div style="font-size:9px;">SELECT AN ALERT</div>
+      <div style="font-size:8px;color:var(--muted);line-height:1.8;">Full AI scoring breakdown,<br>historical comparison,<br>and what to watch next.</div>
+    </div>
+    <div class="dp-content" id="dpContent" style="display:none;"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ── CLOCK ──
+setInterval(()=>document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-US',{hour12:false}),1000);
+
+// ── STATE ──
+let scanned=0, fired=0, filtered=0;
+let alerts=[];
+let selectedId=null;
+
+// ── DEMO ALERT POOL ──
+const ALERT_POOL=[
+  {id:1,grade:'A+',ticker:'NVDA',type:'CALL',strike:'$920',expiry:'Feb 21',premium:6800000,signal:'SWEEP',
+   score:97,time:null,
+   summary:'3-leg sweep — 5,200 contracts hit across CBOE, PHLX, ISE simultaneously. 14x normal call volume at this strike. Stock consolidating at $882 — identical setup to the Nov 20 print that paid +377%.',
+   factors:[
+     {label:'Premium size ($6.8M — top 2% of all prints)',pct:98,color:'var(--accent)'},
+     {label:'Unusual vs avg volume (14x normal)',pct:95,color:'var(--accent)'},
+     {label:'GEX regime (positive gamma — bullish)',pct:88,color:'var(--accent)'},
+     {label:'Historical match (3/3 similar prints paid)',pct:100,color:'var(--gold)'},
+     {label:'Speed of prior similar trades (avg 5 days)',pct:85,color:'var(--blue)'},
+   ],
+   hist:[
+     {date:'Nov 20',detail:'NVDA CALL $800 sweep · $6.8M',result:'+377%',speed:'12 days',grade:'A+'},
+     {date:'Sep 14',detail:'NVDA CALL $780 sweep · $4.1M',result:'+198%',speed:'8 days',grade:'A'},
+     {date:'Jul 8',detail:'NVDA CALL $740 sweep · $3.9M',result:'+134%',speed:'5 days',grade:'A-'},
+   ],
+   watch:'Watch for price to hold above $880. A break above $890 confirms the setup. GEX king node at $910 — above that, dealers are forced to buy. Target window: 5–10 days.'},
+
+  {id:2,grade:'A+',ticker:'META',type:'CALL',strike:'$640',expiry:'Feb 28',premium:4200000,signal:'SWEEP',
+   score:95,time:null,
+   summary:'Massive sweep — 4,800 contracts in under 4 minutes. Dark pool showed $2.1B META accumulation over the past 5 trading days. Earnings in 12 days — classic pre-earnings positioning.',
+   factors:[
+     {label:'Premium size ($4.2M — top 5%)',pct:92,color:'var(--accent)'},
+     {label:'Dark pool confirmation ($2.1B accumulation)',pct:96,color:'var(--accent)'},
+     {label:'Earnings catalyst (12 days out)',pct:90,color:'var(--gold)'},
+     {label:'Historical match (2/2 similar pre-ER sweeps paid)',pct:100,color:'var(--gold)'},
+     {label:'GEX regime (positive above $610)',pct:82,color:'var(--blue)'},
+   ],
+   hist:[
+     {date:'Oct 22',detail:'META CALL $580 sweep · $3.8M pre-ER',result:'+224%',speed:'4 days',grade:'A+'},
+     {date:'Jul 19',detail:'META CALL $490 sweep · $2.9M pre-ER',result:'+156%',speed:'6 days',grade:'A'},
+   ],
+   watch:'Earnings Jan 29 AMC. The trade is pre-earnings premium expansion. IV should climb into the print. Watch for any weakness to $615 as an entry opportunity — that\'s the GEX flip level.'},
+
+  {id:3,grade:'A',ticker:'SPY',type:'PUT',strike:'$560',expiry:'Feb 7',premium:5400000,signal:'BLOCK',
+   score:91,time:null,
+   summary:'Institutional block — single counterparty, 19,000 contracts. GEX just turned negative — the $568 flip zone was breached on close yesterday. This is a macro hedge from a large fund responding to the regime change.',
+   factors:[
+     {label:'Premium size ($5.4M — top 3%)',pct:94,color:'var(--accent)'},
+     {label:'GEX regime flip (negative gamma = amplified moves)',pct:92,color:'var(--red)'},
+     {label:'Signal type (block = institutional, not retail)',pct:88,color:'var(--accent)'},
+     {label:'Historical match (4/5 similar GEX-flip puts paid)',pct:80,color:'var(--blue)'},
+     {label:'Speed expectation (regime flips resolve in 3–7 days)',pct:85,color:'var(--blue)'},
+   ],
+   hist:[
+     {date:'Nov 8',detail:'SPY PUT $565 sweep · $4.4M (GEX flip)',result:'+189%',speed:'3 days',grade:'A'},
+     {date:'Aug 30',detail:'SPY PUT $540 block · $6.1M (GEX flip)',result:'+143%',speed:'5 days',grade:'A-'},
+     {date:'Jun 11',detail:'SPY PUT $520 sweep · $3.2M (GEX flip)',result:'+98%',speed:'7 days',grade:'B+'},
+   ],
+   watch:'GEX is now negative — dealers are short gamma which amplifies downside. Key level: $565 support. A break below that opens $555. Do not fight this regime until GEX flips back positive.'},
+
+  {id:4,grade:'A',ticker:'TSLA',type:'CALL',strike:'$280',expiry:'Feb 14',premium:2900000,signal:'SWEEP',
+   score:88,time:null,
+   summary:'Aggressive sweep — 8,200 contracts bought on ask across 3 exchanges. TSLA at $255, down 6% on the week. Contrarian bet — buyer fading weakness ahead of earnings Jan 22.',
+   factors:[
+     {label:'Premium size ($2.9M — top 8%)',pct:84,color:'var(--accent)'},
+     {label:'Sweep aggression (bought on ask, 3 exchanges)',pct:90,color:'var(--accent)'},
+     {label:'Earnings catalyst (8 days)',pct:86,color:'var(--gold)'},
+     {label:'Historical match (TSLA contrarian sweeps 2/3 paid)',pct:67,color:'var(--gold)'},
+     {label:'GEX setup (below flip = higher volatility expected)',pct:78,color:'var(--blue)'},
+   ],
+   hist:[
+     {date:'Dec 28',detail:'TSLA CALL $260 sweep · $1.9M (contrarian)',result:'+156%',speed:'1 day',grade:'A-'},
+     {date:'Sep 30',detail:'TSLA CALL $240 sweep · $2.4M (contrarian)',result:'+88%',speed:'3 days',grade:'B+'},
+   ],
+   watch:'High risk/high reward. TSLA is below its GEX flip ($262) — this amplifies moves in both directions. If earnings beat, this flies. If miss, pain is real. Only take this if you\'ve sized for the risk. Use R/R calculator before entering.'},
+];
+
+let poolIdx=0;
+
+// ── SCORING SIMULATION ──
+let scanInterval;
+function startScanning(){
+  let scanTick=0;
+  scanInterval=setInterval(()=>{
+    scanTick++;
+    scanned++;
+    // Randomly filter — most prints don't qualify
+    const roll=Math.random();
+    if(roll<0.04 && poolIdx<ALERT_POOL.length){
+      // Fire a real A/A+ alert
+    } else {
+      filtered++;
+    }
+    document.getElementById('scanCount').textContent=scanned;
+    document.getElementById('filteredOut').textContent=filtered;
+    document.getElementById('qScan').textContent=scanned;
+    document.getElementById('qFiltered').textContent=filtered;
+    document.getElementById('quietLast').textContent='Last scan: '+new Date().toLocaleTimeString('en-US',{hour12:false});
+  },800);
+}
+
+function demoFire(){
+  if(poolIdx>=ALERT_POOL.length) poolIdx=0;
+  const alert={...ALERT_POOL[poolIdx]};
+  alert.id=Date.now();
+  alert.time=new Date().toLocaleTimeString('en-US',{hour12:false});
+  poolIdx++;
+  fired++;
+  alerts.unshift(alert);
+  document.getElementById('firedCount').textContent=fired;
+
+  // Switch to active screen
+  document.getElementById('quietScreen').style.display='none';
+  document.getElementById('activeScreen').style.display='flex';
+
+  renderAlerts();
+  selectAlert(alert.id);
+}
+
+function renderAlerts(){
+  document.getElementById('alertsCol').innerHTML=alerts.map(a=>`
+    <div class="alert-card grade-${a.grade==='A+'?'ap':'a'}${selectedId===a.id?' selected':''}" onclick="selectAlert(${a.id})">
+      <div class="ac-top">
+        <div class="ac-grade" style="background:${a.grade==='A+'?'rgba(240,192,64,.12)':'rgba(0,212,170,.1)'};border:1px solid ${a.grade==='A+'?'rgba(240,192,64,.3)':'rgba(0,212,170,.25)'}">
+          <span class="ac-grade-val" style="color:${a.grade==='A+'?'var(--gold)':'var(--accent)'}">${a.grade}</span>
+          <span class="ac-grade-lbl" style="color:${a.grade==='A+'?'var(--gold)':'var(--accent)'}">GRADE</span>
+        </div>
+        <div class="ac-main">
+          <div style="display:flex;align-items:center;gap:7px;">
+            <span class="ac-ticker">${a.ticker}</span>
+            <span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:2px;background:${a.type==='CALL'?'rgba(0,212,170,.1)':'rgba(240,64,96,.1)'};color:${a.type==='CALL'?'var(--accent)':'var(--red)'}">${a.type}</span>
+            <span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:2px;background:rgba(255,128,64,.1);color:var(--orange)">${a.signal}</span>
+            ${a.grade==='A+'?'<span style="font-size:7px;font-weight:700;padding:2px 6px;border-radius:2px;background:rgba(240,192,64,.12);color:var(--gold);animation:pulse 2s infinite">⚡ TOP SIGNAL</span>':''}
+          </div>
+          <div class="ac-detail">${a.strike} · ${a.expiry} · AI Score: ${a.score}/100</div>
+        </div>
+        <div class="ac-right">
+          <span class="ac-premium" style="color:${a.type==='CALL'?'var(--accent)':'var(--red)'}">$${(a.premium/1e6).toFixed(1)}M</span>
+          <span class="ac-time">${a.time}</span>
+        </div>
+      </div>
+      <div class="ac-body">
+        <div class="ac-intel" style="background:rgba(${a.grade==='A+'?'240,192,64':'0,212,170'},.04);border:1px solid rgba(${a.grade==='A+'?'240,192,64':'0,212,170'},.12);">${a.summary}</div>
+        <div class="ac-hist">
+          <div class="ac-hist-title">MATCHED AGAINST ${a.hist.length} SIMILAR HISTORICAL PRINTS</div>
+          ${a.hist.map(h=>`
+            <div class="ac-hist-row">
+              <span style="color:var(--muted);width:44px;flex-shrink:0">${h.date}</span>
+              <span style="color:var(--dim);flex:1">${h.detail}</span>
+              <span style="color:var(--accent);font-weight:700;width:40px;text-align:right">${h.result}</span>
+              <span style="color:var(--muted);width:48px;text-align:right">${h.speed}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function selectAlert(id){
+  selectedId=id;
+  renderAlerts();
+  const a=alerts.find(x=>x.id===id);
+  if(!a)return;
+
+  document.getElementById('dpEmpty').style.display='none';
+  document.getElementById('dpContent').style.display='flex';
+
+  const gradeColor=a.grade==='A+'?'var(--gold)':'var(--accent)';
+
+  document.getElementById('dpContent').innerHTML=`
+
+    <!-- SCORE METER -->
+    <div class="score-meter">
+      <div class="sm-top">
+        <span class="sm-label">AI CONVICTION SCORE</span>
+        <span class="sm-val" style="color:${gradeColor}">${a.score}<span style="font-size:11px;color:var(--muted)">/100</span></span>
+      </div>
+      <div class="sm-track"><div class="sm-fill" style="width:${a.score}%;background:${a.grade==='A+'?'linear-gradient(90deg,var(--accent),var(--gold))':'var(--accent)'}"></div></div>
+      <div class="sm-ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+    </div>
+
+    <!-- GRADE FACTORS -->
+    <div style="background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:10px 12px;">
+      <div style="font-size:7px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px;">SCORING FACTORS</div>
+      ${a.factors.map(f=>`
+        <div class="factor">
+          <span class="factor-label">${f.label}</span>
+          <div class="factor-bar"><div class="factor-fill" style="width:${f.pct}%;background:${f.color}"></div></div>
+          <span class="factor-val" style="color:${f.color}">${f.pct}</span>
+        </div>`).join('')}
+    </div>
+
+    <!-- HISTORICAL MATCHES -->
+    <div style="background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:10px 12px;">
+      <div style="font-size:7px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px;">HISTORICAL COMPARISON · ${a.hist.length} SIMILAR PRINTS</div>
+      ${a.hist.map((h,i)=>`
+        <div style="padding:7px 0;border-bottom:1px solid rgba(28,28,48,.5)${i===a.hist.length-1?';border-bottom:none':''}">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+            <span style="font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px;background:${h.grade.startsWith('A+')?'rgba(240,192,64,.12)':'rgba(0,212,170,.1)'};color:${h.grade.startsWith('A+')?'var(--gold)':'var(--accent)'}">${h.grade}</span>
+            <span style="font-size:8px;color:var(--dim)">${h.detail}</span>
+          </div>
+          <div style="display:flex;gap:12px;font-size:8px;">
+            <span style="color:var(--muted)">Result: <span style="color:var(--accent);font-weight:700">${h.result}</span></span>
+            <span style="color:var(--muted)">Speed: <span style="color:var(--blue)">${h.speed}</span></span>
+            <span style="color:var(--muted)">${h.date}</span>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <!-- WHAT TO WATCH -->
+    <div style="background:rgba(${a.grade==='A+'?'240,192,64':'0,212,170'},.04);border:1px solid rgba(${a.grade==='A+'?'240,192,64':'0,212,170'},.2);border-radius:4px;padding:10px 12px;">
+      <div style="font-size:7px;color:${gradeColor};letter-spacing:.1em;margin-bottom:5px;">⚡ WHAT TO WATCH</div>
+      <div style="font-size:8px;color:var(--muted2);line-height:1.7;">${a.watch}</div>
+    </div>
+
+    <!-- R/R REMINDER -->
+    <div style="background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:10px 12px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:18px;">÷</span>
+      <div style="flex:1;">
+        <div style="font-size:8px;font-weight:700;color:var(--gold);margin-bottom:2px;">BEFORE YOU TRADE</div>
+        <div style="font-size:7px;color:var(--muted2);line-height:1.6;">Run this through the R/R Calculator. Plug in your entry, target, and stop. DARKFLOW will tell you if the math justifies the trade based on your journal win rate.</div>
+      </div>
+    </div>
+  `;
+}
+
+// ── INIT ──
+startScanning();
+</script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DARKFLOW · Terminal Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080810;--surface:#0c0c18;--raised:#10101f;
+  --border:#1c1c30;--bm:#252540;
+  --text:#e8e8f0;--dim:#b0b0c8;--muted2:#8888a8;--muted:#444460;
+  --accent:#00d4aa;--red:#f04060;--gold:#f0c040;--blue:#4888ff;--orange:#ff8040;--purple:#a855f7;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;-webkit-font-smoothing:antialiased;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.topbar{height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:100;}
+.logo{font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14px;letter-spacing:.14em;color:var(--accent);display:flex;align-items:center;gap:9px;}
+.logo-tri{width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:15px solid var(--accent);}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;margin-left:auto;}
+.clk{font-size:10px;color:var(--muted2);margin-left:10px;}
+
+.hero{padding:36px 24px 20px;text-align:center;}
+.hero-title{font-size:11px;letter-spacing:.16em;color:var(--muted);margin-bottom:8px;}
+.hero-sub{font-size:8px;color:var(--muted);letter-spacing:.1em;}
+
+.section-label{font-size:7px;letter-spacing:.16em;color:var(--muted);padding:0 24px;margin-bottom:8px;margin-top:20px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;padding:0 24px 8px;}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:16px 18px;cursor:pointer;text-decoration:none;display:block;position:relative;overflow:hidden;transition:border-color .15s,transform .12s;}
+.card:hover{transform:translateY(-1px);}
+.card:hover{border-color:var(--bm);}
+.card-top{position:absolute;top:0;left:0;right:0;height:2px;}
+.card-num{font-size:7px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px;}
+.card-icon{font-size:18px;margin-bottom:8px;}
+.card-name{font-size:11px;font-weight:700;letter-spacing:.08em;margin-bottom:5px;}
+.card-desc{font-size:8px;color:var(--muted2);line-height:1.65;}
+.card-tag{display:inline-flex;align-items:center;gap:4px;font-size:7px;font-weight:600;letter-spacing:.06em;padding:2px 7px;border-radius:2px;margin-top:10px;}
+.card-arrow{position:absolute;top:14px;right:14px;font-size:11px;color:var(--muted);transition:color .15s;}
+.card:hover .card-arrow{color:var(--text);}
+
+.new-badge{position:absolute;top:10px;right:28px;font-size:6px;font-weight:700;padding:2px 5px;border-radius:2px;background:rgba(240,192,64,.15);color:var(--gold);border:1px solid rgba(240,192,64,.3);letter-spacing:.08em;}
+
+.footer{background:var(--surface);border-top:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:16px;font-size:7px;color:var(--muted);letter-spacing:.1em;margin-top:20px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><div class="logo-tri"></div>DARKFLOW</div>
+  <div class="dot"></div>
+  <span class="clk" id="clk"></span>
+</div>
+
+<div class="hero">
+  <div class="hero-title">DARKFLOW TERMINAL · ALL MODULES</div>
+  <div class="hero-sub">CLICK ANY MODULE TO OPEN · 13 TOOLS · ONE TERMINAL</div>
+</div>
+
+<!-- AI INTELLIGENCE -->
+<div class="section-label">⚡ AI INTELLIGENCE — THE EDGE</div>
+<div class="grid">
+
+  <a class="card" href="darkflow-gammabot.html" target="_blank" style="border-color:rgba(240,192,64,.2)">
+    <div class="card-top" style="background:linear-gradient(90deg,var(--gold),transparent)"></div>
+    <div class="new-badge">NEW</div>
+    <div class="card-arrow">↗</div>
+    <div class="card-num">01</div>
+    <div class="card-icon">◈</div>
+    <div class="card-name" style="color:var(--gold)">GAMMA AI</div>
+    <div class="card-desc">Price touches a gamma level — bot fires instantly. Long probability, short probability, historical rejection rate, dealer positioning. Cold, fast, just the math.</div>
+    <div class="card-tag" style="background:rgba(240,192,64,.1);color:var(--gold);border:1px solid rgba(240,192,64,.25)">⚡ PROBABILITY ENGINE</div>
+  </a>
+
+  <a class="card" href="darkflow-alerts.html" target="_blank" style="border-color:rgba(240,192,64,.15)">
+    <div class="card-top" style="background:linear-gradient(90deg,var(--gold),transparent)"></div>
+    <div class="new-badge">NEW</div>
+    <div class="card-arrow">↗</div>
+    <div class="card-num">02</div>
+    <div class="card-icon">🔕</div>
+    <div class="card-name" style="color:var(--gold)">AI ALERTS</div>
+    <div class="card-desc">Screen stays dark and quiet. Only A and A+ flow prints wake it up. When it fires — historical context, conviction score, what to watch. Patience pays.</div>
+    <div class="card-tag" style="background:rgba(240,192,64,.1);color:var(--gold);border:1px solid rgba(240,192,64,.25)">A / A+ ONLY</div>
+  </a>
+
+  <a class="card" href="darkflow-flowscanner.html" target="_blank" style="border-color:rgba(0,212,170,.15)">
+    <div class="card-top" style="background:linear-gradient(90deg,var(--accent),transparent)"></div>
+    <div class="new-badge">NEW</div>
+    <div class="card-arrow">↗</div>
+    <div class="card-num">03</div>
+    <div class="card-icon">▦</div>
+    <div class="card-name" style="color:var(--accent)">FLOW SCANNER</div>
+    <div class="card-desc">90 days of historical flow — every trade that paid, AI graded A+ to F. See what the winning prints looked like so you recognize them live.</div>
+    <div class="card-tag" style="background:rgba(0,212,170,.1);color:var(--accent);border:1px solid rgba(0,212,170,.25)">AI GRADED</div>
+  </a>
+
+</div>
+
+<!-- GAMMA -->
+<div class="section-label">◈ GAMMA — THE FOUNDATION</div>
+<div class="grid">
+
+  <a class="card" href="darkflow-gex-v2.html" target="_blank">
+    <div class="card-top" style="background:linear-gradient(90deg,var(--accent),transparent)"></div>
+    <div class="card-arrow">↗</div>
+    <div class="card-num">04</div>
+    <div class="card-icon">◈</div>
+    <div class="card-name" style="color:var(--accent)">GEX HEATMAP</div>
+    <div class="card-desc">Gamma exposure by strike and expiry. King node, flip zones, call walls, put floors. 5-day history. The foundation every trade starts from.</div>
+    <div class="card-tag" style="background:rgba(0,212,170,.1);color:var(--accent);border:1px solid rgba(0,212,170,.25)">● LIVE</div>
+  </a>
+
+  <a class="card" href="darkflow-gexchart.html" target="_blank">
+    <div class="card-top" style="background:linear-gradient(90deg,var(--accent),transparent)"></div>
+    <div class="card-arrow">↗</div>
+    <div class="card-num">05</div>
+    <div class="card-icon">📈</div>
+    <div class="card-name" style="color:var(--accent)">GAMMA MAP</div>
+    <div class="card-desc">Live candles with gamma levels drawn as solid lines. Set alerts on king node, call wall, put wall, flip zone. Fires when price touches your level.</div>
+    <div class="card-tag" style="background:rgba(0,212,170,.1);color:var(--accent);border:1px solid rgba(0,212,170,.25)">● LIVE ALERTS</div>
+  </a>
+
+</div>
+
+<!-- FLOW -->
+<div class="section-label">⚡ FLOW — FOLLOW THE MONEY</div>
+<div class="grid">
+
+  <a class="card" href="darkflow-flow-v4.html" target="_blank">
+    <div class="card-top" style="background:linear-gradient(90deg,var(--blue),transparent)"></div>
+    <div class="card-arrow">↗</div>
+    <div class="card-num">06</div>
+    <div class="card-icon">⚡</div>
+    <div class="card-name" style="color:var(--blue)">OPTIONS FLOW</div>
+    <div class="card-desc">Real-time sweeps and blocks. AI Hot Picks strip shows the top 5 most significant prints ranked by conviction. Every unusual print explained in plain English.</div>
+    <div class="card-tag" style="background:rgba(72,136,255,.1);color:var(--blue);border:1px solid rgba(72,136,255,.25)">● REAL-TIME</div>
+  </a>
+
+  <a class="card" href="darkflow-netdrift.html" target="_blank">
+    <div class="card-top" style="background:linear-gradient(90deg,var(--accent),transparent)"></div>
+    <div class="card-arrow">↗</div>
+    <div class="card-num">07</div>
+    <div class="card-icon">↑↓</div>
+    <div class="card-name" style="color:var(--accent)">PREMIUM DIVERGENCE</div>
+    <div class="card-desc">Cumulative call vs put premium on a chart. When puts overtake calls — divergence alert fires. The earliest bearish signal in the market.</div>
+    <div class="card-tag" style="background:rgba(0,212,170,.1);color:var(--accent);border:1px solid rgba(0,212,170,.25)">● CROSSOVER ALERTS</div>
+  </a>
+
+  <a class="card" href="darkflow-darkpool-v2.html" target="_blank">
+    <div class="card-top" style="background:linear-gradient(90deg,var(--purple),transparent)"></div>
+    <div class="card-arrow">↗</div>
+    <div class="card-num">08</div>
+    <div class="card-icon">◉</div>
+    <div class="card-name" style="color:var(--purple)">DARK POOL</div>
+    <div class="card-desc">Institutional off-exchange prints plotted on the SPY chart. See where big money executed. Accumulation vs distribution. 30-day print history.</div>
+    <div class="card-tag" style="background:rgba(168,85,247,.1);color:var(--purple);border:1px solid rgba(168,85,247,.25)">● INSTITUTIONAL</div>
+  </a>
+
+</div>
+
+<!-- INTELLIGENCE -->
+<div class="section-label">◆ INTELLIGENCE — KNOW BEFORE YOU TRADE</div>
+<div class="grid">
+
+  <a class="card" href="darkflow-chain.html" target="_blank">
+    <div class="card-top" style="background:linear-gradient(90deg,var(--gold),transparent)"></div>
+    <div class="card-arrow">↗</div>
+    <div class="card-num">09</div>
+    <div class="card-icon">⬡</div>
+    <div class="card-name" style="color:var(--gold)">STRIKE MATRIX</div>
+    <div class="card-desc">Full two-sided options chain — GEX, IV, OI walls, spread liquidity. Toggle Guided Mode for plain English: call wall above, put floor below, what to do.</div>
+    <div class="card-tag" style="background:rgba(240,192,64,.1);color:var(--gold);border:1px solid rgba(240,192,64,.25)">GUIDED MODE</div>
+  </a>
+
+  <a class="card" href="darkflow-earnings.html" target="_blank">
+    <div class="card-top" style="background:linear-gradient(90deg,var(--gold),transparent)"></div>
+    <div class="card-arrow">↗</div>
+    <div class="card-num">10</div>
+    <div class="card-icon">📅</div>
+    <div class="card-name" style="color:var(--gold)">EARNINGS DATA</div>
+    <div class="card-desc">Type any ticker. Expected move, 10-year reaction history, IV crush risk, options positioning. Earnings + econ calendar in the sidebar.</div>
+    <div class="card-tag" style="background:rgba(240,192,64,.1);color:var(--gold);border:1px solid rgba(240,192,64,.25)">10-YEAR HISTORY</div>
+  </a>
+
+  <a class="card" href="darkflow-rr-calc.html" target="_blank">
+    <div class="card-top" style="background:linear-gradient(90deg,var(--gold),transparent)"></div>
+    <div class="card-arrow">↗</div>
+    <div class="card-num">11</div>
+    <div class="card-icon">÷</div>
+    <div class="card-name" style="color:var(--gold)">R/R CALCULATOR</div>
+    <div class="card-desc">Entry · Target · Stop → TAKE or SKIP verdict based on your own journal win rate vs break-even math. Run this before every trade.</div>
+    <div class="card-tag" style="background:rgba(240,192,64,.1);color:var(--gold);border:1px solid rgba(240,192,64,.25)">PRE-TRADE</div>
+  </a>
+
+</div>
+
+<!-- PERSONAL -->
+<div class="section-label">◆ PERSONAL — YOUR EDGE</div>
+<div class="grid">
+
+  <a class="card" href="darkflow-journal.html" target="_blank">
+    <div class="card-top" style="background:linear-gradient(90deg,var(--orange),transparent)"></div>
+    <div class="card-arrow">↗</div>
+    <div class="card-num">12</div>
+    <div class="card-icon">◆</div>
+    <div class="card-name" style="color:var(--orange)">JOURNAL</div>
+    <div class="card-desc">AI coach reads your last 47 trades. Tells you your edge, your leaks, your patterns. "Stop trading after 2pm. Your 0DTE win rate drops to 28%."</div>
+    <div class="card-tag" style="background:rgba(255,128,64,.1);color:var(--orange);border:1px solid rgba(255,128,64,.25)">AI COACH</div>
+  </a>
+
+  <a class="card" href="darkflow-signals-v7.jsx" target="_blank">
+    <div class="card-top" style="background:linear-gradient(90deg,var(--purple),transparent)"></div>
+    <div class="card-arrow">↗</div>
+    <div class="card-num">13</div>
+    <div class="card-icon">◈</div>
+    <div class="card-name" style="color:var(--purple)">AI SIGNALS</div>
+    <div class="card-desc">ML pattern detection across flow, GEX, and dark pool. Synthesizes all data sources into a single signal. The big picture in one view.</div>
+    <div class="card-tag" style="background:rgba(168,85,247,.1);color:var(--purple);border:1px solid rgba(168,85,247,.25)">ML POWERED</div>
+  </a>
+
+</div>
+
+<div class="footer">
+  <div style="display:flex;align-items:center;gap:5px"><div style="width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 4px var(--accent)"></div>ALL SYSTEMS LIVE</div>
+  <div>DARKFLOW v1.0 · 13 MODULES</div>
+  <div style="margin-left:auto" id="clk2"></div>
+</div>
+
+<script>
+function tick(){
+  const t=new Date().toLocaleTimeString('en-US',{hour12:false});
+  document.getElementById('clk').textContent=t;
+  document.getElementById('clk2').textContent=t;
+}
+setInterval(tick,1000);tick();
+</script>
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DARKFLOW · We Don't Just Show You The Market</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080810;--surface:#0c0c18;--raised:#10101f;
+  --border:#1c1c30;--bm:#252540;
+  --text:#e8e8f0;--dim:#b0b0c8;--muted2:#8888a8;--muted:#444460;
+  --accent:#00d4aa;--red:#f04060;--gold:#f0c040;--blue:#4888ff;--orange:#ff8040;--purple:#a855f7;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes scanline{0%{top:-10%}100%{top:110%}}
+@keyframes glow{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:56px;display:flex;align-items:center;padding:0 40px;background:rgba(8,8,16,.85);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.04);}
+.nav-logo{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;letter-spacing:.14em;color:var(--accent);display:flex;align-items:center;gap:9px;text-decoration:none;}
+.nav-tri{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--accent);}
+.nav-links{display:flex;gap:28px;margin-left:40px;}
+.nav-links a{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--muted);text-decoration:none;transition:color .15s;}
+.nav-links a:hover{color:var(--text);}
+.nav-cta{margin-left:auto;background:var(--accent);color:#080810;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;padding:8px 20px;border-radius:3px;border:none;cursor:pointer;text-decoration:none;transition:opacity .15s;}
+.nav-cta:hover{opacity:.85;}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:100px 24px 60px;position:relative;overflow:hidden;text-align:center;}
+.hero-bg{position:absolute;inset:0;pointer-events:none;}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,212,170,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,170,.03) 1px,transparent 1px);background-size:48px 48px;}
+.hero-glow{position:absolute;top:20%;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(ellipse,rgba(0,212,170,.06) 0%,transparent 70%);pointer-events:none;}
+.hero-glow-r{position:absolute;top:40%;right:-100px;width:400px;height:400px;background:radial-gradient(ellipse,rgba(72,136,255,.04) 0%,transparent 70%);}
+.hero-glow-l{position:absolute;top:30%;left:-100px;width:400px;height:400px;background:radial-gradient(ellipse,rgba(240,64,96,.04) 0%,transparent 70%);}
+
+.hero-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;color:var(--accent);margin-bottom:20px;display:flex;align-items:center;gap:8px;justify-content:center;animation:fadeUp .5s ease both;}
+.hero-eyebrow-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;}
+
+.hero-headline{font-size:clamp(36px,6vw,72px);font-weight:700;line-height:1.08;letter-spacing:-.02em;margin-bottom:24px;animation:fadeUp .5s .1s ease both;}
+.hero-headline span{color:var(--accent);}
+.hero-headline .red{color:var(--red);}
+
+.hero-sub{font-size:clamp(14px,2vw,18px);color:var(--muted2);max-width:520px;line-height:1.7;margin-bottom:40px;animation:fadeUp .5s .2s ease both;font-weight:400;}
+
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;animation:fadeUp .5s .3s ease both;}
+.btn-primary{background:var(--accent);color:#080810;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.1em;padding:14px 32px;border-radius:3px;border:none;cursor:pointer;text-decoration:none;transition:opacity .15s,transform .1s;display:inline-block;}
+.btn-primary:hover{opacity:.88;transform:translateY(-1px);}
+.btn-secondary{background:transparent;color:var(--dim);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.1em;padding:14px 28px;border-radius:3px;border:1px solid var(--border);cursor:pointer;text-decoration:none;transition:border-color .15s,color .15s;display:inline-block;}
+.btn-secondary:hover{border-color:var(--bm);color:var(--text);}
+
+.hero-proof{margin-top:32px;font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:.1em;animation:fadeUp .5s .4s ease both;}
+
+/* TERMINAL PREVIEW */
+.terminal-wrap{width:100%;max-width:900px;margin:60px auto 0;animation:fadeUp .6s .4s ease both;position:relative;}
+.terminal-glow{position:absolute;inset:-1px;background:linear-gradient(135deg,rgba(0,212,170,.15),transparent,rgba(72,136,255,.1));border-radius:8px;pointer-events:none;}
+.terminal{background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,.6);}
+.terminal-bar{height:36px;background:#0a0a16;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:8px;}
+.t-dot{width:10px;height:10px;border-radius:50%;}
+.terminal-nav{display:flex;gap:0;height:100%;margin-left:16px;}
+.t-tab{height:100%;padding:0 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;color:var(--muted);border-bottom:2px solid transparent;display:flex;align-items:center;}
+.t-tab.on{color:var(--accent);border-bottom-color:var(--accent);}
+.terminal-body{padding:16px;}
+.t-ticker-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.t-pill{background:var(--raised);border:1px solid var(--border);border-radius:2px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;}
+.t-pill.green{color:var(--accent);border-color:rgba(0,212,170,.25);background:rgba(0,212,170,.06);}
+.t-pill.red{color:var(--red);border-color:rgba(240,64,96,.25);background:rgba(240,64,96,.06);}
+.t-pill.gold{color:var(--gold);border-color:rgba(240,192,64,.25);background:rgba(240,192,64,.06);}
+.t-pill.purple{color:var(--purple);border-color:rgba(168,85,247,.25);background:rgba(168,85,247,.06);}
+.t-intel{background:rgba(0,212,170,.05);border:1px solid rgba(0,212,170,.18);border-radius:4px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px;}
+.t-intel-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);flex-shrink:0;margin-top:3px;animation:pulse 2s infinite;}
+.t-intel-text{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted2);line-height:1.65;}
+.t-intel-title{color:var(--accent);font-weight:700;font-size:9px;margin-bottom:2px;}
+.t-table{width:100%;border-collapse:collapse;}
+.t-table th{font-family:'IBM Plex Mono',monospace;font-size:7px;letter-spacing:.1em;color:var(--muted);padding:4px 8px;border-bottom:1px solid var(--border);text-align:left;}
+.t-table td{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:7px 8px;border-bottom:1px solid rgba(28,28,48,.5);}
+.t-table tr:last-child td{border-bottom:none;}
+.t-badge{font-size:7px;font-weight:700;padding:1px 6px;border-radius:2px;letter-spacing:.06em;}
+.scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(transparent,rgba(0,212,170,.08),transparent);animation:scanline 4s linear infinite;pointer-events:none;}
+
+/* SOCIAL PROOF STRIP */
+.proof-strip{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 40px;display:flex;align-items:center;justify-content:center;gap:40px;flex-wrap:wrap;}
+.proof-item{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.1em;color:var(--muted2);}
+.proof-num{font-size:16px;font-weight:700;color:var(--text);}
+
+/* SECTIONS */
+section{padding:80px 24px;}
+.section-inner{max-width:960px;margin:0 auto;}
+.section-label{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.2em;color:var(--accent);margin-bottom:12px;}
+.section-title{font-size:clamp(28px,4vw,44px);font-weight:700;letter-spacing:-.02em;line-height:1.15;margin-bottom:16px;}
+.section-sub{font-size:15px;color:var(--muted2);max-width:480px;line-height:1.7;}
+
+/* FEATURES */
+.features-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:48px;}
+.feat-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;transition:border-color .2s;}
+.feat-card:hover{border-color:var(--bm);}
+.feat-card-accent{position:absolute;top:0;left:0;right:0;height:2px;}
+.feat-icon{width:36px;height:36px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:14px;}
+.feat-title{font-size:14px;font-weight:700;margin-bottom:8px;letter-spacing:-.01em;}
+.feat-desc{font-size:12px;color:var(--muted2);line-height:1.7;}
+.feat-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:7px;letter-spacing:.1em;margin-top:12px;padding:2px 8px;border-radius:2px;font-weight:600;}
+
+/* HOW IT WORKS */
+.how-wrap{margin-top:56px;display:grid;grid-template-columns:repeat(3,1fr);gap:0;position:relative;}
+.how-wrap::before{content:'';position:absolute;top:28px;left:calc(16.67% + 16px);right:calc(16.67% + 16px);height:1px;background:linear-gradient(90deg,var(--accent),var(--blue),var(--gold));opacity:.3;}
+.how-step{padding:0 24px;text-align:center;}
+.how-num{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;margin:0 auto 20px;border:2px solid;position:relative;z-index:1;}
+.how-step:nth-child(1) .how-num{color:var(--accent);border-color:var(--accent);background:rgba(0,212,170,.08);}
+.how-step:nth-child(2) .how-num{color:var(--blue);border-color:var(--blue);background:rgba(72,136,255,.08);}
+.how-step:nth-child(3) .how-num{color:var(--gold);border-color:var(--gold);background:rgba(240,192,64,.08);}
+.how-title{font-size:15px;font-weight:700;margin-bottom:10px;}
+.how-desc{font-size:12px;color:var(--muted2);line-height:1.7;}
+
+/* PRICING */
+.pricing-wrap{margin-top:56px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:860px;margin-left:auto;margin-right:auto;}
+.price-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:28px;position:relative;overflow:hidden;transition:transform .15s;}
+.price-card:hover{transform:translateY(-2px);}
+.price-card.featured{border-color:rgba(0,212,170,.35);background:rgba(0,212,170,.03);}
+.price-card.featured::before{content:'MOST POPULAR';position:absolute;top:0;left:50%;transform:translateX(-50%);background:var(--accent);color:#080810;font-family:'IBM Plex Mono',monospace;font-size:7px;font-weight:700;letter-spacing:.12em;padding:3px 14px;border-radius:0 0 4px 4px;}
+.price-name{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--muted2);margin-bottom:10px;margin-top:8px;}
+.price-amount{font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1;margin-bottom:4px;}
+.price-amount span{font-size:16px;font-weight:400;color:var(--muted2);}
+.price-desc{font-size:11px;color:var(--muted2);margin-bottom:20px;line-height:1.6;}
+.price-divider{height:1px;background:var(--border);margin-bottom:20px;}
+.price-features{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:24px;}
+.price-features li{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--dim);}
+.price-features li::before{content:'✓';color:var(--accent);font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;}
+.price-features li.dim{color:var(--muted);}
+.price-features li.dim::before{content:'—';color:var(--muted);}
+.price-btn{width:100%;padding:12px;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--dim);transition:all .15s;}
+.price-btn:hover{border-color:var(--bm);color:var(--text);}
+.price-btn.primary{background:var(--accent);color:#080810;border-color:var(--accent);}
+.price-btn.primary:hover{opacity:.88;}
+
+/* COMPETITOR */
+.vs-table{width:100%;border-collapse:collapse;margin-top:48px;font-family:'IBM Plex Mono',monospace;font-size:11px;}
+.vs-table th{padding:10px 16px;font-size:8px;letter-spacing:.1em;color:var(--muted);border-bottom:1px solid var(--border);text-align:center;}
+.vs-table th:first-child{text-align:left;}
+.vs-table th.df{color:var(--accent);}
+.vs-table td{padding:11px 16px;border-bottom:1px solid rgba(28,28,48,.6);text-align:center;color:var(--muted2);}
+.vs-table td:first-child{text-align:left;color:var(--text);font-size:10px;}
+.vs-table tr:last-child td{border-bottom:none;}
+.vs-table tr:hover td{background:rgba(255,255,255,.01);}
+.vs-yes{color:var(--accent);font-weight:700;}
+.vs-no{color:var(--muted);}
+.vs-col-df{background:rgba(0,212,170,.03);}
+
+/* FOOTER */
+footer{background:var(--surface);border-top:1px solid var(--border);padding:40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;}
+.footer-logo{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;letter-spacing:.14em;color:var(--accent);display:flex;align-items:center;gap:8px;}
+.footer-tri{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid var(--accent);}
+.footer-links{display:flex;gap:24px;}
+.footer-links a{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);text-decoration:none;letter-spacing:.08em;}
+.footer-links a:hover{color:var(--text);}
+.footer-copy{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:.08em;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#"><div class="nav-tri"></div>DARKFLOW</a>
+  <div class="nav-links">
+    <a href="#features">FEATURES</a>
+    <a href="#how">HOW IT WORKS</a>
+    <a href="#pricing">PRICING</a>
+  </div>
+  <a class="nav-cta" href="#pricing">SUBSCRIBE NOW</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="hero-grid"></div>
+    <div class="hero-glow"></div>
+    <div class="hero-glow-r"></div>
+    <div class="hero-glow-l"></div>
+  </div>
+
+  <div class="hero-eyebrow">
+    <div class="hero-eyebrow-dot"></div>
+    PROFESSIONAL OPTIONS TERMINAL
+  </div>
+
+  <h1 class="hero-headline">
+    We Don't Just<br>
+    Show You The Market.<br>
+    <span>We Tell You What It Means.</span>
+  </h1>
+
+  <p class="hero-sub">
+    GEX heatmaps, dark pool prints, option flow, net drift — all in one terminal. With plain English explanations on every screen so you always know what to do next.
+  </p>
+
+  <div class="hero-actions">
+    <a class="btn-primary" href="#pricing">SUBSCRIBE NOW — FROM $49/MO</a>
+    <a class="btn-secondary" href="#features">SEE HOW IT WORKS</a>
+  </div>
+
+  <div class="hero-proof">NO DISCORD REQUIRED · NO EXPERIENCE NEEDED · CANCEL ANYTIME</div>
+
+  <!-- TERMINAL PREVIEW -->
+  <div class="terminal-wrap">
+    <div class="terminal-glow"></div>
+    <div class="terminal" style="position:relative;overflow:hidden;">
+      <div class="scanline"></div>
+      <div class="terminal-bar">
+        <div class="t-dot" style="background:#f04060"></div>
+        <div class="t-dot" style="background:#f0c040"></div>
+        <div class="t-dot" style="background:#00d4aa"></div>
+        <div class="terminal-nav">
+          <div class="t-tab">OPTIONS FLOW</div>
+          <div class="t-tab on">GEX</div>
+          <div class="t-tab">PREMIUM DIVERGENCE</div>
+          <div class="t-tab">DARK POOL</div>
+          <div class="t-tab">STRIKE MATRIX</div>
+        </div>
+        <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#444460" id="termClock"></span>
+      </div>
+      <div class="terminal-body">
+        <div class="t-ticker-row">
+          <div class="t-pill green">CALL WALL $5,750</div>
+          <div class="t-pill red">PUT WALL $5,700</div>
+          <div class="t-pill gold">FLIP $5,720</div>
+          <div class="t-pill green">NVL $5,735</div>
+          <div class="t-pill green">SPOT $5,718 ↑</div>
+          <div class="t-pill purple">⚡ KING $5,740</div>
+        </div>
+        <div class="t-intel">
+          <div class="t-intel-dot"></div>
+          <div>
+            <div class="t-intel-title">BULLISH REGIME · POSITIVE GAMMA</div>
+            <div class="t-intel-text">Dealers are net long gamma between $5,700–$5,750. This creates a mechanical bid under the market — dip buyers are being rewarded. The $5,750 call wall is acting as a ceiling with 7.4M GEX. A break above opens a squeeze to $5,780. Fades are dangerous until price reaches the wall.</div>
+          </div>
+        </div>
+        <table class="t-table">
+          <thead>
+            <tr>
+              <th>STRIKE</th><th>MAR 6</th><th>MAR 10</th><th>MAR 12</th><th>SIGNAL</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="color:#444460">$5,755</td>
+              <td style="color:#00d4aa">4.1M</td><td style="color:#f04060">-4.5M</td><td style="color:#00d4aa">4.6M</td>
+              <td><span class="t-badge" style="background:rgba(0,212,170,.1);color:#00d4aa">CALL WALL</span></td>
+            </tr>
+            <tr>
+              <td style="color:#444460">$5,750</td>
+              <td style="color:#00d4aa">6.7M</td><td style="color:#00d4aa">6.4M</td><td style="color:#00d4aa">6.9M</td>
+              <td><span class="t-badge" style="background:rgba(240,192,64,.1);color:#f0c040">FLIP ZONE</span></td>
+            </tr>
+            <tr style="background:rgba(0,212,170,.03);border-left:2px solid #00d4aa">
+              <td style="color:#00d4aa;font-weight:700">$5,718 ◀</td>
+              <td style="color:#00d4aa">3.5M</td><td style="color:#f04060">-5.3M</td><td style="color:#00d4aa">3.5M</td>
+              <td><span class="t-badge" style="background:rgba(0,212,170,.15);color:#00d4aa">SPOT</span></td>
+            </tr>
+            <tr>
+              <td style="color:#444460">$5,700</td>
+              <td style="color:#f04060">-7.6M</td><td style="color:#f04060">-7.3M</td><td style="color:#f04060">-7.7M</td>
+              <td><span class="t-badge" style="background:rgba(240,64,96,.1);color:#f04060">PUT WALL</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROOF STRIP -->
+<div class="proof-strip">
+  <div class="proof-item"><span class="proof-num" style="color:var(--accent)">9</span>MODULES IN ONE TERMINAL</div>
+  <div class="proof-item"><span class="proof-num">$49</span>STARTING PRICE / MO</div>
+  <div class="proof-item"><span class="proof-num" style="color:var(--gold)">74%</span>LESS THAN SKYLIT</div>
+  <div class="proof-item"><span class="proof-num" style="color:var(--accent)">0</span>DISCORDS NEEDED</div>
+</div>
+
+<!-- FEATURES -->
+<section id="features" style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="section-inner">
+    <div class="section-label">WHY DARKFLOW</div>
+    <h2 class="section-title">Every competitor shows you data.<br>Only we tell you what it <span style="color:var(--accent)">means.</span></h2>
+    <p class="section-sub">Every screen has a plain English explanation. You never have to guess. You never need a mentor. The terminal teaches you while you trade.</p>
+
+    <div class="features-grid">
+
+      <div class="feat-card">
+        <div class="feat-card-accent" style="background:linear-gradient(90deg,var(--accent),transparent)"></div>
+        <div class="feat-icon" style="background:rgba(0,212,170,.08)">◈</div>
+        <div class="feat-title">GEX Heatmap</div>
+        <div class="feat-desc">See exactly where dealers are forced to hedge. King nodes, flip zones, call walls, put floors — all in one heatmap with 5-day history.</div>
+        <div class="feat-tag" style="background:rgba(0,212,170,.1);color:var(--accent);">UNIQUE TO DARKFLOW</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-card-accent" style="background:linear-gradient(90deg,var(--blue),transparent)"></div>
+        <div class="feat-icon" style="background:rgba(72,136,255,.08)">⚡</div>
+        <div class="feat-title">Option Flow + Net Drift</div>
+        <div class="feat-desc">Real-time sweeps and blocks. Plus the Net Drift chart — cumulative call vs put premium with crossover alerts when smart money flips direction.</div>
+        <div class="feat-tag" style="background:rgba(72,136,255,.1);color:var(--blue);">REAL-TIME</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-card-accent" style="background:linear-gradient(90deg,var(--purple),transparent)"></div>
+        <div class="feat-icon" style="background:rgba(168,85,247,.08)">◉</div>
+        <div class="feat-title">Dark Pool Overlay</div>
+        <div class="feat-desc">Institutional off-exchange prints plotted directly on the price chart. See exactly where the big money executed and whether they were accumulating or distributing.</div>
+        <div class="feat-tag" style="background:rgba(168,85,247,.1);color:var(--purple);">INSTITUTIONAL GRADE</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-card-accent" style="background:linear-gradient(90deg,var(--orange),transparent)"></div>
+        <div class="feat-icon" style="background:rgba(255,128,64,.08)">◆</div>
+        <div class="feat-title">AI Trade Coach</div>
+        <div class="feat-desc">The journal reads your last 47 trades and tells you your edge, your leaks, and your patterns. "Your 0DTE win rate is 71% before 11:30am. Stop trading after 2pm."</div>
+        <div class="feat-tag" style="background:rgba(255,128,64,.1);color:var(--orange);">AI-POWERED</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-card-accent" style="background:linear-gradient(90deg,var(--gold),transparent)"></div>
+        <div class="feat-icon" style="background:rgba(240,192,64,.08)">÷</div>
+        <div class="feat-title">Pre-Trade R/R Calculator</div>
+        <div class="feat-desc">Enter your entry, target, and stop. DARKFLOW calculates your R/R, your break-even win rate, and gives you a TAKE or SKIP verdict based on your own journal data.</div>
+        <div class="feat-tag" style="background:rgba(240,192,64,.1);color:var(--gold);">PRE-TRADE EDGE</div>
+      </div>
+
+      <div class="feat-card" style="background:rgba(0,212,170,.03);border-color:rgba(0,212,170,.2);">
+        <div class="feat-card-accent" style="background:linear-gradient(90deg,var(--accent),var(--blue))"></div>
+        <div class="feat-icon" style="background:rgba(0,212,170,.1);font-size:20px;">→</div>
+        <div class="feat-title" style="color:var(--accent)">Guided Mode on Every Page</div>
+        <div class="feat-desc">Toggle between Pro Mode (full data) and Guided Mode (plain English walls, floors, and what to do). Built for traders who are still learning and pros who want speed.</div>
+        <div class="feat-tag" style="background:rgba(0,212,170,.15);color:var(--accent);">THE DARKFLOW DIFFERENCE</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="section-inner">
+    <div class="section-label">THE LOOP</div>
+    <h2 class="section-title">Three steps.<br>One <span style="color:var(--accent)">decision.</span></h2>
+    <p class="section-sub">Every session starts the same way. The terminal gives you the regime, the level, and the verdict — before you ever click buy.</p>
+
+    <div class="how-wrap">
+      <div class="how-step">
+        <div class="how-num">1</div>
+        <div class="how-title">Read the Regime</div>
+        <div class="how-desc">Open GEX or Net Drift. The intelligence banner tells you in plain English whether the market is bullish, bearish, or pinned — and why. No interpretation needed.</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">2</div>
+        <div class="how-title">Find the Levels</div>
+        <div class="how-desc">The Options Chain (Guided Mode) shows you the call wall above, the put floor below, and max pain. You know your ceiling, your floor, and your target before you enter.</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">3</div>
+        <div class="how-title">Get the Verdict</div>
+        <div class="how-desc">Plug your entry, target, and stop into the R/R Calculator. Based on your own journal win rate, DARKFLOW tells you: TAKE THIS TRADE or SKIP IT.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" style="background:var(--surface);border-top:1px solid var(--border);">
+  <div class="section-inner" style="text-align:center;">
+    <div class="section-label" style="justify-content:center;display:flex;">PRICING</div>
+    <h2 class="section-title">Everything unlocked.<br>No feature <span style="color:var(--accent)">gating.</span></h2>
+    <p class="section-sub" style="margin:0 auto;">SpotGamma locks their best features at $299/mo. We don't. Pick the plan that fits your trading frequency — every feature is available on every plan.</p>
+
+    <div class="pricing-wrap">
+
+      <!-- STARTER -->
+      <div class="price-card">
+        <div class="price-name">STARTER</div>
+        <div class="price-amount">$49<span>/mo</span></div>
+        <div class="price-desc">For traders who want the edge without the complexity.</div>
+        <div class="price-divider"></div>
+        <ul class="price-features">
+          <li>GEX Heatmap — full access</li>
+          <li>Option Flow Feed</li>
+          <li>Net Drift + crossover alerts</li>
+          <li>Options Chain + Guided Mode</li>
+          <li>Trade Journal + AI Coach</li>
+          <li>R/R Calculator</li>
+          <li class="dim">Dark Pool overlay</li>
+          <li class="dim">AI Signals</li>
+        </ul>
+        <button class="price-btn" onclick="this.textContent='COMING SOON'">SUBSCRIBE NOW</button>
+      </div>
+
+      <!-- PRO -->
+      <div class="price-card featured">
+        <div class="price-name">PRO</div>
+        <div class="price-amount" style="color:var(--accent)">$79<span>/mo</span></div>
+        <div class="price-desc">The full terminal. Everything, real-time, with AI layer.</div>
+        <div class="price-divider"></div>
+        <ul class="price-features">
+          <li>Everything in Starter</li>
+          <li>Dark Pool overlay + 30D history</li>
+          <li>AI Signals — pattern detection</li>
+          <li>Multi-ticker Net Drift</li>
+          <li>Priority data feeds</li>
+          <li>Mobile-optimized interface</li>
+          <li>Early access to new features</li>
+          <li>Direct feedback channel</li>
+        </ul>
+        <button class="price-btn primary" onclick="this.textContent='COMING SOON'">SUBSCRIBE NOW</button>
+      </div>
+
+      <!-- ELITE -->
+      <div class="price-card">
+        <div class="price-name">ELITE</div>
+        <div class="price-amount" style="color:var(--gold)">$200<span>/mo</span></div>
+        <div class="price-desc">For serious traders who want the full institutional stack.</div>
+        <div class="price-divider"></div>
+        <ul class="price-features">
+          <li>Everything in Pro</li>
+          <li>Custom GEX alerts via SMS</li>
+          <li>Personal AI coaching session</li>
+          <li>API access — raw GEX + flow data</li>
+          <li>White-glove onboarding</li>
+          <li>Weekly market regime briefing</li>
+          <li>Direct line to the founders</li>
+          <li>Lifetime price lock</li>
+        </ul>
+        <button class="price-btn" onclick="this.textContent='COMING SOON'">SUBSCRIBE NOW</button>
+      </div>
+
+    </div>
+
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted);margin-top:24px;letter-spacing:.1em;">ALL PLANS · CANCEL ANYTIME · 7-DAY FREE TRIAL · NO CREDIT CARD TO START</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo"><div class="footer-tri"></div>DARKFLOW</div>
+  <div class="footer-links">
+    <a href="#">FEATURES</a>
+    <a href="#">PRICING</a>
+    <a href="#">PRIVACY</a>
+    <a href="#">TERMS</a>
+    <a href="#">CONTACT</a>
+  </div>
+  <div class="footer-copy">© 2026 DARKFLOW · WE TELL YOU WHAT IT MEANS</div>
+</footer>
+
+<script>
+setInterval(()=>{
+  const el=document.getElementById('termClock');
+  if(el)el.textContent=new Date().toLocaleTimeString('en-US',{hour12:false});
+},1000);
+
+// Scroll animations
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.style.animation='fadeUp .5s ease both';
+      observer.unobserve(e.target);
+    }
+  });
+},{threshold:.1});
+document.querySelectorAll('.feat-card,.how-step,.price-card').forEach(el=>{
+  el.style.opacity='0';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>
