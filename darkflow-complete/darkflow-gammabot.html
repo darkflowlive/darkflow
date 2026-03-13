@@ -246,6 +246,13 @@ long_target:callWall,short_target:putWall,long_target_label:'call $'+callWall,sh
 {key:'maxpain',label:'MAX PAIN',price:maxPain,color:'var(--gold)',gex:0.5,long_pct:50,short_pct:50,
 long_target:maxPain+20,short_target:maxPain-20,long_target_label:'above $'+(maxPain+20),short_target_label:'below $'+(maxPain-20),hist_reject:5,hist_total:10,hist:[]}];
 if(typeof renderLevels==='function')renderLevels();
+    // Draw mini chart with live spot
+    genCandles();
+    // Auto-fire probability on put wall (most actionable level)
+    const putWallLevel = LEVELS.find(l=>l.key==='put');
+    if(putWallLevel && typeof fireProbability==='function') {
+      setTimeout(()=>fireProbability(putWallLevel), 500);
+    }
 if(typeof genCandles==='function')genCandles();
 if(LEVELS.length&&typeof fireProbability==='function'){
 const nearest=LEVELS.reduce((best,l)=>Math.abs(l.price-spot)<Math.abs(best.price-spot)?l:best,LEVELS[0]);
@@ -499,7 +506,13 @@ setTimeout(()=>{
 
 setInterval(simPrice,1200);
 
-loadGammaBot('SPX');setInterval(()=>loadGammaBot(GAMMA_STATE.sym||'SPX'),60000);
+// Wait for DOM then load
+window.addEventListener('DOMContentLoaded', function() {
+  loadGammaBot('SPX');
+}, false);
+// Also fire immediately in case DOM already loaded
+if(document.readyState !== 'loading') loadGammaBot('SPX');
+setInterval(()=>loadGammaBot(GAMMA_STATE.sym||'SPX'), 60000);
 </script>
 </body>
 </html>
