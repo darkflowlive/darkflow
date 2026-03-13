@@ -289,32 +289,7 @@ setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocal
 
 // ── DRIFT DATA ────────────────────────────────────────────────
 // calls/puts = cumulative premium (positive values), delta = net (calls-puts)
-const DAYS = {
-  '1D': {
-    times:["09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30"],
-    calls:[520000, 1240000,2100000,2800000,3200000,3380000,3420000,3440000,3460000,3480000,3500000],
-    puts: [180000, 320000, 480000, 560000, 820000, 1280000,1840000,2400000,2960000,3200000,3400000],
-    spx:  [572.8,  573.2,  573.6,  573.4,  572.8,  572.1,  571.6,  571.2,  570.8,  571.0,  571.4],
-  },
-  '2D': {
-    times:["Yest 9:30","10:30","11:30","12:30","13:30","14:30","Today 9:30","10:30","11:30","12:30","13:30","14:30"],
-    calls:[800000, 1200000,1600000,2000000,1800000,1600000,420000, 980000, 2020000,3100000,4280000,5600000],
-    puts: [900000, 1100000,1400000,1600000,1700000,1700000,300000, 600000, 1080000,1280000,1300000,1400000],
-    spx:  [570.2,  570.8,  571.4,  571.8,  571.2,  570.9,  572.1,  571.8,  572.8,  572.1,  571.8,  571.4],
-  },
-  '3D': {
-    times:["D-2 9:30","11:30","13:30","D-1 9:30","11:30","13:30","Today 9:30","11:30","13:30","14:30"],
-    calls:[600000, 800000, 900000, 800000, 1600000,1600000,420000, 2020000,4280000,5600000],
-    puts: [900000, 1000000,1100000,900000, 1400000,1700000,300000, 1080000,1300000,1400000],
-    spx:  [569.4,  569.8,  570.1,  570.2,  571.4,  570.9,  572.1,  572.8,  571.8,  571.4],
-  },
-  '5D': {
-    times:["D-4","D-4 PM","D-3","D-3 PM","D-2","D-2 PM","D-1","D-1 PM","Today","Today PM"],
-    calls:[400000, 600000, 600000, 900000, 800000, 900000, 800000, 1600000,2020000,5600000],
-    puts: [800000, 1000000,1000000,1100000,900000, 1100000,900000, 1400000,1080000,1400000],
-    spx:  [568.2,  568.8,  569.4,  570.1,  570.2,  570.9,  570.9,  571.4,  572.8,  571.4],
-  },
-};
+let DAYS={};let VOL_HOURS=[];async function loadNetDrift(){try{const base=window.location.hostname==='localhost'?'':'https://www.darkflow.live';const r=await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/SPX/net-prem-ticks'));const json=await r.json();const rows=json.data||[];if(!rows.length)return;const byDate={};rows.forEach(row=>{const date=row.date||row.tape_time.slice(0,10);if(!byDate[date])byDate[date]=[];byDate[date].push({time:row.tape_time?new Date(row.tape_time).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}):'09:30',callPrem:parseFloat(row.net_call_premium)||0,putPrem:parseFloat(row.net_put_premium)||0,callVol:parseInt(row.call_volume)||0,putVol:parseInt(row.put_volume)||0,net:(parseFloat(row.net_call_premium)||0)-Math.abs(parseFloat(row.net_put_premium)||0)});});DAYS=byDate;const today=Object.keys(byDate).sort().pop();const todayRows=byDate[today]||[];let cumCall=0,cumPut=0;VOL_HOURS=todayRows.map(r=>{cumCall+=r.callPrem;cumPut+=r.putPrem;return{time:r.time,cumCall,cumPut,net:cumCall-Math.abs(cumPut),callVol:r.callVol,putVol:r.putVol};});if(typeof drawDrift==='function')drawDrift();if(typeof buildVolBars==='function')buildVolBars();}catch(e){console.error('NetDrift:',e);}};
 
 let activeTab='1D';
 
@@ -453,16 +428,7 @@ function drawDrift(){
 
 
 // ── CALL/PUT VOL BARS ─────────────────────────────────────────
-const VOL_HOURS=[
-  {t:"09:30",calls:0.82,puts:0.28},
-  {t:"10:00",calls:1.24,puts:0.41},
-  {t:"10:30",calls:0.94,puts:0.38},
-  {t:"11:00",calls:1.10,puts:0.52},
-  {t:"11:30",calls:0.88,puts:0.84},
-  {t:"12:00",calls:0.62,puts:0.98},
-  {t:"13:00",calls:0.58,puts:1.14},
-  {t:"14:00",calls:0.54,puts:1.08},
-];
+//VOL_HOURS via loadNetDrift;
 const maxVol=Math.max(...VOL_HOURS.map(h=>h.calls+h.puts));
 
 function buildVolBars(){
@@ -487,6 +453,8 @@ function buildVolBars(){
 window.addEventListener('resize',drawDrift);
 buildVolBars();
 setTimeout(drawDrift,80);
+
+loadNetDrift();setInterval(loadNetDrift,60000);
 </script>
 </body>
 </html>
