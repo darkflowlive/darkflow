@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DARKFLOW · Options Flow</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080810;--surface:#0c0c18;--raised:#10101f;--hover:#14142a;
+  --border:#1c1c30;--bm:#252540;
+  --text:#e8e8f0;--dim:#b0b0c8;--muted2:#8888a8;--muted:#444460;
+  --accent:#00d4aa;--red:#f04060;--gold:#f0c040;--blue:#4888ff;--orange:#ff8040;--purple:#a855f7;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;-webkit-font-smoothing:antialiased;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes newRow{from{background:rgba(0,212,170,.12)}to{background:transparent}}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:var(--bm);}
+
+.topbar{height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:0;flex-shrink:0;}
+.logo{font-family:'IBM Plex Sans',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:var(--accent);display:flex;align-items:center;gap:8px;margin-right:16px;flex-shrink:0;}
+.logo-tri{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--accent);}
+.nav{display:flex;height:100%;overflow-x:auto;flex:1;}
+.nav::-webkit-scrollbar{display:none;}
+.nav-tab{height:100%;padding:0 12px;font-size:9px;font-weight:600;letter-spacing:.08em;white-space:nowrap;color:var(--muted);border:none;border-bottom:2px solid transparent;background:none;font-family:'IBM Plex Mono',monospace;cursor:pointer;}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;}
+
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+
+/* FILTERS */
+.filters{flex-shrink:0;padding:8px 14px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border);overflow-x:auto;background:var(--surface);}
+.filters::-webkit-scrollbar{display:none;}
+.fbtn{height:26px;padding:0 10px;border-radius:2px;font-size:8px;font-weight:700;cursor:pointer;font-family:'IBM Plex Mono',monospace;border:1px solid var(--border);color:var(--muted);background:transparent;letter-spacing:.06em;transition:all .12s;white-space:nowrap;}
+.fbtn.on{border-color:var(--accent);color:var(--accent);background:rgba(0,212,170,.08);}
+.fbtn.bull.on{border-color:var(--accent);color:var(--accent);background:rgba(0,212,170,.08);}
+.fbtn.bear.on{border-color:var(--red);color:var(--red);background:rgba(240,64,96,.08);}
+.status-bar{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;}
+.status{font-size:8px;color:var(--muted2);}
+
+/* STATS ROW */
+.stats-row{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);}
+.stat{flex:1;padding:7px 12px;border-right:1px solid var(--border);}
+.stat:last-child{border-right:none;}
+.stat-v{font-size:13px;font-weight:700;}
+.stat-l{font-size:6px;color:var(--muted);letter-spacing:.08em;margin-top:1px;}
+
+/* TABLE */
+.table-wrap{flex:1;overflow-y:auto;}
+.table{width:100%;border-collapse:collapse;}
+.th{padding:6px 10px;font-size:7px;font-weight:700;letter-spacing:.1em;color:var(--muted);border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;position:sticky;top:0;background:var(--surface);z-index:2;}
+.th.r{text-align:right;}
+.tr{border-bottom:1px solid rgba(28,28,48,.5);transition:background .15s;cursor:pointer;}
+.tr:hover{background:var(--hover);}
+.tr.new{animation:newRow 2s ease;}
+.td{padding:7px 10px;font-size:8px;white-space:nowrap;}
+.td.r{text-align:right;}
+
+/* TICKER BADGE */
+.ticker-badge{font-size:9px;font-weight:700;}
+.type-badge{font-size:7px;font-weight:700;padding:2px 6px;border-radius:2px;}
+.sent-badge{font-size:7px;font-weight:700;padding:2px 5px;border-radius:2px;}
+
+/* AI TAG */
+.ai-tag{font-size:6px;font-weight:700;padding:1px 5px;border-radius:2px;background:rgba(240,192,64,.1);color:var(--gold);border:1px solid rgba(240,192,64,.3);}
+
+/* LOADING */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:12px;color:var(--muted2);}
+.spin{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* STAT BAR */
+.stat-bar{display:flex;border-top:1px solid var(--border);flex-shrink:0;background:var(--surface);}
+.sb{flex:1;padding:6px 10px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:1px;}
+.sb:last-child{border-right:none;}
+.sb-v{font-size:11px;font-weight:700;}
+.sb-l{font-size:6px;color:var(--muted);letter-spacing:.08em;}
+
+/* ERROR */
+.error-box{margin:12px;padding:12px 14px;background:rgba(240,64,96,.06);border:1px solid rgba(240,64,96,.2);border-radius:5px;font-size:8px;color:var(--red);line-height:1.8;}
+</style>
+<script>if(window.self!==window.top){document.head.insertAdjacentHTML('beforeend','<style>.topbar{display:none!important;}</style>');}</script>
+</head>
+<body>
+<div class="app">
+
+<div class="topbar">
+  <div class="logo"><div class="logo-tri"></div>DARKFLOW</div>
+  <div class="nav">
+    <button class="nav-tab active">OPTIONS FLOW</button>
+    <button class="nav-tab">DARK POOL</button>
+    <button class="nav-tab">FLOW SCANNER</button>
+    <button class="nav-tab">AI INTELLIGENCE</button>
+  </div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0;">
+    <div class="live-dot"></div>
+    <span style="font-size:9px;color:var(--muted2)" id="clk"></span>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <span style="font-size:7px;color:var(--muted);letter-spacing:.1em;">TYPE</span>
+  <button class="fbtn on" onclick="setFilter('type','ALL',this)">ALL</button>
+  <button class="fbtn bull" onclick="setFilter('type','CALL',this)">CALLS</button>
+  <button class="fbtn bear" onclick="setFilter('type','PUT',this)">PUTS</button>
+  <span style="font-size:7px;color:var(--muted);letter-spacing:.1em;margin-left:4px;">SIZE</span>
+  <button class="fbtn on" onclick="setFilter('size','ALL',this)">ALL</button>
+  <button class="fbtn" onclick="setFilter('size','SWEEP',this)">SWEEPS</button>
+  <button class="fbtn" onclick="setFilter('size','BLOCK',this)">BLOCKS</button>
+  <span style="font-size:7px;color:var(--muted);letter-spacing:.1em;margin-left:4px;">SENTIMENT</span>
+  <button class="fbtn on" onclick="setFilter('sent','ALL',this)">ALL</button>
+  <button class="fbtn bull" onclick="setFilter('sent','BULLISH',this)">BULLISH</button>
+  <button class="fbtn bear" onclick="setFilter('sent','BEARISH',this)">BEARISH</button>
+  <div class="status-bar">
+    <span class="status" id="flowCount">-- prints</span>
+    <span class="status" id="lastUpdate">updating...</span>
+  </div>
+</div>
+
+<!-- STATS ROW -->
+<div class="stats-row">
+  <div class="stat"><div class="stat-v" style="color:var(--accent)" id="totalPremium">--</div><div class="stat-l">TOTAL PREMIUM</div></div>
+  <div class="stat"><div class="stat-v" style="color:var(--accent)" id="callPct">--</div><div class="stat-l">CALL BIAS</div></div>
+  <div class="stat"><div class="stat-v" style="color:var(--gold)" id="sweepCount">--</div><div class="stat-l">SWEEPS TODAY</div></div>
+  <div class="stat"><div class="stat-v" style="color:var(--purple)" id="blockCount">--</div><div class="stat-l">BLOCKS TODAY</div></div>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th class="th">TIME</th>
+        <th class="th">TICKER</th>
+        <th class="th">TYPE</th>
+        <th class="th r">STRIKE</th>
+        <th class="th r">EXPIRY</th>
+        <th class="th r">PREMIUM</th>
+        <th class="th r">SIZE</th>
+        <th class="th">SENTIMENT</th>
+        <th class="th">AI TAG</th>
+      </tr>
+    </thead>
+    <tbody id="flowBody">
+      <tr><td colspan="9"><div class="loading"><div class="spin"></div><span>Loading live flow...</span></div></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- STAT BAR -->
+<div class="stat-bar">
+  <div class="sb"><span class="sb-v" style="color:var(--accent)" id="spxLive">--</span><span class="sb-l">SPX</span></div>
+  <div class="sb"><span class="sb-v" id="biasEl" style="color:var(--accent)">--</span><span class="sb-l">FLOW BIAS</span></div>
+  <div class="sb"><span class="sb-v" style="color:var(--gold)" id="topTickerEl">--</span><span class="sb-l">TOP TICKER</span></div>
+  <div class="sb"><span class="sb-v" style="color:var(--text)">LIVE</span><span class="sb-l">DATA SOURCE</span></div>
+</div>
+
+</div>
+
+<script>
+const API_KEY = '9dbba67b-0135-4101-94cc-cd7a91f7a40f';
+const BASE = 'https://api.unusualwhales.com';
+
+async function apiFetch(path){
+  const url = BASE + path;
+  try {
+    const r = await fetch(url, {headers:{'Authorization':`Bearer ${API_KEY}`,'Accept':'application/json'}});
+    if(r.ok) return r.json();
+    throw new Error(r.status);
+  } catch(e){
+    const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(url), {headers:{'Authorization':`Bearer ${API_KEY}`,'Accept':'application/json'}});
+    if(!r2.ok) throw new Error(r2.status);
+    return r2.json();
+  }
+}
+
+setInterval(()=>document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-US',{hour12:false}),1000);
+
+let allFlows = [];
+let filters = {type:'ALL', size:'ALL', sent:'ALL'};
+let sweeps=0, blocks=0, totalPrem=0, callPrem=0;
+
+function setFilter(key, val, btn){
+  const group = key==='type'?['ALL','CALL','PUT']:key==='size'?['ALL','SWEEP','BLOCK']:['ALL','BULLISH','BEARISH'];
+  document.querySelectorAll('.fbtn').forEach(b=>{
+    if(group.some(g=>b.textContent===g)) b.classList.remove('on');
+  });
+  btn.classList.add('on');
+  filters[key]=val;
+  renderTable();
+}
+
+function formatPremium(val){
+  const n=parseFloat(val)||0;
+  if(n>=1000000) return '$'+(n/1000000).toFixed(1)+'M';
+  if(n>=1000) return '$'+(n/1000).toFixed(0)+'K';
+  return '$'+n.toFixed(0);
+}
+
+function getAITag(flow){
+  const prem = parseFloat(flow.total_premium)||parseFloat(flow.premium)||0;
+  const sentiment = (flow.sentiment||'').toUpperCase();
+  const type = (flow.put_call||flow.type||'').toUpperCase();
+  if(prem > 2000000) return {text:'WHALE 🐋', col:'var(--purple)'};
+  if(flow.is_sweep && prem > 500000) return {text:'BIG SWEEP', col:'var(--gold)'};
+  if(flow.is_block) return {text:'BLOCK', col:'var(--blue)'};
+  if(sentiment==='BULLISH' && type==='CALL') return {text:'BULL FLOW', col:'var(--accent)'};
+  if(sentiment==='BEARISH' && type==='PUT') return {text:'BEAR FLOW', col:'var(--red)'};
+  return {text:'FLOW', col:'var(--muted2)'};
+}
+
+function renderTable(){
+  const filtered = allFlows.filter(f=>{
+    const type = (f.put_call||f.type||'').toUpperCase();
+    const sent = (f.sentiment||'').toUpperCase();
+    const isSwp = f.is_sweep;
+    const isBlk = f.is_block;
+    if(filters.type!=='ALL' && type!==filters.type) return false;
+    if(filters.size==='SWEEP' && !isSwp) return false;
+    if(filters.size==='BLOCK' && !isBlk) return false;
+    if(filters.sent!=='ALL' && !sent.includes(filters.sent)) return false;
+    return true;
+  });
+
+  const body = document.getElementById('flowBody');
+  if(!filtered.length){
+    body.innerHTML='<tr><td colspan="9"><div class="loading"><span style="color:var(--muted2)">No prints match filter</span></div></td></tr>';
+    return;
+  }
+
+  body.innerHTML = filtered.slice(0,200).map((f,i)=>{
+    const type = (f.put_call||f.type||'CALL').toUpperCase();
+    const sent = (f.sentiment||'neutral').toUpperCase();
+    const prem = parseFloat(f.total_premium||f.premium||0);
+    const strike = parseFloat(f.strike||0).toFixed(0);
+    const size = parseInt(f.size||f.volume||0).toLocaleString();
+    const expiry = f.expiry||f.expiration_date||'--';
+    const time = f.created_at ? new Date(f.created_at).toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '--';
+    const ticker = f.ticker||f.symbol||'--';
+    const isNew = i < 3;
+    const tag = getAITag(f);
+    const typeCol = type==='CALL'?'var(--accent)':'var(--red)';
+    const sentCol = sent.includes('BULL')?'var(--accent)':sent.includes('BEAR')?'var(--red)':'var(--muted2)';
+    const sweepLabel = f.is_sweep?'SWEEP':f.is_block?'BLOCK':'TRADE';
+    const sweepCol = f.is_sweep?'var(--gold)':f.is_block?'var(--purple)':'var(--muted)';
+
+    return `<tr class="tr${isNew?' new':''}" style="${prem>1000000?'background:rgba(168,85,247,.04);':''}">
+      <td class="td" style="color:var(--muted2)">${time}</td>
+      <td class="td"><span class="ticker-badge" style="color:${typeCol}">${ticker}</span></td>
+      <td class="td">
+        <span class="type-badge" style="background:${typeCol}18;color:${typeCol};border:1px solid ${typeCol}44">${type}</span>
+        <span style="font-size:6px;color:${sweepCol};margin-left:4px;">${sweepLabel}</span>
+      </td>
+      <td class="td r" style="color:var(--text)">$${strike}</td>
+      <td class="td r" style="color:var(--muted2)">${expiry}</td>
+      <td class="td r" style="color:${prem>1000000?'var(--purple)':prem>500000?'var(--gold)':'var(--text)'};font-weight:${prem>500000?700:400}">${formatPremium(prem)}</td>
+      <td class="td r" style="color:var(--dim)">${size}</td>
+      <td class="td"><span class="sent-badge" style="background:${sentCol}18;color:${sentCol};border:1px solid ${sentCol}33">${sent.slice(0,4)}</span></td>
+      <td class="td"><span class="ai-tag" style="background:${tag.col}15;color:${tag.col};border-color:${tag.col}44">${tag.text}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+async function fetchFlow(){
+  try {
+    const data = await apiFetch('/api/option-trades/flow-alerts');
+    const flows = data.data || data.results || data || [];
+    if(flows.length){
+      const newFlows = flows.filter(f=>!allFlows.find(e=>e.id===f.id));
+      allFlows = [...newFlows, ...allFlows].slice(0, 500);
+      sweeps = allFlows.filter(f=>f.is_sweep).length;
+      blocks = allFlows.filter(f=>f.is_block).length;
+      totalPrem = allFlows.reduce((s,f)=>s+(parseFloat(f.total_premium||f.premium)||0),0);
+      callPrem = allFlows.filter(f=>(f.put_call||'').toUpperCase()==='CALL').reduce((s,f)=>s+(parseFloat(f.total_premium||f.premium)||0),0);
+      document.getElementById('totalPremium').textContent = formatPremium(totalPrem);
+      document.getElementById('callPct').textContent = totalPrem>0 ? Math.round((callPrem/totalPrem)*100)+'% CALLS' : '--';
+      document.getElementById('sweepCount').textContent = sweeps;
+      document.getElementById('blockCount').textContent = blocks;
+      document.getElementById('flowCount').textContent = allFlows.length + ' prints';
+      document.getElementById('lastUpdate').textContent = 'updated ' + new Date().toLocaleTimeString('en-US',{hour12:false});
+      const bias = callPrem/totalPrem;
+      const biasEl = document.getElementById('biasEl');
+      biasEl.textContent = bias>0.6?'BULLISH':bias<0.4?'BEARISH':'NEUTRAL';
+      biasEl.style.color = bias>0.6?'var(--accent)':bias<0.4?'var(--red)':'var(--gold)';
+      const tickerMap={};
+      allFlows.forEach(f=>{ const t=f.ticker||f.symbol; if(t) tickerMap[t]=(tickerMap[t]||0)+(parseFloat(f.total_premium||f.premium)||0); });
+      const top = Object.entries(tickerMap).sort((a,b)=>b[1]-a[1])[0];
+      if(top) document.getElementById('topTickerEl').textContent = top[0];
+      renderTable();
+    }
+  } catch(e) {
+    document.getElementById('flowBody').innerHTML = '<tr><td colspan="9"><div class="error-box">⚠️ API Error: ' + e.message + '<br>Make sure your Unusual Whales subscription is active at unusualwhales.com/account</div></td></tr>';
+  }
+}
+
+async function fetchSPX(){
+  try {
+    const d = await apiFetch('/api/market/market-tide');
+    const price = d.data?.spy_price || d.data?.price;
+    if(price) document.getElementById('spxLive').textContent = '$'+(parseFloat(price)*10).toFixed(2);
+  } catch(e){}
+}
+
+// Initial fetch
+fetchFlow();
+fetchSPX();
+
+// Poll every 15 seconds
+setInterval(fetchFlow, 15000);
+setInterval(fetchSPX, 10000);
+</script>
+</body>
+</html>
