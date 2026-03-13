@@ -527,8 +527,41 @@ tr.row-flip .strike-col{animation:flipPulse 2.4s ease-in-out infinite;}
 
 <script>
 // ── CONSTANTS ──────────────────────────────────────────────────
-const TICKERS = ["SPX","SPY","QQQ","NDX","AAPL","TSLA","NVDA","AMZN","META","MSFT","AMD","GOOGL","NFLX","COIN","GS","JPM","IWM","PLTR","MU","INTC"];
-const PRICES  = {SPX:5710,SPY:571,QQQ:471,NDX:19800,AAPL:225,TSLA:310,NVDA:875,AMZN:198,META:590,MSFT:415,AMD:165,GOOGL:175,NFLX:920,COIN:210,GS:520,JPM:230,IWM:205,PLTR:78,MU:95,INTC:48};
+const TICKERS = ['SPX','SPY','QQQ','TSLA','NVDA','AAPL','AMZN','META','MSFT'];
+const PRICES   = {SPX:5700,SPY:570,QQQ:470,TSLA:250,NVDA:880,AAPL:225,AMZN:200,META:590,MSFT:415};
+let GEX_CACHE  = {};
+
+async function loadGEX(sym) {
+  try {
+    const base = window.location.hostname==='localhost'?'':'https://www.darkflow.live';
+    const r = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/greek-exposure/strike'));
+    const json = await r.json();
+    const rows = json.data || [];
+    if (!rows.length) return;
+    // Update PRICES with live underlying price from first row (use strike midpoint as proxy)
+    // Build GEX_CACHE[sym] keyed by strike
+    GEX_CACHE[sym] = {};
+    rows.forEach(row => {
+      const strike = parseFloat(row.strike);
+      const callGex = parseFloat(row.call_gex) || 0;
+      const putGex  = parseFloat(row.put_gex)  || 0;
+      GEX_CACHE[sym][strike] = { callGex, putGex, net: callGex + putGex };
+    });
+    // Find max absolute net GEX strike as call wall / put wall
+    let maxCall=0, maxPut=0, maxCallStrike=0, maxPutStrike=0;
+    rows.forEach(row => {
+      const cg = parseFloat(row.call_gex)||0;
+      const pg = parseFloat(row.put_gex)||0;
+      if(cg > maxCall){maxCall=cg; maxCallStrike=parseFloat(row.strike);}
+      if(Math.abs(pg) > maxPut){maxPut=Math.abs(pg); maxPutStrike=parseFloat(row.strike);}
+    });
+    // Update PRICES with live data if we can infer spot
+    const allStrikes = rows.map(r=>parseFloat(r.strike)).sort((a,b)=>a-b);
+    const mid = allStrikes[Math.floor(allStrikes.length/2)];
+    if(mid) PRICES[sym] = mid;
+    buildGEX(sym, null);
+  } catch(e) { console.error('GEX load error:', e); }
+};
 
 const rand    = (a,b) => Math.random()*(b-a)+a;
 const randInt = (a,b) => Math.floor(rand(a,b));
@@ -1359,6 +1392,10 @@ function toggleWTM(){
   }
 }
 
+
+// AUTO-LOAD LIVE DATA
+loadGEX(currentTicker||'SPX');
+setInterval(()=>loadGEX(currentTicker||'SPX'),60000);
 </script>
 </body>
 </html>
