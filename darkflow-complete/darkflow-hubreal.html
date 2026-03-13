@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DARKFLOW Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080810;--surface:#0c0c18;--raised:#10101f;
+  --border:#1c1c30;--bm:#252540;
+  --text:#e8e8f0;--dim:#b0b0c8;--muted2:#8888a8;--muted:#444460;
+  --accent:#00d4aa;--red:#f04060;--gold:#f0c040;--blue:#4888ff;--orange:#ff8040;--purple:#a855f7;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;overflow:hidden;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* TOPBAR */
+.topbar{height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:0;flex-shrink:0;position:relative;z-index:10;}
+.logo{font-family:'IBM Plex Sans',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:var(--accent);display:flex;align-items:center;gap:8px;margin-right:12px;flex-shrink:0;}
+.logo-tri{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--accent);}
+.nav{display:flex;height:100%;overflow-x:auto;flex:1;}
+.nav::-webkit-scrollbar{display:none;}
+.nav-tab{height:100%;padding:0 11px;font-size:8.5px;font-weight:600;letter-spacing:.07em;white-space:nowrap;color:var(--muted);border:none;border-bottom:2px solid transparent;background:none;font-family:'IBM Plex Mono',monospace;cursor:pointer;transition:all .15s;}
+.nav-tab:hover{color:var(--dim);}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.nav-tab.gold.active{color:var(--gold);border-bottom-color:var(--gold);}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;flex-shrink:0;}
+
+/* IFRAME */
+.frame-wrap{flex:1;position:relative;overflow:hidden;}
+iframe{width:100%;height:100%;border:none;background:var(--bg);}
+
+.app{display:flex;flex-direction:column;height:100vh;}
+
+/* STAT BAR */
+.stat-bar{display:flex;border-top:1px solid var(--border);flex-shrink:0;background:var(--surface);height:32px;}
+.sb{flex:1;padding:0 10px;border-right:1px solid var(--border);display:flex;align-items:center;gap:6px;}
+.sb:last-child{border-right:none;}
+.sb-v{font-size:10px;font-weight:700;}
+.sb-l{font-size:6px;color:var(--muted);letter-spacing:.08em;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="topbar">
+  <div class="logo"><div class="logo-tri"></div>DARKFLOW</div>
+  <div class="nav" id="mainNav">
+    <button class="nav-tab active" onclick="loadTool('darkflow-overview.html',this)">OVERVIEW</button>
+    <button class="nav-tab" onclick="loadTool('darkflow-flow.html',this)">OPTIONS FLOW</button>
+    <button class="nav-tab" onclick="loadTool('darkflow-gex-v2.html',this)">GEX HEATMAP</button>
+    <button class="nav-tab" onclick="loadTool('darkflow-gexchart.html',this)">GAMMA MAP</button>
+    <button class="nav-tab" onclick="loadTool('darkflow-gammabot.html',this)">GAMMA AI</button>
+    <button class="nav-tab" onclick="loadTool('darkflow-alerts.html',this)">AI ALERTS</button>
+    <button class="nav-tab" onclick="loadTool('darkflow-ai-intelligence.html',this)">AI INTELLIGENCE</button>
+    <button class="nav-tab gold" onclick="loadTool('darkflow-squeeze.html',this)">GAMMA SQUEEZE 👑</button>
+    <button class="nav-tab" onclick="loadTool('darkflow-flowscanner.html',this)">FLOW SCANNER</button>
+    <button class="nav-tab" onclick="loadTool('darkflow-divergence.html',this)">PREMIUM DIV</button>
+    <button class="nav-tab" onclick="loadTool('darkflow-darkpool.html',this)">DARK POOL</button>
+    <button class="nav-tab" onclick="loadTool('darkflow-strike.html',this)">STRIKE MATRIX</button>
+    <button class="nav-tab" onclick="loadTool('darkflow-earnings.html',this)">EARNINGS</button>
+    <button class="nav-tab" onclick="loadTool('darkflow-journal.html',this)">JOURNAL</button>
+    <button class="nav-tab" onclick="loadTool('darkflow-rrcalc.html',this)">R/R CALC</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-left:8px;flex-shrink:0;">
+    <div class="live-dot"></div>
+    <span style="font-size:9px;color:var(--muted2)" id="clk"></span>
+  </div>
+</div>
+
+<div class="frame-wrap">
+  <iframe id="mainFrame" src="darkflow-overview.html"></iframe>
+</div>
+
+<div class="stat-bar">
+  <div class="sb"><span class="sb-v" style="color:var(--accent)" id="spxEl">$5,726</span><span class="sb-l">SPX</span></div>
+  <div class="sb"><span class="sb-v" style="color:var(--gold)">LONG γ</span><span class="sb-l">REGIME</span></div>
+  <div class="sb"><span class="sb-v" style="color:var(--accent)">$5,750</span><span class="sb-l">CALL WALL</span></div>
+  <div class="sb"><span class="sb-v" style="color:var(--red)">$5,700</span><span class="sb-l">PUT WALL</span></div>
+  <div class="sb"><span class="sb-v" style="color:var(--text)">LIVE</span><span class="sb-l">DATA</span></div>
+</div>
+
+</div>
+
+<script>
+setInterval(()=>document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-US',{hour12:false}),1000);
+
+function loadTool(url, btn){
+  document.getElementById('mainFrame').src = url;
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// Live SPX from our proxy
+async function fetchSPX(){
+  try {
+    const r = await fetch('/api/flow?endpoint=/api/market/market-tide');
+    const d = await r.json();
+    const price = d.data?.spy_price;
+    if(price) document.getElementById('spxEl').textContent='$'+(parseFloat(price)*10).toFixed(0);
+  } catch(e){}
+}
+fetchSPX();
+setInterval(fetchSPX, 15000);
+</script>
+</body>
+</html>
