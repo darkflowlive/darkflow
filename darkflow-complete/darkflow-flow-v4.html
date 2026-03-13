@@ -216,20 +216,64 @@ tr.detail-row td{padding:0;height:auto;}
 setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-US',{hour12:false});},1000);
 
 // ── DATA ─────────────────────────────────────────────────────
-const FLOW=[
-  {id:1, time:"14:03:22",ticker:"SPY", exp:"Mar 12",strike:572,  side:"CALL",spot:571.40,qty:1842,price:1.14,bid:1.13,ask:1.15,prem:2100000,sentiment:"BULL",type:"SWEEP",exch:"MULTIPLE",otm:"OTM $0.60",vol:94820,oi:218430,unusual:true, note:"Multi-leg sweep hit 4 exchanges simultaneously — aggressive directional bet on SPY moving higher before close. Paid above ask signals urgency."},
-  {id:2, time:"13:58:11",ticker:"QQQ", exp:"Mar 19",strike:480,  side:"PUT", spot:471.20,qty:1203,price:1.50,bid:1.48,ask:1.51,prem:1800000,sentiment:"BEAR",type:"BLOCK",exch:"CBOE",    otm:"OTM $9.20",vol:34120,oi:87650,unusual:true, note:"Single large block at ask — likely institutional hedge against long equity position. Monthly expiry suggests protection, not speculation."},
-  {id:3, time:"13:51:44",ticker:"NVDA",exp:"Mar 12",strike:875,  side:"CALL",spot:868.40,qty:980, price:0.91,bid:0.89,ask:0.92,prem:890000, sentiment:"BULL",type:"SWEEP",exch:"MULTIPLE",otm:"OTM $6.60",vol:182400,oi:44380,unusual:true, note:"Paid above ask on a market order — high urgency. Someone expects NVDA to rip into close. Follows broader semi sector strength."},
-  {id:4, time:"13:44:09",ticker:"AAPL",exp:"Mar 26",strike:232,  side:"CALL",spot:228.60,qty:751, price:0.59,bid:0.58,ask:0.60,prem:440000, sentiment:"BULL",type:"BLOCK",exch:"AMEX",    otm:"OTM $3.40",vol:28940,oi:61200,unusual:false,note:"At-ask block, moderate size. Could be covered call unwind or new bullish position ahead of product event. Watch for follow-on flow."},
-  {id:5, time:"13:39:55",ticker:"SPX", exp:"Mar 12",strike:5700, side:"PUT", spot:5718.4,qty:621, price:1.93,bid:1.91,ask:1.94,prem:1200000,sentiment:"BEAR",type:"SWEEP",exch:"CBOE",    otm:"OTM $18.4",vol:74200,oi:156800,unusual:true, note:"Fast sweep executed below bid — dealer-driven hedging near gamma flip at $5,735. Not a pure directional bet — likely delta hedging."},
-  {id:6, time:"13:31:02",ticker:"TSLA",exp:"Mar 19",strike:260,  side:"CALL",spot:251.80,qty:1420,price:0.44,bid:0.43,ask:0.45,prem:620000, sentiment:"BULL",type:"SWEEP",exch:"MULTIPLE",otm:"OTM $8.20",vol:211800,oi:89400,unusual:true, note:"Repeated sweeps building across multiple prints — pattern suggests accumulation. Someone is positioning for a catalyst or technical breakout."},
-  {id:7, time:"13:28:17",ticker:"META",exp:"Apr 17", strike:580,  side:"PUT", spot:601.20,qty:391, price:2.51,bid:2.48,ask:2.53,prem:980000, sentiment:"BEAR",type:"BLOCK",exch:"PHLX",    otm:"OTM $21.2",vol:18200,oi:42100,unusual:false,note:"Monthly put block — likely portfolio protection against long META position, not a directional bet. Standard institutional hedging behavior."},
-  {id:8, time:"13:19:44",ticker:"SPY", exp:"Mar 14",strike:574,  side:"CALL",spot:571.40,qty:914, price:0.83,bid:0.82,ask:0.84,prem:760000, sentiment:"BULL",type:"SWEEP",exch:"MULTIPLE",otm:"OTM $2.60",vol:62400,oi:198200,unusual:true, note:"Strike above call wall — speculative bet on breakout above SPX $5,750. Paid at ask, multi-exchange. High conviction directional play."},
-  {id:9, time:"13:11:28",ticker:"IWM", exp:"Mar 19",strike:205,  side:"PUT", spot:208.40,qty:874, price:0.62,bid:0.61,ask:0.63,prem:540000, sentiment:"BEAR",type:"BLOCK",exch:"ISE",     otm:"OTM $3.40",vol:24800,oi:71600,unusual:false,note:"Small-cap hedge — risk-off positioning in Russell 2000. Consistent with macro caution despite positive SPX gamma regime."},
-  {id:10,time:"13:04:55",ticker:"AMD", exp:"Mar 12",strike:120,  side:"CALL",spot:116.80,qty:1240,price:0.25,bid:0.24,ask:0.26,prem:310000, sentiment:"BULL",type:"SWEEP",exch:"MULTIPLE",otm:"OTM $3.20",vol:318400,oi:112800,unusual:true, note:"0DTE sweep following NVDA strength — sector momentum play. AMD lagging NVDA, this bet is on catch-up before close."},
-  {id:11,time:"12:58:33",ticker:"SPX", exp:"Mar 12",strike:5740, side:"CALL",spot:5718.4,qty:304, price:2.80,bid:2.78,ask:2.82,prem:852000, sentiment:"BULL",type:"SWEEP",exch:"CBOE",    otm:"OTM $21.6",vol:48200,oi:88400,unusual:true, note:"Bullish call above call wall at $5,750 — this is a breakout bet. Small size but above-ask execution signals conviction."},
-  {id:12,time:"12:51:14",ticker:"MSFT",exp:"Mar 19",strike:415,  side:"CALL",spot:404.70,qty:657, price:0.87,bid:0.82,ask:0.88,prem:572000, sentiment:"BULL",type:"SWEEP",exch:"MULTIPLE",otm:"OTM $10.3",vol:16190,oi:7300, unusual:false,note:"Mid-size call sweep, slightly above ask. Could be covering short calls or initiating new bullish position ahead of macro data."},
-];
+let FLOW=[];
+let flowLoaded=false;
+
+function mapUWtoFlow(d){
+  const t=new Date(d.created_at);
+  const hh=String(t.getHours()).padStart(2,'0');
+  const mm=String(t.getMinutes()).padStart(2,'0');
+  const ss=String(t.getSeconds()).padStart(2,'0');
+  const expDate=new Date(d.expiry);
+  const expStr=expDate.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const prem=parseFloat(d.total_premium)||0;
+  const isSweep=d.has_sweep||d.alert_rule?.includes('Sweep')||d.alert_rule?.includes('Ascending');
+  const isFloor=d.has_floor;
+  const side=d.type?.toUpperCase()==='CALL'?'CALL':'PUT';
+  const isBull=side==='CALL';
+  const spot=parseFloat(d.underlying_price)||0;
+  const strike=parseFloat(d.strike)||0;
+  const otmDiff=Math.abs(spot-strike).toFixed(2);
+  const otmLabel=(side==='CALL'?(strike>spot?'OTM':'ITM'):(strike<spot?'OTM':'ITM'))+' $'+otmDiff;
+  const unusual=d.volume_oi_ratio>1.5||isSweep||isFloor;
+  return {
+    id:d.id,
+    time:hh+':'+mm+':'+ss,
+    ticker:d.ticker,
+    exp:expStr,
+    strike:strike,
+    side:side,
+    spot:spot,
+    qty:d.total_size||0,
+    price:parseFloat(d.price)||0,
+    bid:parseFloat(d.bid)||0,
+    ask:parseFloat(d.ask)||0,
+    prem:prem,
+    sentiment:isBull?'BULL':'BEAR',
+    type:isFloor?'FLOOR':isSweep?'SWEEP':'BLOCK',
+    exch:'UW',
+    otm:otmLabel,
+    vol:d.volume||0,
+    oi:d.open_interest||0,
+    unusual:unusual,
+    note:d.alert_rule||''
+  };
+}
+
+async function loadFlow(){
+  try{
+    const base=window.location.hostname==='localhost'?'':'https://www.darkflow.live';
+    const r=await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/option-trades/flow-alerts'));
+    const json=await r.json();
+    FLOW=(json.data||[]).map(mapUWtoFlow);
+    flowLoaded=true;
+    render();
+    renderAIPicks();
+  }catch(e){console.error('Flow load error:',e);}
+}
+
+loadFlow();
+setInterval(loadFlow,30000);;
 
 let typeF="ALL", sideF="ALL", unusualF=false, expandedId=null, sortCol="time", sortDir=-1;
 
@@ -344,27 +388,15 @@ function render(){
 render();
 
 // ── AI HOT PICKS ──
-const AI_PICKS=[
-  {rank:1,score:97,ticker:'NVDA',exp:'Mar 21',type:'CALL',strike:'$920',size:'$4.2M',signal:'SWEEP',conviction:'EXTREME',
-   reason:'Massive sweep above ask — 2,400 contracts hit in single print. IV at 78th percentile. Dark pool showed $890M accumulation yesterday. This is institutional positioning ahead of earnings.',
-   color:'var(--accent)'},
-  {rank:2,score:91,ticker:'SPY',exp:'0DTE',type:'CALL',strike:'$575',size:'$1.8M',signal:'BLOCK',conviction:'HIGH',
-   reason:'Large block bought on offer at 10:42am — unusual for 0DTE this size. GEX positive above $572. Call wall at $576. Risk/reward favors a squeeze into close.',
-   color:'var(--accent)'},
-  {rank:3,score:88,ticker:'TSLA',exp:'Feb 7',type:'PUT',strike:'$230',size:'$2.1M',signal:'SWEEP',conviction:'HIGH',
-   reason:'Multi-leg put sweep — 3 exchanges hit simultaneously. Below GEX flip at $240. Dark pool showing distribution. Earnings miss history 6/10 last years.',
-   color:'var(--red)'},
-  {rank:4,score:82,ticker:'META',exp:'Feb 14',type:'CALL',strike:'$620',size:'$980K',signal:'UNUSUAL',conviction:'MED-HIGH',
-   reason:'Open interest jumped 340% overnight at this strike. Premium buyer aggressive — paid $4.20 vs $3.10 mid. Consistent with dark pool accumulation pattern seen last 2 weeks.',
-   color:'var(--accent)'},
-  {rank:5,score:76,ticker:'QQQ',exp:'Jan 31',type:'PUT',strike:'$490',size:'$1.4M',signal:'REPEAT',conviction:'MED',
-   reason:'Third consecutive day of put buying at this strike from same counterparty signature. Smells like macro hedge from large fund. Net drift turning bearish on QQQ.',
-   color:'var(--red)'},
-];
+const AI_PICKS=()=>FLOW
+  .filter(f=>f.prem>500000&&(f.type==='SWEEP'||f.type==='FLOOR'))
+  .sort((a,b)=>b.prem-a.prem)
+  .slice(0,5)
+  .map((f,i)=>({rank:i+1,ticker:f.ticker,side:f.side,strike:f.strike,exp:f.exp,prem:f.prem,type:f.type,score:Math.min(99,Math.round(60+(f.prem/1000000)*15+(f.unusual?10:0))),note:f.note||f.type+' — $'+Math.round(f.prem/1000)+'K premium'}));
 
 function renderAIPicks(){
   document.getElementById('pickTime').textContent='Updated '+new Date().toLocaleTimeString('en-US',{hour12:false});
-  document.getElementById('aiPicksList').innerHTML=AI_PICKS.map(p=>`
+  document.getElementById('aiPicksList').innerHTML=AI_PICKS().map(p=>`
     <div style="flex-shrink:0;width:220px;padding:10px 12px;border-right:1px solid rgba(240,192,64,.12);cursor:pointer;transition:background .12s;" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background=''" onclick="showPickDetail(${p.rank-1})">
       <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px;">
         <span style="font-size:7px;background:rgba(240,192,64,.12);color:var(--gold);padding:1px 5px;border-radius:2px;font-weight:700;">#${p.rank}</span>
