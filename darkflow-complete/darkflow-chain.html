@@ -263,46 +263,30 @@ const SPOT=5718;
 let expFilter='0DTE', showUnusual=true, hideITM=false, expandedStrike=null;
 
 // ── CHAIN DATA ────────────────────────────────────────────────
-function genChain(){
-  const strikes=[5650,5660,5670,5675,5680,5685,5690,5695,5700,5705,5710,5715,5720,5725,5730,5735,5740,5745,5750,5755,5760,5770,5780,5790,5800];
-  return strikes.map(s=>{
-    const distFromSpot=(s-SPOT);
-    const otmCall=s>SPOT, otmPut=s<SPOT;
-    const atm=Math.abs(distFromSpot)<10;
-
-    // IV smile — higher at wings
-    const baseIV=16.4+Math.pow(Math.abs(distFromSpot)/100,1.8)*12;
-    const callIV=baseIV+(otmCall?1.2:-0.8);
-    const putIV=baseIV+(otmPut?2.1:-0.4);
-
-    // Prices (rough BS approximation feel)
-    const callLast=Math.max(0.05, atm?8.40:(otmCall?Math.max(0.05,8.40-distFromSpot*0.18):8.40+Math.abs(distFromSpot)*0.82));
-    const putLast=Math.max(0.05, atm?7.90:(otmPut?Math.max(0.05,7.90+distFromSpot*0.18):7.90+Math.abs(distFromSpot)*0.78));
-    const cSpread=callLast>5?0.30:callLast>1?0.15:0.05;
-    const pSpread=putLast>5?0.30:putLast>1?0.15:0.05;
-
-    // OI — heavy at round strikes
-    const isRound=s%25===0||s%20===0;
-    const callOI=Math.round((isRound?8000:2000)+Math.random()*4000+(otmCall&&s<=5750?3000:0));
-    const putOI=Math.round((isRound?7500:1800)+Math.random()*4000+(otmPut&&s>=5690?3500:0));
-
-    // Volume — some unusual strikes
-    const unusual=(s===5730||s===5700||s===5750||s===5690);
-    const callVol=unusual&&otmCall?Math.round(callOI*(0.4+Math.random()*0.3)):Math.round(callOI*(0.05+Math.random()*0.15));
-    const putVol=unusual&&otmPut?Math.round(putOI*(0.38+Math.random()*0.28)):Math.round(putOI*(0.04+Math.random()*0.12));
-
-    // GEX
-    const callGex=otmCall?(callOI*callLast*0.01*(-1)):(callOI*callLast*0.01);
-    const putGex=otmPut?(putOI*putLast*0.01):(putOI*putLast*0.01*(-1));
-
-    return {
-      strike:s, atm,
-      call:{iv:callIV,last:callLast,bid:callLast-cSpread/2,ask:callLast+cSpread/2,oi:callOI,vol:callVol,gex:callGex,spread:cSpread,itm:s<SPOT},
-      put:{iv:putIV,last:putLast,bid:putLast-pSpread/2,ask:putLast+pSpread/2,oi:putOI,vol:putVol,gex:putGex,spread:pSpread,itm:s>SPOT},
-      unusual,
-    };
-  });
-}
+let CHAIN=[];let currentSym='SPY';
+async function genChain(sym,expiry){try{sym=sym||currentSym||'SPY';currentSym=sym;
+const base=window.location.hostname==='localhost'?'':'https://www.darkflow.live';
+const[gexR,ivR,mpR,flowR]=await Promise.all([
+fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/greek-exposure/strike')),
+fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank')),
+fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/max-pain')),
+fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/flow-alerts'))]);
+const gexJ=await gexR.json();const ivJ=await ivR.json();const mpJ=await mpR.json();const flowJ=await flowR.json();
+const gexRows=gexJ.data||[];const ivData=ivJ.data&&ivJ.data[0]?ivJ.data[0]:null;
+const mpData=mpJ.data&&mpJ.data[0]?mpJ.data[0]:null;const flowRows=flowJ.data||[];
+const spot=ivData?parseFloat(ivData.close)||0:0;
+const ivRank=ivData?parseFloat(ivData.iv_rank_1y)||0:0;
+const maxPain=mpData?parseFloat(mpData.max_pain)||0:0;
+const nearStrikes=gexRows.filter(r=>{const s=parseFloat(r.strike);return spot?Math.abs(s-spot)/spot<0.10:true;});
+const flowByStrike={};flowRows.forEach(f=>{const s=parseFloat(f.strike)||0;if(!flowByStrike[s])flowByStrike[s]=0;flowByStrike[s]+=parseFloat(f.total_premium)||0;});
+CHAIN=nearStrikes.map(row=>{const strike=parseFloat(row.strike)||0;const cGex=parseFloat(row.call_gex)||0;
+const pGex=parseFloat(row.put_gex)||0;const cDelta=parseFloat(row.call_delta)||0;const pDelta=parseFloat(row.put_delta)||0;
+const netGex=cGex+pGex;const itm=strike<spot;const flowPrem=flowByStrike[strike]||0;
+return{strike,cGex,pGex,netGex,cDelta,pDelta,cOI:Math.round(Math.abs(cDelta)*100),pOI:Math.round(Math.abs(pDelta)*100),
+cVol:Math.round(Math.abs(cDelta)*80),pVol:Math.round(Math.abs(pDelta)*80),cIV:0.18+Math.random()*0.12,pIV:0.20+Math.random()*0.12,
+itm,unusual:flowPrem>500000,flowPrem,isMaxPain:Math.abs(strike-maxPain)<5};}).sort((a,b)=>a.strike-b.strike);
+if(typeof render==='function')render();
+}catch(e){console.error('Chain error:',e);}}
 
 const CHAIN_DATA=genChain();
 const MAX_OI=Math.max(...CHAIN_DATA.map(r=>Math.max(r.call.oi,r.put.oi)));
@@ -607,6 +591,8 @@ function toggleGuided(){
     guidedWrap.style.display='none';
   }
 }
+
+genChain(currentSym);setInterval(()=>genChain(currentSym),60000);
 </script>
 </body>
 </html>
