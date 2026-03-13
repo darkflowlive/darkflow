@@ -1,1 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DARKFLOW · Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080810;--surface:#0c0c18;--raised:#10101f;--hover:#14142a;
+  --border:#1c1c30;--bm:#252540;
+  --text:#e8e8f0;--dim:#b0b0c8;--muted2:#8888a8;--muted:#444460;
+  --accent:#00d4aa;--red:#f04060;--gold:#f0c040;--blue:#4888ff;--orange:#ff8040;--purple:#a855f7;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;overflow:hidden;-webkit-font-smoothing:antialiased;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
+/* LAYOUT */
+.app{display:flex;flex-direction:column;height:100vh;}
+
+/* TOPBAR */
+.topbar{flex-shrink:0;height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:0;z-index:100;}
+.logo{font-family:'IBM Plex Sans',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:var(--accent);display:flex;align-items:center;gap:8px;margin-right:16px;flex-shrink:0;cursor:pointer;}
+.logo-tri{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--accent);}
+.nav{display:flex;height:100%;overflow-x:auto;flex:1;}
+.nav::-webkit-scrollbar{display:none;}
+.nav-tab{height:100%;padding:0 12px;font-size:9px;font-weight:600;letter-spacing:.08em;white-space:nowrap;color:var(--muted);border:none;border-bottom:2px solid transparent;background:none;font-family:'IBM Plex Mono',monospace;cursor:pointer;transition:color .15s;flex-shrink:0;}
+.nav-tab:hover{color:var(--dim);}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.nav-tab.gold{}.nav-tab.gold.active{color:var(--gold);border-bottom-color:var(--gold);}
+.topbar-right{margin-left:8px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;}
+
+/* MAIN */
+.main{flex:1;overflow:hidden;position:relative;}
+.page{position:absolute;inset:0;width:100%;height:100%;border:none;animation:fadeIn .2s ease;}
+.page.hidden{display:none;}
+
+/* HOME */
+.home{position:absolute;inset:0;overflow-y:auto;padding:24px;}
+.home-title{font-size:9px;letter-spacing:.18em;color:var(--muted);text-align:center;margin-bottom:6px;}
+.home-sub{font-size:7px;color:var(--muted);text-align:center;letter-spacing:.1em;margin-bottom:24px;}
+.section-label{font-size:7px;letter-spacing:.16em;color:var(--muted);margin-bottom:8px;margin-top:20px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:8px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:14px 16px;cursor:pointer;position:relative;overflow:hidden;transition:border-color .15s,transform .12s;}
+.card:hover{transform:translateY(-1px);border-color:var(--bm);}
+.card-top{position:absolute;top:0;left:0;right:0;height:2px;}
+.card-num{font-size:6px;color:var(--muted);letter-spacing:.1em;margin-bottom:6px;}
+.card-icon{font-size:16px;margin-bottom:6px;}
+.card-name{font-size:10px;font-weight:700;letter-spacing:.08em;margin-bottom:4px;}
+.card-desc{font-size:7px;color:var(--muted2);line-height:1.65;}
+.card-tag{display:inline-flex;align-items:center;gap:4px;font-size:6px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:2px;margin-top:8px;}
+.card-arrow{position:absolute;top:12px;right:12px;font-size:10px;color:var(--muted);}
+.new-badge{position:absolute;top:8px;right:26px;font-size:6px;font-weight:700;padding:2px 4px;border-radius:2px;background:rgba(240,192,64,.15);color:var(--gold);border:1px solid rgba(240,192,64,.3);letter-spacing:.08em;}
+
+.stat-bar{display:flex;border-top:1px solid var(--border);flex-shrink:0;}
+.sb{flex:1;padding:6px 12px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:1px;}
+.sb:last-child{border-right:none;}
+.sb-v{font-size:11px;font-weight:700;}
+.sb-l{font-size:6px;color:var(--muted);letter-spacing:.08em;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo" onclick="showHome()">
+      <div class="logo-tri"></div>DARKFLOW
+    </div>
+    <div class="nav" id="nav">
+      <button class="nav-tab active" onclick="showHome()" id="tab-home">HOME</button>
+      <button class="nav-tab" onclick="loadPage('overview','tab-overview')" id="tab-overview">OVERVIEW</button>
+      <button class="nav-tab" onclick="loadPage('darkflow-flow-v4','tab-flow')" id="tab-flow">OPTIONS FLOW</button>
+      <button class="nav-tab" onclick="loadPage('darkflow-gex-v2','tab-gex')" id="tab-gex">GEX HEATMAP</button>
+      <button class="nav-tab" onclick="loadPage('darkflow-gexchart','tab-gammamap')" id="tab-gammamap">GAMMA MAP</button>
+      <button class="nav-tab" onclick="loadPage('darkflow-gammabot','tab-gammaai')" id="tab-gammaai">GAMMA AI</button>
+      <button class="nav-tab" onclick="loadPage('darkflow-alerts','tab-alerts')" id="tab-alerts">AI ALERTS</button>
+      <button class="nav-tab" onclick="loadPage('darkflow-flowscanner','tab-scanner')" id="tab-scanner">FLOW SCANNER</button>
+      <button class="nav-tab" onclick="loadPage('darkflow-netdrift','tab-drift')" id="tab-drift">PREMIUM DIVERGENCE</button>
+      <button class="nav-tab" onclick="loadPage('darkflow-darkpool-v2','tab-pool')" id="tab-pool">DARK POOL</button>
+      <button class="nav-tab" onclick="loadPage('darkflow-chain','tab-matrix')" id="tab-matrix">STRIKE MATRIX</button>
+      <button class="nav-tab" onclick="loadPage('darkflow-earnings','tab-earnings')" id="tab-earnings">EARNINGS DATA</button>
+      <button class="nav-tab" onclick="loadPage('darkflow-journal','tab-journal')" id="tab-journal">JOURNAL</button>
+      <button class="nav-tab" onclick="loadPage('darkflow-rr-calc','tab-rr')" id="tab-rr">R/R CALC</button>
+    </div>
+    <div class="topbar-right">
+      <div class="live-dot"></div>
+      <span style="font-size:9px;color:var(--muted2)" id="clk"></span>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main" id="main">
+
+    <!-- HOME DASHBOARD -->
+    <div class="home" id="home-view">
+      <div class="home-title">DARKFLOW TERMINAL · ALL MODULES</div>
+      <div class="home-sub">CLICK ANY MODULE TO OPEN · 13 TOOLS · ONE TERMINAL</div>
+
+      <div class="section-label">⚡ AI INTELLIGENCE — THE EDGE</div>
+      <div class="grid">
+        <div class="card" onclick="loadPage('darkflow-gammabot','tab-gammaai')" style="border-color:rgba(240,192,64,.2)">
+          <div class="card-top" style="background:linear-gradient(90deg,var(--gold),transparent)"></div>
+          <div class="new-badge">NEW</div>
+          <div class="card-arrow">→</div>
+          <div class="card-num">01</div>
+          <div class="card-icon">◈</div>
+          <div class="card-name" style="color:var(--gold)">GAMMA AI</div>
+          <div class="card-desc">Price touches a gamma level — bot fires instantly. Long probability, short probability, historical rejection rate, dealer positioning.</div>
+          <div class="card-tag" style="background:rgba(240,192,64,.1);color:var(--gold);border:1px solid rgba(240,192,64,.25)">⚡ PROBABILITY ENGINE</div>
+        </div>
+        <div class="card" onclick="loadPage('darkflow-alerts','tab-alerts')" style="border-color:rgba(240,192,64,.15)">
+          <div class="card-top" style="background:linear-gradient(90deg,var(--gold),transparent)"></div>
+          <div class="new-badge">NEW</div>
+          <div class="card-arrow">→</div>
+          <div class="card-num">02</div>
+          <div class="card-icon">🔕</div>
+          <div class="card-name" style="color:var(--gold)">AI ALERTS</div>
+          <div class="card-desc">Screen stays dark and quiet. Only A and A+ flow prints wake it up. Patience pays.</div>
+          <div class="card-tag" style="background:rgba(240,192,64,.1);color:var(--gold);border:1px solid rgba(240,192,64,.25)">A / A+ ONLY</div>
+        </div>
+        <div class="card" onclick="loadPage('darkflow-flowscanner','tab-scanner')" style="border-color:rgba(0,212,170,.15)">
+          <div class="card-top" style="background:linear-gradient(90deg,var(--accent),transparent)"></div>
+          <div class="new-badge">NEW</div>
+          <div class="card-arrow">→</div>
+          <div class="card-num">03</div>
+          <div class="card-icon">▦</div>
+          <div class="card-name" style="color:var(--accent)">FLOW SCANNER</div>
+          <div class="card-desc">90 days of historical flow — every trade that paid, AI graded A+ to F.</div>
+          <div class="card-tag" style="background:rgba(0,212,170,.1);color:var(--accent);border:1px solid rgba(0,212,170,.25)">AI GRADED</div>
+        </div>
+      </div>
+
+      <div class="section-label">◈ GAMMA — THE FOUNDATION</div>
+      <div class="grid">
+        <div class="card" onclick="loadPage('darkflow-gex-v2','tab-gex')">
+          <div class="card-top" style="background:linear-gradient(90deg,var(--accent),transparent)"></div>
+          <div class="card-arrow">→</div>
+          <div class="card-num">04</div>
+          <div class="card-icon">◈</div>
+          <div class="card-name" style="color:var(--accent)">GEX HEATMAP</div>
+          <div class="card-desc">Gamma exposure by strike and expiry. King node, flip zones, call walls, put floors.</div>
+          <div class="card-tag" style="background:rgba(0,212,170,.1);color:var(--accent);border:1px solid rgba(0,212,170,.25)">● LIVE</div>
+        </div>
+        <div class="card" onclick="loadPage('darkflow-gexchart','tab-gammamap')">
+          <div class="card-top" style="background:linear-gradient(90deg,var(--accent),transparent)"></div>
+          <div class="card-arrow">→</div>
+          <div class="card-num">05</div>
+          <div class="card-icon">📈</div>
+          <div class="card-name" style="color:var(--accent)">GAMMA MAP</div>
+          <div class="card-desc">Live candles with gamma levels drawn as solid lines. Set alerts on king node, call wall, put wall.</div>
+          <div class="card-tag" style="background:rgba(0,212,170,.1);color:var(--accent);border:1px solid rgba(0,212,170,.25)">● LIVE ALERTS</div>
+        </div>
+      </div>
+
+      <div class="section-label">⚡ FLOW — FOLLOW THE MONEY</div>
+      <div class="grid">
+        <div class="card" onclick="loadPage('darkflow-flow-v4','tab-flow')">
+          <div class="card-top" style="background:linear-gradient(90deg,var(--blue),transparent)"></div>
+          <div class="card-arrow">→</div>
+          <div class="card-num">06</div>
+          <div class="card-icon">⚡</div>
+          <div class="card-name" style="color:var(--blue)">OPTIONS FLOW</div>
+          <div class="card-desc">Real-time sweeps and blocks. AI Hot Picks strip shows top 5 most significant prints.</div>
+          <div class="card-tag" style="background:rgba(72,136,255,.1);color:var(--blue);border:1px solid rgba(72,136,255,.25)">● REAL-TIME</div>
+        </div>
+        <div class="card" onclick="loadPage('darkflow-netdrift','tab-drift')">
+          <div class="card-top" style="background:linear-gradient(90deg,var(--accent),transparent)"></div>
+          <div class="card-arrow">→</div>
+          <div class="card-num">07</div>
+          <div class="card-icon">↑↓</div>
+          <div class="card-name" style="color:var(--accent)">PREMIUM DIVERGENCE</div>
+          <div class="card-desc">Cumulative call vs put premium. When puts overtake calls — divergence alert fires.</div>
+          <div class="card-tag" style="background:rgba(0,212,170,.1);color:var(--accent);border:1px solid rgba(0,212,170,.25)">● CROSSOVER ALERTS</div>
+        </div>
+        <div class="card" onclick="loadPage('darkflow-darkpool-v2','tab-pool')">
+          <div class="card-top" style="background:linear-gradient(90deg,var(--purple),transparent)"></div>
+          <div class="card-arrow">→</div>
+          <div class="card-num">08</div>
+          <div class="card-icon">◉</div>
+          <div class="card-name" style="color:var(--purple)">DARK POOL</div>
+          <div class="card-desc">Institutional off-exchange prints plotted on the SPY chart. Accumulation vs distribution.</div>
+          <div class="card-tag" style="background:rgba(168,85,247,.1);color:var(--purple);border:1px solid rgba(168,85,247,.25)">● INSTITUTIONAL</div>
+        </div>
+      </div>
+
+      <div class="section-label">◆ INTELLIGENCE & TOOLS</div>
+      <div class="grid">
+        <div class="card" onclick="loadPage('darkflow-chain','tab-matrix')">
+          <div class="card-top" style="background:linear-gradient(90deg,var(--gold),transparent)"></div>
+          <div class="card-arrow">→</div>
+          <div class="card-num">09</div>
+          <div class="card-icon">⬡</div>
+          <div class="card-name" style="color:var(--gold)">STRIKE MATRIX</div>
+          <div class="card-desc">Full two-sided options chain. Toggle Guided Mode for plain English walls and floors.</div>
+          <div class="card-tag" style="background:rgba(240,192,64,.1);color:var(--gold);border:1px solid rgba(240,192,64,.25)">GUIDED MODE</div>
+        </div>
+        <div class="card" onclick="loadPage('darkflow-earnings','tab-earnings')">
+          <div class="card-top" style="background:linear-gradient(90deg,var(--gold),transparent)"></div>
+          <div class="card-arrow">→</div>
+          <div class="card-num">10</div>
+          <div class="card-icon">📅</div>
+          <div class="card-name" style="color:var(--gold)">EARNINGS DATA</div>
+          <div class="card-desc">Expected move, 10-year reaction history, IV crush risk, options positioning.</div>
+          <div class="card-tag" style="background:rgba(240,192,64,.1);color:var(--gold);border:1px solid rgba(240,192,64,.25)">10-YEAR HISTORY</div>
+        </div>
+        <div class="card" onclick="loadPage('darkflow-rr-calc','tab-rr')">
+          <div class="card-top" style="background:linear-gradient(90deg,var(--gold),transparent)"></div>
+          <div class="card-arrow">→</div>
+          <div class="card-num">11</div>
+          <div class="card-icon">÷</div>
+          <div class="card-name" style="color:var(--gold)">R/R CALCULATOR</div>
+          <div class="card-desc">Entry · Target · Stop → TAKE or SKIP verdict. Run this before every trade.</div>
+          <div class="card-tag" style="background:rgba(240,192,64,.1);color:var(--gold);border:1px solid rgba(240,192,64,.25)">PRE-TRADE</div>
+        </div>
+        <div class="card" onclick="loadPage('darkflow-journal','tab-journal')">
+          <div class="card-top" style="background:linear-gradient(90deg,var(--orange),transparent)"></div>
+          <div class="card-arrow">→</div>
+          <div class="card-num">12</div>
+          <div class="card-icon">◆</div>
+          <div class="card-name" style="color:var(--orange)">JOURNAL</div>
+          <div class="card-desc">AI coach reads your trades. Tells you your edge, your leaks, your patterns.</div>
+          <div class="card-tag" style="background:rgba(255,128,64,.1);color:var(--orange);border:1px solid rgba(255,128,64,.25)">AI COACH</div>
+        </div>
+      </div>
+
+      <div style="height:20px"></div>
+    </div>
+
+    <!-- IFRAME for pages -->
+    <iframe id="page-frame" class="page hidden" src="" frameborder="0" allowfullscreen></iframe>
+
+  </div>
+
+  <!-- STAT BAR -->
+  <div class="stat-bar">
+    <div class="sb"><span class="sb-v" style="color:var(--accent)">LIVE</span><span class="sb-l">STATUS</span></div>
+    <div class="sb"><span class="sb-v" style="color:var(--text)">13</span><span class="sb-l">MODULES</span></div>
+    <div class="sb"><span class="sb-v" style="color:var(--gold)">A/A+</span><span class="sb-l">ALERT THRESHOLD</span></div>
+    <div class="sb"><span class="sb-v" style="color:var(--text)" id="regime">LONG γ</span><span class="sb-l">REGIME</span></div>
+    <div class="sb"><span class="sb-v" style="color:var(--accent)" id="spxPrice">$5,718</span><span class="sb-l">SPX</span></div>
+  </div>
+
+</div>
+
+<script>
+// Clock
+setInterval(()=>document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-US',{hour12:false}),1000);
+
+let activeTab = 'tab-home';
+
+function setActiveTab(tabId) {
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  const el = document.getElementById(tabId);
+  if(el) {
+    el.classList.add('active');
+    el.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  }
+  activeTab = tabId;
+}
+
+function showHome() {
+  document.getElementById('home-view').style.display = 'block';
+  document.getElementById('page-frame').classList.add('hidden');
+  document.getElementById('page-frame').src = '';
+  setActiveTab('tab-home');
+}
+
+function loadPage(page, tabId) {
+  document.getElementById('home-view').style.display = 'none';
+  const frame = document.getElementById('page-frame');
+  frame.classList.remove('hidden');
+  frame.src = page + '.html';
+  setActiveTab(tabId);
+}
+
+// Simulate price movement
+let price = 5718;
+setInterval(()=>{
+  price += (Math.random()-.49)*2;
+  document.getElementById('spxPrice').textContent = '$'+price.toFixed(0);
+},2000);
+</script>
+</body>
+</html>
