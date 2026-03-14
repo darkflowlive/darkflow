@@ -548,11 +548,8 @@ setInterval(simPrice,1200);
 
 // Wait for DOM then load
 window.addEventListener('DOMContentLoaded', function() {
-  loadGammaBot('SPX');
-}, false);
-// Also fire immediately in case DOM already loaded
-if(document.readyState !== 'loading') loadGammaBot('SPX');
-setInterval(()=>loadGammaBot(GAMMA_STATE.sym||'SPX'), 60000);
+loadGammaBot('SPX');
+setInterval(()=>loadGammaBot('SPX'), 60000);
 </script>
 </body>
 </html>
