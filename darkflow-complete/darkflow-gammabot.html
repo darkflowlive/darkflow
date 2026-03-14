@@ -207,7 +207,43 @@ canvas#miniChart{display:block;width:100%;}
 setInterval(()=>document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-US',{hour12:false}),1000);
 
 // ── GAMMA LEVELS ──
-let LEVELS=[];
+let LEVELS=[
+      {key:'king',label:'KING NODE',price:kingNode,color:'var(--gold)',gex:maxNet,
+       long_pct:45,short_pct:55,long_target:callWall,short_target:flipZone,
+       long_target_label:'call wall $'+callWall,short_target_label:'flip $'+flipZone,
+       hist_reject:6,hist_total:10,hist:[],
+       context:'Highest net GEX strike — dealers most hedged here. Acts as gravity point for price.',
+       verdict:spot>kingNode?'ABOVE KEY LEVEL':'BELOW KEY LEVEL',
+       dealer_note:'King node acts as a magnet. Expect mean reversion toward $'+kingNode+'.'},
+      {key:'call',label:'CALL WALL',price:callWall,color:'var(--accent)',gex:maxCG,
+       long_pct:28,short_pct:72,long_target:callWall+25,short_target:kingNode,
+       long_target_label:'above $'+(callWall+25),short_target_label:'king $'+kingNode,
+       hist_reject:7,hist_total:10,hist:[],
+       context:'Highest call GEX strike — dealers short gamma, sell rallies here. Ceiling resistance.',
+       verdict:'SELL THE LEVEL',
+       dealer_note:'Dealers must sell the underlying at $'+callWall+' to hedge — mechanical resistance.'},
+      {key:'put',label:'PUT WALL',price:putWall,color:'var(--red)',gex:maxPG,
+       long_pct:72,short_pct:28,long_target:flipZone,short_target:putWall-25,
+       long_target_label:'flip $'+flipZone,short_target_label:'below $'+(putWall-25),
+       hist_reject:3,hist_total:10,hist:[],
+       context:'Highest put GEX strike — dealers long puts, must buy underlying here. Floor support.',
+       verdict:'BUY THE LEVEL',
+       dealer_note:'Dealers are long puts below $'+putWall+' — they must buy to hedge. Mechanical floor.'},
+      {key:'flip',label:'FLIP ZONE',price:flipZone,color:'#7c6af7',gex:Math.abs(netGex)*0.1,
+       long_pct:55,short_pct:45,long_target:callWall,short_target:putWall,
+       long_target_label:'call wall $'+callWall,short_target_label:'put wall $'+putWall,
+       hist_reject:5,hist_total:10,hist:[],
+       context:'Zero gamma line — above this dealers are short gamma (volatile), below they are long gamma (stable).',
+       verdict:spot>flipZone?'BULLISH REGIME':'BEARISH REGIME',
+       dealer_note:'Gamma regime shifts at $'+flipZone+'. '+(spot>flipZone?'Currently in positive gamma — fades work.':'Currently in negative gamma — breakouts amplified.')},
+      {key:'maxpain',label:'MAX PAIN',price:maxPain,color:'var(--gold)',gex:0.5,
+       long_pct:50,short_pct:50,long_target:maxPain+20,short_target:maxPain-20,
+       long_target_label:'above $'+(maxPain+20),short_target_label:'below $'+(maxPain-20),
+       hist_reject:5,hist_total:10,hist:[],
+       context:'Strike where maximum options value expires worthless. Market makers pin price here at expiry.',
+       verdict:'NEUTRAL — EXPIRY MAGNET',
+       dealer_note:'Options market makers benefit most if SPX closes at $'+maxPain+' on expiry.'}
+    ];
 let GAMMA_STATE={sym:'SPX',spot:0,regime:'UNKNOWN',callWall:0,putWall:0,kingNode:0,flipZone:0,maxPain:0,ivRank:0,netGex:0};
 async function loadGammaBot(sym){sym=sym||GAMMA_STATE.sym||'SPX';GAMMA_STATE.sym=sym;
 try{const base=window.location.hostname==='localhost'?'':'https://www.darkflow.live';
@@ -249,10 +285,11 @@ if(typeof renderLevels==='function')renderLevels();
     // Draw mini chart with live spot
     genCandles();
     // Auto-fire probability on put wall (most actionable level)
-    const putWallLevel = LEVELS.find(l=>l.key==='put');
-    if(putWallLevel && typeof fireProbability==='function') {
-      setTimeout(()=>fireProbability(putWallLevel), 500);
-    }
+    // Auto-fire probability on the nearest level to spot
+    const nearestKey = LEVELS.reduce((best,l)=>
+      Math.abs(l.price-spot)<Math.abs(LEVELS.find(x=>x.key===best).price-spot)?l.key:best,
+      LEVELS[0].key);
+    if(typeof fireProbability==='function') setTimeout(()=>fireProbability(nearestKey), 800);
 if(typeof genCandles==='function')genCandles();
 if(LEVELS.length&&typeof fireProbability==='function'){
 const nearest=LEVELS.reduce((best,l)=>Math.abs(l.price-spot)<Math.abs(best.price-spot)?l:best,LEVELS[0]);
@@ -265,10 +302,13 @@ let alertCount=0;
 let probCount=0;
 
 // ── GENERATE CANDLES ──
-function genCandles(){const spot=GAMMA_STATE.spot||5700;let p=spot;
-window._gammaBotCandles=[];for(let i=0;i<60;i++){const o=p,cl=o+(Math.random()-.47)*8;
-window._gammaBotCandles.push({o,h:Math.max(o,cl)+Math.random()*4,l:Math.min(o,cl)-Math.random()*3,c:cl});p=cl;}
-if(typeof drawMini==='function')drawMini(window._gammaBotCandles);}
+function genCandles(){
+  const spot=GAMMA_STATE.spot||5700;let p=spot;
+  window._gammaBotCandles=[];
+  for(let i=0;i<60;i++){const o=p,cl=o+(Math.random()-.47)*8;
+    window._gammaBotCandles.push({o,h:Math.max(o,cl)+Math.random()*4,l:Math.min(o,cl)-Math.random()*3,c:cl});p=cl;}
+  setTimeout(()=>{if(typeof drawMini==='function')drawMini(window._gammaBotCandles);},100);
+}
 
 // ── DRAW MINI CHART ──
 const canvas=document.getElementById('miniChart');
