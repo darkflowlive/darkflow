@@ -327,9 +327,9 @@ async function setTicker(sym) {
   // Fetch real spot price
   try {
     const base = window.location.hostname==='localhost'?'':'https://www.darkflow.live';
-    const r = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank'));
+    const r = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/option-trades/flow-alerts'));
     const j = await r.json();
-    const close = parseFloat(j.data?.[0]?.close);
+    const rows=j.data||[];const _m=rows.find(r=>r.ticker===sym||r.ticker===sym+'W');const close=_m?parseFloat(_m.underlying_price)||0:0;
     if(close > 0) {
       // Update all level prices relative to real spot
       const offset = close - (levels.spot?.price||6600);
