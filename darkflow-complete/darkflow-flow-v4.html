@@ -257,7 +257,11 @@ function mapUWtoFlow(d){
     oi:d.open_interest||0,
     unusual:unusual,
     note:d.alert_rule||''
-  };
+  
+    grade: grade,
+    signal: isSweep ? 'SWEEP' : isFloor ? 'FLOOR' : 'BLOCK',
+    context: row.alert_rule || 'Institutional flow',
+    entry_price: parseFloat(row.price) || 0,};
 }
 
 async function loadFlow(){
