@@ -442,7 +442,9 @@ function drawChart(){
   let lo=Infinity,hi=-Infinity;
   candles.forEach(c=>{lo=Math.min(lo,c.l);hi=Math.max(hi,c.h);});
   // include level prices in range
-  Object.values(levels).forEach(lv=>{ lo=Math.min(lo,lv.price-5); hi=Math.max(hi,lv.price+5); });
+  Object.values(levels).forEach(lv=>{ lo=Math.min(lo,lv.price-5); hi=Math.max(hi,lv.price+5)
+  // clamp Y range to levels ± 80
+  const mid=(hi+lo)/2; hi=mid+80; lo=mid-80;; });
   const pad=(hi-lo)*.08;
   lo-=pad; hi+=pad;
   const pY=p=>(PAD.top + (hi-p)/(hi-lo)*ch);
