@@ -264,29 +264,78 @@ let expFilter='0DTE', showUnusual=true, hideITM=false, expandedStrike=null;
 
 // ── CHAIN DATA ────────────────────────────────────────────────
 let CHAIN=[];let currentSym='SPY';
-async function genChain(sym,expiry){try{sym=sym||currentSym||'SPY';currentSym=sym;
-const base=window.location.hostname==='localhost'?'':'https://www.darkflow.live';
-const[gexR,ivR,mpR,flowR]=await Promise.all([
-fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/greek-exposure/strike')),
-fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank')),
-fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/max-pain')),
-fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/flow-alerts'))]);
-const gexJ=await gexR.json();const ivJ=await ivR.json();const mpJ=await mpR.json();const flowJ=await flowR.json();
-const gexRows=gexJ.data||[];const ivData=ivJ.data&&ivJ.data[0]?ivJ.data[0]:null;
-const mpData=mpJ.data&&mpJ.data[0]?mpJ.data[0]:null;const flowRows=flowJ.data||[];
-const spot=ivData?parseFloat(ivData.close)||0:0;
-const ivRank=ivData?parseFloat(ivData.iv_rank_1y)||0:0;
-const maxPain=mpData?parseFloat(mpData.max_pain)||0:0;
-const nearStrikes=gexRows.filter(r=>{const s=parseFloat(r.strike);return spot?Math.abs(s-spot)/spot<0.10:true;});
-const flowByStrike={};flowRows.forEach(f=>{const s=parseFloat(f.strike)||0;if(!flowByStrike[s])flowByStrike[s]=0;flowByStrike[s]+=parseFloat(f.total_premium)||0;});
-CHAIN=nearStrikes.map(row=>{const strike=parseFloat(row.strike)||0;const cGex=parseFloat(row.call_gex)||0;
-const pGex=parseFloat(row.put_gex)||0;const cDelta=parseFloat(row.call_delta)||0;const pDelta=parseFloat(row.put_delta)||0;
-const netGex=cGex+pGex;const itm=strike<spot;const flowPrem=flowByStrike[strike]||0;
-return{strike,cGex,pGex,netGex,cDelta,pDelta,cOI:Math.round(Math.abs(cDelta)*100),pOI:Math.round(Math.abs(pDelta)*100),
-cVol:Math.round(Math.abs(cDelta)*80),pVol:Math.round(Math.abs(pDelta)*80),cIV:0.18+Math.random()*0.12,pIV:0.20+Math.random()*0.12,
-itm,unusual:flowPrem>500000,flowPrem,isMaxPain:Math.abs(strike-maxPain)<5};}).sort((a,b)=>a.strike-b.strike);
-if(typeof render==='function')render();
-}catch(e){console.error('Chain error:',e);}}
+async function genChain(sym, expiry) {
+  sym = sym || currentSym || 'SPY';
+  currentSym = sym;
+  try {
+    const base = window.location.hostname==='localhost'?'':'https://www.darkflow.live';
+    // 1. Fetch spot price first
+    let spot = 0;
+    try {
+      const ivR = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank'));
+      const ivJ = await ivR.json();
+      spot = parseFloat(ivJ.data?.[0]?.close) || 0;
+      const ivRank = parseFloat(ivJ.data?.[0]?.iv_rank_1y) || 0;
+      // Update spot display
+      const spotEl = document.querySelector('[class*="spot"] .val, .spot-val, #spotVal, [data-spot]');
+      if(spotEl) spotEl.textContent = '$'+spot.toFixed(0);
+      // Update IVR display
+      const ivrEl = document.querySelector('[class*="ivr"] .val, .ivr-val, #ivrVal');
+      if(ivrEl) ivrEl.textContent = ivRank.toFixed(0);
+    } catch(e) { console.warn('iv-rank fetch failed', e); }
+
+    // 2. Fetch GEX data
+    const [gexR, mpR] = await Promise.all([
+      fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/greek-exposure/strike')),
+      fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/max-pain'))
+    ]);
+    const gexJ = await gexR.json();
+    const mpJ = await mpR.json();
+    const gexRows = gexJ.data || [];
+    const mpData = mpJ.data?.[0];
+    const maxPain = mpData ? parseFloat(mpData.max_pain)||0 : 0;
+
+    // 3. Filter to near-spot strikes (±10%)
+    const nearStrikes = spot > 0
+      ? gexRows.filter(r => { const s = parseFloat(r.strike); return Math.abs(s-spot)/spot < 0.10; })
+      : gexRows.filter(r => parseFloat(r.strike) > 100);
+
+    // 4. Build CHAIN
+    CHAIN = nearStrikes.map(row => {
+      const strike = parseFloat(row.strike)||0;
+      const cGex = parseFloat(row.call_gex)||0;
+      const pGex = parseFloat(row.put_gex)||0;
+      const cDelta = parseFloat(row.call_delta)||0;
+      const pDelta = parseFloat(row.put_delta)||0;
+      const netGex = cGex + pGex;
+      const itm = spot > 0 ? strike < spot : false;
+      return {
+        strike, cGex, pGex, netGex,
+        cDelta, pDelta,
+        cOI: Math.round(Math.abs(cDelta)*100),
+        pOI: Math.round(Math.abs(pDelta)*100),
+        cVol: Math.round(Math.abs(cDelta)*80),
+        pVol: Math.round(Math.abs(pDelta)*80),
+        cIV: 0.18+Math.random()*0.12,
+        pIV: 0.20+Math.random()*0.12,
+        itm, unusual: Math.abs(netGex) > 1000000,
+        isMaxPain: maxPain > 0 && Math.abs(strike-maxPain) < 5
+      };
+    }).sort((a,b) => a.strike - b.strike);
+
+    // 5. Update spot display buttons
+    const spotBtns = document.querySelectorAll('[class*="spot"]');
+    spotBtns.forEach(el => {
+      if(el.textContent.includes('SPOT') || el.textContent.includes('5,7')) {
+        const valEl = el.querySelector('.val') || el;
+        if(spot > 0) valEl.textContent = el.textContent.includes('SPOT') ? 'SPOT $'+spot.toFixed(0) : '$'+spot.toFixed(0);
+      }
+    });
+
+    // 6. Render
+    if(typeof render === 'function') render();
+  } catch(e) { console.error('genChain error:', e); }
+}
 
 const CHAIN_DATA=genChain();
 const MAX_OI=Math.max(...CHAIN_DATA.map(r=>Math.max(r.call.oi,r.put.oi)));
