@@ -256,12 +256,11 @@ function mapUWtoFlow(d){
     vol:d.volume||0,
     oi:d.open_interest||0,
     unusual:unusual,
-    note:d.alert_rule||''
-  
+    note:d.alert_rule||'',
     grade: grade,
     signal: isSweep ? 'SWEEP' : isFloor ? 'FLOOR' : 'BLOCK',
-    context: row.alert_rule || 'Institutional flow',
-    entry_price: parseFloat(row.price) || 0,};
+    context: d.alert_rule || 'Institutional flow',
+    entry_price: parseFloat(d.price) || 0};
 }
 
 async function loadFlow(){
