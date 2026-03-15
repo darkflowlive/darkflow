@@ -389,9 +389,9 @@ async function generateCandles(){
     if(mpJ.data&&mpJ.data[0]) levels.maxpain.price=parseFloat(mpJ.data[0].max_pain)||levels.maxpain.price;
     // Now build candle array from greek-exposure time series (use as price proxy)
     // Use iv-rank data for spot price
-    const ivR = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank'));
+    const ivR = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/option-trades/flow-alerts'));
     const ivJ = await ivR.json();
-    const spot = ivJ.data&&ivJ.data[0] ? parseFloat(ivJ.data[0].close) : levels.call.price-10;
+    const spot = ivJ.data&&ivJ.data[0] ? parseFloat((ivJ.data||[]).find(r=>r.ticker===sym||r.ticker===sym+'W')?.underlying_price)||0 : levels.call.price-10;
     // Generate realistic candles around live spot price
     candles=[];
     let p=spot;
