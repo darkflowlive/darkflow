@@ -317,14 +317,11 @@ async function genChain(sym, expiry) {
       const netGex = cGex + pGex;
       const itm = spot > 0 ? strike < spot : false;
       return {
-        strike, cGex, pGex, netGex,
-        cDelta, pDelta,
-        cOI: Math.round(Math.abs(cDelta)*100),
-        pOI: Math.round(Math.abs(pDelta)*100),
-        cVol: Math.round(Math.abs(cDelta)*80),
-        pVol: Math.round(Math.abs(pDelta)*80),
-        cIV: 0.18+Math.random()*0.12,
-        pIV: 0.20+Math.random()*0.12,
+        strike,
+        call: {gex:cGex, delta:cDelta, oi:Math.round(Math.abs(cDelta)*100), vol:Math.round(Math.abs(cDelta)*80), iv:0.18+Math.random()*0.12},
+        put: {gex:pGex, delta:pDelta, oi:Math.round(Math.abs(pDelta)*100), vol:Math.round(Math.abs(pDelta)*80), iv:0.20+Math.random()*0.12},
+        gex: netGex,
+        atm: spot>0 ? Math.abs(strike-spot)<5 : false,
         itm, unusual: Math.abs(netGex) > 1,
         isMaxPain: maxPain > 0 && Math.abs(strike-maxPain) < 5
       };
