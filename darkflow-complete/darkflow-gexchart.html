@@ -320,12 +320,26 @@ function fireAlert(key,title,msg,type){
 }
 
 // ── TICKER / TF ──
-function setTicker(t,btn){
-  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  document.getElementById('tf1D').classList.add('on');
-  document.getElementById('chTicker').textContent=t;
-  generateCandles();
+async function setTicker(sym) {
+  sym = sym||currentSym||'SPX';
+  currentSym = sym;
+  document.getElementById('tickerLabel').textContent = sym;
+  // Fetch real spot price
+  try {
+    const base = window.location.hostname==='localhost'?'':'https://www.darkflow.live';
+    const r = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank'));
+    const j = await r.json();
+    const close = parseFloat(j.data?.[0]?.close);
+    if(close > 0) {
+      // Update all level prices relative to real spot
+      const offset = close - (levels.spot?.price||6600);
+      Object.keys(levels).forEach(k => {
+        if(levels[k].price) levels[k].price = Math.round((levels[k].price + offset)/5)*5;
+      });
+      levels.spot.price = close;
+    }
+  } catch(e) { console.warn('spot fetch failed'); }
+  generateCandles(sym);
   drawChart();
 }
 function setTF(t,btn){
