@@ -255,7 +255,7 @@ const gexJ=await gexR.json();const ivJ=await ivR.json();const mpJ=await mpR.json
 const gexRows=(gexJ.data||[]).filter(r=>parseFloat(r.strike)>1000);
 const ivData=ivJ.data&&ivJ.data[0]?ivJ.data[0]:null;
 const mpData=mpJ.data&&mpJ.data[0]?mpJ.data[0]:null;
-const spot=ivData?parseFloat(ivData.close)||5700:5700;
+const _fr=await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/option-trades/flow-alerts'));const _fj=await _fr.json();const _fm=(_fj.data||[]).find(r=>r.ticker===sym||r.ticker===sym+'W');const spot=_fm?parseFloat(_fm.underlying_price)||0:ivData?parseFloat(ivData.close)||0:0;
 const ivRank=ivData?parseFloat(ivData.iv_rank_1y)||50:50;
 const maxPain=mpData?parseFloat(mpData.max_pain)||spot:spot;
 let maxCG=0,maxPG=0,callWall=0,putWall=0,kingNode=0,maxNet=0;
@@ -550,6 +550,7 @@ setInterval(simPrice,1200);
 window.addEventListener('DOMContentLoaded', function() {
 loadGammaBot('SPX');
 setInterval(()=>loadGammaBot('SPX'), 60000);
+}
 </script>
 </body>
 </html>
