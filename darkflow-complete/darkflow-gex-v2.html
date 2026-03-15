@@ -534,10 +534,22 @@ const PRICES = {SPX:6600,SPY:660,QQQ:470,TSLA:250,NVDA:880,AAPL:225,AMZN:200,MET
 async function fetchSpot(sym) {
   try {
     const base = window.location.hostname==='localhost'?'':'https://www.darkflow.live';
-    const r = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank'));
+    const r = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/option-trades/flow-alerts'));
     const j = await r.json();
-    const close = parseFloat(j.data?.[0]?.close);
-    if(close > 0) { PRICES[sym] = close; return close; }
+    const rows = j.data||[];
+    // Find matching ticker in recent flow alerts
+    const match = rows.find(row => row.ticker===sym || row.ticker===sym+'W');
+    if(match && parseFloat(match.underlying_price) > 0) {
+      const price = parseFloat(match.underlying_price);
+      PRICES[sym] = price;
+      return price;
+    }
+    // Fallback: use SPX/SPY from any recent row
+    const anyRow = rows.find(row => row.underlying_price);
+    if(anyRow) { PRICES[sym] = parseFloat(anyRow.underlying_price)||PRICES[sym]; }
+  } catch(e) { console.warn('fetchSpot failed:', e); }
+  return PRICES[sym] || 6600;
+}
   } catch(e) {}
   return PRICES[sym] || 6600;
 }
