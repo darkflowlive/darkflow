@@ -401,6 +401,7 @@ const AI_PICKS=()=>FLOW
   .slice(0,5)
   .map((f,i)=>({rank:i+1,ticker:f.ticker,side:f.side,strike:f.strike,exp:f.exp,prem:f.prem,type:f.type,score:Math.min(99,Math.round(60+(f.prem/1000000)*15+(f.unusual?10:0))),note:f.note||f.type+' — $'+Math.round(f.prem/1000)+'K premium',
         size: f.prem>1000000?'LARGE':f.prem>500000?'MED':'SMALL',
+        signal: f.type||'BLOCK',
         conviction: f.type==='SWEEP'||f.type==='FLOOR'?'HIGH':'MEDIUM',
         reason: (f.type||'BLOCK')+' — '+Math.round((f.prem||0)/1000)+'K premium'}));
 
