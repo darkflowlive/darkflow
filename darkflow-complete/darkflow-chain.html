@@ -260,7 +260,7 @@ table.guided td.gs{text-align:center;background:var(--raised);border-left:1px so
 setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-US',{hour12:false});},1000);
 
 const SPOT=5718;
-let expFilter='0DTE', showUnusual=true, hideITM=false, expandedStrike=null;
+let expFilter='0DTE', showUnusual=false, hideITM=false, expandedStrike=null;
 
 // ── CHAIN DATA ────────────────────────────────────────────────
 let CHAIN=[];let currentSym='SPY';
@@ -318,7 +318,7 @@ async function genChain(sym, expiry) {
         pVol: Math.round(Math.abs(pDelta)*80),
         cIV: 0.18+Math.random()*0.12,
         pIV: 0.20+Math.random()*0.12,
-        itm, unusual: Math.abs(netGex) > 1000000,
+        itm, unusual: Math.abs(netGex) > 1,
         isMaxPain: maxPain > 0 && Math.abs(strike-maxPain) < 5
       };
     }).sort((a,b) => a.strike - b.strike);
