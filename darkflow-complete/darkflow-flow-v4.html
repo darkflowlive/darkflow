@@ -257,10 +257,10 @@ function mapUWtoFlow(d){
     oi:d.open_interest||0,
     unusual:unusual,
     note:d.alert_rule||'',
-    grade: grade,
-    signal: isSweep ? 'SWEEP' : isFloor ? 'FLOOR' : 'BLOCK',
-    context: d.alert_rule || 'Institutional flow',
-    entry_price: parseFloat(d.price) || 0};
+    grade: (()=>{const p=parseFloat(d.total_premium)||0;const v=parseFloat(d.volume_oi_ratio)||0;const sw=d.has_sweep||(d.alert_rule||'').includes('Ascending');const fl=d.has_floor;if(p>1000000&&v>2&&(sw||fl))return'A+';if(p>500000&&v>1.5)return'A';if(p>250000&&(sw||fl||v>1))return'B+';return'B';})(),
+    signal: d.has_floor?'FLOOR':d.has_sweep?'SWEEP':'BLOCK',
+    context: d.alert_rule||'Institutional flow',
+    entry_price: parseFloat(d.price)||0};
 }
 
 async function loadFlow(){
