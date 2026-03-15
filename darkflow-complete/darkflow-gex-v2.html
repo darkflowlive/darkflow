@@ -1,4 +1,6 @@
-<!DOCTYPE html>
+<!D
+    await fetchSpot(sym);
+    OCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -528,7 +530,17 @@ tr.row-flip .strike-col{animation:flipPulse 2.4s ease-in-out infinite;}
 <script>
 // ── CONSTANTS ──────────────────────────────────────────────────
 const TICKERS = ['SPX','SPY','QQQ','TSLA','NVDA','AAPL','AMZN','META','MSFT'];
-const PRICES   = {SPX:5700,SPY:570,QQQ:470,TSLA:250,NVDA:880,AAPL:225,AMZN:200,META:590,MSFT:415};
+const PRICES = {SPX:6600,SPY:660,QQQ:470,TSLA:250,NVDA:880,AAPL:225,AMZN:200,META:560,MSFT:400,GOOG:170};
+async function fetchSpot(sym) {
+  try {
+    const base = window.location.hostname==='localhost'?'':'https://www.darkflow.live';
+    const r = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank'));
+    const j = await r.json();
+    const close = parseFloat(j.data?.[0]?.close);
+    if(close > 0) { PRICES[sym] = close; return close; }
+  } catch(e) {}
+  return PRICES[sym] || 6600;
+}
 let GEX_CACHE  = {};
 
 async function loadGEX(sym) {
@@ -559,14 +571,7 @@ async function loadGEX(sym) {
     const allStrikes = rows.map(r=>parseFloat(r.strike)).sort((a,b)=>a-b);
     const mid = allStrikes[Math.floor(allStrikes.length/2)];
     if(mid) PRICES[sym] = mid;
-    // Fetch real spot price from UW
-    try {
-      const ivR = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank'));
-      const ivJ = await ivR.json();
-      if(ivJ.data&&ivJ.data[0]&&ivJ.data[0].close) {
-        PRICES[sym] = parseFloat(ivJ.data[0].close);
-      }
-    } catch(e) { console.warn('iv-rank failed, using cached price'); }
+        } catch(e) { console.warn('iv-rank failed, using cached price'); }
     buildGEX(sym, null);
   } catch(e) { console.error('GEX load error:', e); }
 };
