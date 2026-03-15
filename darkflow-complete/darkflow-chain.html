@@ -263,19 +263,26 @@ const SPOT=5718;
 let expFilter='0DTE', showUnusual=false, hideITM=false, expandedStrike=null;
 
 // ── CHAIN DATA ────────────────────────────────────────────────
-let CHAIN=[];let currentSym='SPY';
+let CHAIN_DATA=[];let currentSym='SPY';
 async function genChain(sym, expiry) {
   sym = sym || currentSym || 'SPY';
   currentSym = sym;
   try {
     const base = window.location.hostname==='localhost'?'':'https://www.darkflow.live';
-    // 1. Fetch spot price first
+    // 1. Fetch spot price from flow-alerts (most accurate)
     let spot = 0;
+    let ivRank = 0;
     try {
+      const flowR = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/option-trades/flow-alerts'));
+      const flowJ = await flowR.json();
+      const rows = flowJ.data||[];
+      const match = rows.find(r=>r.ticker===sym||r.ticker===sym+'W');
+      if(match) spot = parseFloat(match.underlying_price)||0;
+      if(!spot && rows.length) spot = parseFloat(rows[0].underlying_price)||0;
+      // Also get iv-rank separately
       const ivR = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank'));
       const ivJ = await ivR.json();
-      spot = parseFloat(ivJ.data?.[0]?.close) || 0;
-      const ivRank = parseFloat(ivJ.data?.[0]?.iv_rank_1y) || 0;
+      ivRank = parseFloat(ivJ.data?.[0]?.iv_rank_1y) || 0;
       // Update spot display
       const spotEl = document.querySelector('[class*="spot"] .val, .spot-val, #spotVal, [data-spot]');
       if(spotEl) spotEl.textContent = '$'+spot.toFixed(0);
@@ -301,7 +308,7 @@ async function genChain(sym, expiry) {
       : gexRows.filter(r => parseFloat(r.strike) > 100);
 
     // 4. Build CHAIN
-    CHAIN = nearStrikes.map(row => {
+    CHAIN_DATA = nearStrikes.map(row => {
       const strike = parseFloat(row.strike)||0;
       const cGex = parseFloat(row.call_gex)||0;
       const pGex = parseFloat(row.put_gex)||0;
@@ -337,7 +344,7 @@ async function genChain(sym, expiry) {
   } catch(e) { console.error('genChain error:', e); }
 }
 
-const CHAIN_DATA=genChain();
+CHAIN_DATA =genChain();
 const MAX_OI=Math.max(...CHAIN_DATA.map(r=>Math.max(r.call.oi,r.put.oi)));
 
 function fmtOI(n){return n>=1000?(n/1000).toFixed(1)+'K':n;}
