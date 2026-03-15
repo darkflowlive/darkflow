@@ -1,4 +1,6 @@
-<!DOCTYPE html>
+<!D
+    await fetchSpot(sym);
+    OCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -532,22 +534,10 @@ const PRICES = {SPX:6600,SPY:660,QQQ:470,TSLA:250,NVDA:880,AAPL:225,AMZN:200,MET
 async function fetchSpot(sym) {
   try {
     const base = window.location.hostname==='localhost'?'':'https://www.darkflow.live';
-    const r = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/option-trades/flow-alerts'));
+    const r = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank'));
     const j = await r.json();
-    const rows = j.data||[];
-    // Find matching ticker in recent flow alerts
-    const match = rows.find(row => row.ticker===sym || row.ticker===sym+'W');
-    if(match && parseFloat(match.underlying_price) > 0) {
-      const price = parseFloat(match.underlying_price);
-      PRICES[sym] = price;
-      return price;
-    }
-    // Fallback: use SPX/SPY from any recent row
-    const anyRow = rows.find(row => row.underlying_price);
-    if(anyRow) { PRICES[sym] = parseFloat(anyRow.underlying_price)||PRICES[sym]; }
-  } catch(e) { console.warn('fetchSpot failed:', e); }
-  return PRICES[sym] || 6600;
-}
+    const close = parseFloat(j.data?.[0]?.close);
+    if(close > 0) { PRICES[sym] = close; return close; }
   } catch(e) {}
   return PRICES[sym] || 6600;
 }
@@ -564,7 +554,7 @@ async function loadGEX(sym) {
       const ivJ = await ivR.json();
       const close = parseFloat(ivJ.data?.[0]?.close);
       if(close > 0) PRICES[sym] = close;
-    
+    } catch(e) { console.warn('spot fetch failed'); }
     // 2. Fetch GEX strike data
     const r = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/greek-exposure/strike'));
     const json = await r.json();
@@ -1108,10 +1098,7 @@ init();
   </div>
 </div>
 
-<script>/* darkflow-gex-v3 */
-
-// v1773607998614
-
+<script>
 // ── STRIKE INSPECTOR ─────────────────────────────────────────
 let inspStrike = null;
 let inspDate   = null;
