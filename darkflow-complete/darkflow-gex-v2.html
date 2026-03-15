@@ -534,16 +534,7 @@ let GEX_CACHE  = {};
 async function loadGEX(sym) {
   try {
     const base = window.location.hostname==='localhost'?'':'https://www.darkflow.live';
-    // Fetch real spot price from UW
-    try {
-      const ivR = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank'));
-      const ivJ = await ivR.json();
-      if(ivJ.data&&ivJ.data[0]&&ivJ.data[0].close) {
-        PRICES[sym] = parseFloat(ivJ.data[0].close);
-      }
-    } catch(e) { console.warn('iv-rank failed, using cached price'); }
-    
-    const r = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/greek-exposure/strike'));
+        const r = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/greek-exposure/strike'));
     const json = await r.json();
     const rows = json.data || [];
     if (!rows.length) return;
@@ -568,6 +559,14 @@ async function loadGEX(sym) {
     const allStrikes = rows.map(r=>parseFloat(r.strike)).sort((a,b)=>a-b);
     const mid = allStrikes[Math.floor(allStrikes.length/2)];
     if(mid) PRICES[sym] = mid;
+    // Fetch real spot price from UW
+    try {
+      const ivR = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank'));
+      const ivJ = await ivR.json();
+      if(ivJ.data&&ivJ.data[0]&&ivJ.data[0].close) {
+        PRICES[sym] = parseFloat(ivJ.data[0].close);
+      }
+    } catch(e) { console.warn('iv-rank failed, using cached price'); }
     buildGEX(sym, null);
   } catch(e) { console.error('GEX load error:', e); }
 };
