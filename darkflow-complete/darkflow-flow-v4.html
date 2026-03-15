@@ -266,52 +266,9 @@ async async function loadFlow(){
     const r=await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/option-trades/flow-alerts'));
     const json=await r.json();
     const rows=json.data||[];
-    FLOW=rows.map(row=>{
-      const dt=new Date(row.created_at);
-      const prem=parseFloat(row.total_premium)||0;
-      const volOI=parseFloat(row.volume_oi_ratio)||0;
-      const isSweep=row.has_sweep||(row.alert_rule||'').includes('Ascending');
-      const isFloor=row.has_floor;
-      const expDate=row.expiry?new Date(row.expiry):null;
-      const expStr=expDate?expDate.toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
-      let grade='B';
-      if(prem>1000000&&volOI>2&&(isSweep||isFloor))grade='A+';
-      else if(prem>500000&&volOI>1.5)grade='A';
-      else if(prem>250000&&(isSweep||isFloor||volOI>1))grade='B+';
-      const side=(row.type||'call').toUpperCase();
-      return{
-        id:row.id,
-        month:expDate?expDate.toLocaleDateString('en-US',{month:'short'}):'',
-        day:expDate?expDate.getDate():'',
-        time:dt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),
-        ticker:row.ticker||'',
-        exp:expStr,
-        strike:parseFloat(row.strike)||0,
-        side:side,
-        spot:parseFloat(row.underlying_price)||0,
-        qty:parseInt(row.total_size)||0,
-        price:parseFloat(row.price)||0,
-        bid:parseFloat(row.bid)||0,
-        ask:parseFloat(row.ask)||0,
-        prem:prem,
-        sentiment:side==='CALL'?'bullish':'bearish',
-        type:isFloor?'FLOOR':isSweep?'SWEEP':'BLOCK',
-        exch:row.alert_rule||'',
-        otm:0,
-        vol:parseInt(row.volume)||0,
-        oi:parseInt(row.open_interest)||0,
-        unusual:prem>500000||volOI>2,
-        note:grade,
-        grade:grade,
-        signal:isFloor?'FLOOR':isSweep?'SWEEP':'BLOCK',
-        context:row.alert_rule||'Institutional flow',
-        entry_price:parseFloat(row.price)||0,
-        volOI:volOI.toFixed(2)
-      };
-    });
-    if(typeof render==='function')render();
-    if(typeof renderTopPicks==='function')renderTopPicks();
-    if(typeof updateStats==='function')updateStats();
+    FLOW=rows.map(row=>mapUWtoFlow(row));
+    render();
+    renderAIPicks();
   }catch(e){console.error('Flow error:',e);}
 }
 
