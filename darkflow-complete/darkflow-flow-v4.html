@@ -260,7 +260,11 @@ function mapUWtoFlow(d){
     grade: (()=>{const p=parseFloat(d.total_premium)||0;const v=parseFloat(d.volume_oi_ratio)||0;const sw=d.has_sweep||(d.alert_rule||'').includes('Ascending');const fl=d.has_floor;if(p>1000000&&v>2&&(sw||fl))return'A+';if(p>500000&&v>1.5)return'A';if(p>250000&&(sw||fl||v>1))return'B+';return'B';})(),
     signal: d.has_floor?'FLOOR':d.has_sweep?'SWEEP':'BLOCK',
     context: d.alert_rule||'Institutional flow',
-    entry_price: parseFloat(d.price)||0};
+    entry_price: parseFloat(d.price)||0,
+    score: (()=>{const p=parseFloat(d.total_premium)||0;const v=parseFloat(d.volume_oi_ratio)||0;if(p>1000000&&v>2)return 99;if(p>500000&&v>1.5)return 88;if(p>250000&&v>1)return 75;return 60;})(),
+    size: parseInt(d.total_size)||0,
+    conviction: d.has_sweep?'HIGH':d.has_floor?'HIGH':'MEDIUM',
+    reason: (d.has_floor?'Floor trade':'')+(d.has_sweep?' Sweep':'')+(d.alert_rule?' '+d.alert_rule:'')||'Unusual flow'};
 }
 
 async function loadFlow(){
