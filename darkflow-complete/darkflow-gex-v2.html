@@ -544,36 +544,35 @@ async function fetchSpot(sym) {
 let GEX_CACHE  = {};
 
 async function loadGEX(sym) {
+  sym = sym || currentSym || 'SPX';
+  currentSym = sym;
   try {
     const base = window.location.hostname==='localhost'?'':'https://www.darkflow.live';
-        const r = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/greek-exposure/strike'));
+    // 1. Fetch real spot price first
+    try {
+      const ivR = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/iv-rank'));
+      const ivJ = await ivR.json();
+      const close = parseFloat(ivJ.data?.[0]?.close);
+      if(close > 0) PRICES[sym] = close;
+    } catch(e) { console.warn('spot fetch failed'); }
+    // 2. Fetch GEX strike data
+    const r = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/greek-exposure/strike'));
     const json = await r.json();
     const rows = json.data || [];
-    if (!rows.length) return;
-    // Update PRICES with live underlying price from first row (use strike midpoint as proxy)
-    // Build GEX_CACHE[sym] keyed by strike
-    GEX_CACHE[sym] = {};
-    rows.forEach(row => {
-      const strike = parseFloat(row.strike);
-      const callGex = parseFloat(row.call_gex) || 0;
-      const putGex  = parseFloat(row.put_gex)  || 0;
-      GEX_CACHE[sym][strike] = { callGex, putGex, net: callGex + putGex };
-    });
-    // Find max absolute net GEX strike as call wall / put wall
-    let maxCall=0, maxPut=0, maxCallStrike=0, maxPutStrike=0;
-    rows.forEach(row => {
-      const cg = parseFloat(row.call_gex)||0;
-      const pg = parseFloat(row.put_gex)||0;
-      if(cg > maxCall){maxCall=cg; maxCallStrike=parseFloat(row.strike);}
-      if(Math.abs(pg) > maxPut){maxPut=Math.abs(pg); maxPutStrike=parseFloat(row.strike);}
-    });
-    // Update PRICES with live data if we can infer spot
-    const allStrikes = rows.map(r=>parseFloat(r.strike)).sort((a,b)=>a-b);
-    const mid = allStrikes[Math.floor(allStrikes.length/2)];
-    if(mid) PRICES[sym] = mid;
-        } catch(e) { console.warn('iv-rank failed, using cached price'); }
-    buildGEX(sym, null);
-  } catch(e) { console.error('GEX load error:', e); }
+    if(!rows.length) return;
+    // 3. Build GEX_DATA
+    GEX_DATA = rows.map(row => ({
+      strike: parseFloat(row.strike)||0,
+      callGEX: parseFloat(row.call_gex)||0,
+      putGEX: parseFloat(row.put_gex)||0,
+      netGEX: (parseFloat(row.call_gex)||0) + (parseFloat(row.put_gex)||0),
+      callDelta: parseFloat(row.call_delta)||0,
+      putDelta: parseFloat(row.put_delta)||0,
+    })).filter(r=>r.strike>100).sort((a,b)=>a.strike-b.strike);
+    // 4. Render
+    if(typeof buildGEX==='function') buildGEX();
+  } catch(e) { console.error('loadGEX error:', e); }
+} catch(e) { console.error('GEX load error:', e); }
 };
 
 const rand    = (a,b) => Math.random()*(b-a)+a;
