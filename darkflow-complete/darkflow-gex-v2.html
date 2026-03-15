@@ -1,6 +1,4 @@
-<!D
-    await fetchSpot(sym);
-    OCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -566,7 +564,7 @@ async function loadGEX(sym) {
       const ivJ = await ivR.json();
       const close = parseFloat(ivJ.data?.[0]?.close);
       if(close > 0) PRICES[sym] = close;
-    } catch(e) { console.warn('spot fetch failed'); }
+    
     // 2. Fetch GEX strike data
     const r = await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/stock/'+sym+'/greek-exposure/strike'));
     const json = await r.json();
