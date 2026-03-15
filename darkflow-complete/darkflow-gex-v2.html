@@ -572,7 +572,7 @@ async function loadGEX(sym) {
     // 4. Render
     if(typeof buildGEX==='function') buildGEX();
   } catch(e) { console.error('loadGEX error:', e); }
-} catch(e) { console.error('GEX load error:', e); }
+
 };
 
 const rand    = (a,b) => Math.random()*(b-a)+a;
