@@ -135,7 +135,7 @@ canvas#gexChart{display:block;width:100%;flex:1;}
         <span class="intel-bias" id="biasLabel">POSITIVE GAMMA · BULLISH REGIME</span>
         <span class="intel-sub" id="biasTime">as of 15:22:01</span>
       </div>
-      <div class="intel-text" id="biasText">SPX is trading above the gamma flip at $5,720. Dealers are net long gamma — they sell strength and buy dips, creating a mechanical ceiling at the Call Wall ($5,750) and support at the Put Wall ($5,700). Price is pinned in a 50-point range. A close above $5,750 triggers a dealer squeeze.</div>
+      <div class="intel-text" id="biasText">SPX is trading above the gamma flip at $6,600. Dealers are net long gamma — they sell strength and buy dips, creating a mechanical ceiling at the Call Wall ($6,630) and support at the Put Wall ($6,570). Price is pinned in a 50-point range. A close above $6,630 triggers a dealer squeeze.</div>
     </div>
     <div class="intel-stats">
       <div class="istat">
@@ -169,8 +169,8 @@ canvas#gexChart{display:block;width:100%;flex:1;}
     <button class="tbtn" onclick="setTF('1M',this)" id="tf1M">1M</button>
     <div class="t-div"></div>
     <div class="pill green"><span>●</span>ABOVE FLIP</div>
-    <div class="pill green" style="margin-left:6px">⚡ KING $5,740</div>
-    <div class="pill gold" style="margin-left:6px">◎ MAX PAIN $5,720</div>
+    <div class="pill green" style="margin-left:6px">⚡ KING $6,640</div>
+    <div class="pill gold" style="margin-left:6px">◎ MAX PAIN $6,600</div>
   </div>
 
   <!-- CHART -->
@@ -201,7 +201,7 @@ canvas#gexChart{display:block;width:100%;flex:1;}
       <div class="lev" id="lev-king">
         <div class="lev-bar" style="background:var(--gold)"></div>
         <div class="lev-label">⚡ KING NODE</div>
-        <div class="lev-val" style="color:var(--gold)">$5,740</div>
+        <div class="lev-val" style="color:var(--gold)">$6,640</div>
         <div class="lev-sub" style="color:var(--muted2)">Highest GEX strike · 9.1M</div>
         <div class="lev-alert" style="background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.2);color:var(--gold)" onclick="toggleAlert('king')">
           <span id="bell-king">🔔</span><span id="alert-label-king">SET ALERT</span>
@@ -211,7 +211,7 @@ canvas#gexChart{display:block;width:100%;flex:1;}
       <div class="lev" id="lev-call">
         <div class="lev-bar" style="background:var(--accent)"></div>
         <div class="lev-label">▲ CALL WALL</div>
-        <div class="lev-val" style="color:var(--accent)">$5,750</div>
+        <div class="lev-val" style="color:var(--accent)">$6,630</div>
         <div class="lev-sub" style="color:var(--muted2)">Dealer ceiling · resistance</div>
         <div class="lev-alert" style="background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2);color:var(--accent)" onclick="toggleAlert('call')">
           <span id="bell-call">🔔</span><span id="alert-label-call">SET ALERT</span>
@@ -221,7 +221,7 @@ canvas#gexChart{display:block;width:100%;flex:1;}
       <div class="lev" id="lev-flip">
         <div class="lev-bar" style="background:var(--blue)"></div>
         <div class="lev-label">◈ FLIP ZONE</div>
-        <div class="lev-val" style="color:var(--blue)">$5,720</div>
+        <div class="lev-val" style="color:var(--blue)">$6,600</div>
         <div class="lev-sub" style="color:var(--muted2)">Zero gamma line · regime shift</div>
         <div class="lev-alert" style="background:rgba(72,136,255,.08);border:1px solid rgba(72,136,255,.2);color:var(--blue)" onclick="toggleAlert('flip')">
           <span id="bell-flip">🔔</span><span id="alert-label-flip">SET ALERT</span>
@@ -231,7 +231,7 @@ canvas#gexChart{display:block;width:100%;flex:1;}
       <div class="lev" id="lev-put">
         <div class="lev-bar" style="background:var(--red)"></div>
         <div class="lev-label">▼ PUT WALL</div>
-        <div class="lev-val" style="color:var(--red)">$5,700</div>
+        <div class="lev-val" style="color:var(--red)">$6,570</div>
         <div class="lev-sub" style="color:var(--muted2)">Dealer floor · support</div>
         <div class="lev-alert" style="background:rgba(240,64,96,.08);border:1px solid rgba(240,64,96,.2);color:var(--red)" onclick="toggleAlert('put')">
           <span id="bell-put">🔔</span><span id="alert-label-put">SET ALERT</span>
@@ -241,7 +241,7 @@ canvas#gexChart{display:block;width:100%;flex:1;}
       <div class="lev" id="lev-pain">
         <div class="lev-bar" style="background:var(--orange)"></div>
         <div class="lev-label">◎ MAX PAIN</div>
-        <div class="lev-val" style="color:var(--orange)">$5,720</div>
+        <div class="lev-val" style="color:var(--orange)">$6,600</div>
         <div class="lev-sub" style="color:var(--muted2)">Options expiry magnet</div>
         <div class="lev-alert" style="background:rgba(255,128,64,.08);border:1px solid rgba(255,128,64,.2);color:var(--orange)" onclick="toggleAlert('pain')">
           <span id="bell-pain">🔔</span><span id="alert-label-pain">SET ALERT</span>
