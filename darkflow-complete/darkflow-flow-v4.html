@@ -260,7 +260,7 @@ function mapUWtoFlow(d){
   };
 }
 
-async async function loadFlow(){
+async function loadFlow(){
   try{
     const base=window.location.hostname==='localhost'?'':'https://www.darkflow.live';
     const r=await fetch(base+'/api/flow?endpoint='+encodeURIComponent('/api/option-trades/flow-alerts'));
